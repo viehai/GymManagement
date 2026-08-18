@@ -1,0 +1,199 @@
+<!-- Đường dẫn file: Views/Account/AccessDenied.cshtml -->
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Không Có Quyền Truy Cập";
+}
+
+<style>
+    /* Black banner */
+    .denied-banner {
+        background: #000;
+        padding: 6rem 0 5rem;
+    }
+    .denied-code {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 7rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #fff;
+        letter-spacing: -4px;
+    }
+    .denied-code-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.35);
+        margin-top: 0.5rem;
+    }
+    /* White content area */
+    .denied-content {
+        padding: 5rem 0;
+        background: #fff;
+    }
+    .denied-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: #000;
+        line-height: 1.1;
+        margin-bottom: 1.25rem;
+    }
+    .denied-desc {
+        font-size: 0.92rem;
+        color: #666;
+        line-height: 1.85;
+        max-width: 480px;
+        margin-bottom: 2.5rem;
+    }
+    .divider-rule {
+        width: 40px;
+        height: 2px;
+        background: #000;
+        margin: 1.5rem 0 2rem;
+    }
+    .btn-min-dark {
+        background: #000;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border: 0;
+        border-radius: 0;
+        padding: 0.85rem 2rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        transition: background 0.2s;
+    }
+    .btn-min-dark:hover { background: #333; color: #fff; }
+    .btn-min-outline {
+        background: transparent;
+        color: #000;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border: 1.5px solid #000;
+        border-radius: 0;
+        padding: 0.83rem 2rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        transition: background 0.2s, color 0.2s;
+        cursor: pointer;
+    }
+    .btn-min-outline:hover { background: #000; color: #fff; }
+    /* Side decorative bar */
+    .side-bar {
+        width: 4px;
+        background: #000;
+        align-self: stretch;
+        flex-shrink: 0;
+        min-height: 120px;
+    }
+    .info-card {
+        display: flex;
+        gap: 1.5rem;
+        background: #fafafa;
+        border: 1px solid #f0f0f0;
+        padding: 2rem;
+        max-width: 520px;
+        margin-top: 3rem;
+    }
+    .info-card-body {
+        flex: 1;
+    }
+    .info-card-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #aaa;
+        margin-bottom: 0.5rem;
+    }
+    .info-card-text {
+        font-size: 0.85rem;
+        color: #444;
+        line-height: 1.7;
+    }
+</style>
+
+<!-- Black 403 banner -->
+<div class="denied-banner">
+    <div class="container">
+        <div class="denied-code">403</div>
+        <p class="denied-code-label">Lỗi phân quyền — Access Denied</p>
+    </div>
+</div>
+
+<!-- White content -->
+<div class="denied-content">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-7">
+                <h1 class="denied-title">Không Có<br>Quyền Truy Cập</h1>
+                <div class="divider-rule"></div>
+                <p class="denied-desc">
+                    Khu vực này yêu cầu quyền đặc biệt mà tài khoản của bạn hiện không có.
+                    Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là nhầm lẫn, hoặc
+                    đăng nhập bằng tài khoản có quyền phù hợp.
+                </p>
+
+                <div class="d-flex flex-wrap gap-3">
+                    <a asp-controller="Home" asp-action="Index" class="btn-min-dark" id="btnGoHome">
+                        <i class="bi bi-house" style="font-size:0.8rem;"></i>
+                        Trang Chủ
+                    </a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form method="post" asp-controller="Account" asp-action="Logout">
+                            <button type="submit" class="btn-min-outline" id="btnLogout">
+                                <i class="bi bi-box-arrow-right" style="font-size:0.8rem;"></i>
+                                Đổi Tài Khoản
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn-min-outline" id="btnLogin">
+                            <i class="bi bi-box-arrow-in-right" style="font-size:0.8rem;"></i>
+                            Đăng Nhập
+                        </a>
+                    }
+                </div>
+
+                <div class="info-card">
+                    <div class="side-bar"></div>
+                    <div class="info-card-body">
+                        <p class="info-card-label">Cần hỗ trợ?</p>
+                        <p class="info-card-text mb-0">
+                            Nếu bạn tin rằng đây là lỗi hệ thống, hãy liên hệ quản trị viên
+                            qua email <strong>admin@gym.com</strong> hoặc trực tiếp tại
+                            lễ tân phòng tập.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 d-none d-lg-flex align-items-center justify-content-center">
+                <div style="text-align:center; color:#eee;">
+                    <div style="font-family:'Montserrat',sans-serif; font-size:10rem; font-weight:900; line-height:1; color:#f0f0f0; user-select:none;">
+                        &#x26D4;
+                    </div>
+                    <p style="font-family:'Montserrat',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#ccc; margin-top:0.5rem;">
+                        Restricted Area
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

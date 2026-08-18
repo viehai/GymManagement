@@ -1,3 +1,4 @@
+using GymManagement.Helpers;
 using GymManagement.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // B1: Thêm MVC Service
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<EmailHelper>();
 
 // B2: Thêm Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

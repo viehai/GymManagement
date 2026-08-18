@@ -1,0 +1,303 @@
+<!-- Đường dẫn file: Views/Account/Register.cshtml -->
+@model GymManagement.ViewModels.RegisterViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Đăng Ký";
+}
+
+<style>
+    .auth-page {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: stretch;
+    }
+    /* Left — black panel */
+    .auth-panel-left {
+        background: #000;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 5rem 4rem;
+    }
+    .panel-eyebrow {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.45);
+        margin-bottom: 1.25rem;
+    }
+    .auth-panel-left h2 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 900;
+        line-height: 1.15;
+        text-transform: uppercase;
+        margin-bottom: 1.25rem;
+    }
+    .auth-panel-left p {
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.5);
+        line-height: 1.8;
+        max-width: 320px;
+    }
+    .benefit-list {
+        list-style: none;
+        padding: 0;
+        margin: 1.75rem 0 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 1.5rem;
+    }
+    .benefit-list li {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.55);
+        padding: 0.45rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .benefit-list li::before {
+        content: '';
+        display: inline-block;
+        width: 18px;
+        height: 1px;
+        background: rgba(255,255,255,0.35);
+        flex-shrink: 0;
+    }
+    /* Right form */
+    .auth-panel-right {
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 4rem 4rem;
+        overflow-y: auto;
+    }
+    .form-section-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #aaa;
+        margin-bottom: 2rem;
+    }
+    .form-label-min {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 0.45rem;
+        display: block;
+    }
+    .form-control-min {
+        display: block;
+        width: 100%;
+        border: 0;
+        border-bottom: 1.5px solid #d0d0d0;
+        border-radius: 0;
+        padding: 0.6rem 0;
+        font-size: 0.95rem;
+        font-family: 'Inter', sans-serif;
+        color: #111;
+        background: transparent;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-control-min:focus { border-bottom-color: #000; }
+    .form-control-min::placeholder { color: #bbb; }
+    .btn-submit-min {
+        background: #000;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border: 0;
+        border-radius: 0;
+        padding: 0.85rem 2.5rem;
+        transition: background 0.2s;
+        width: 100%;
+        margin-top: 0.75rem;
+    }
+    .btn-submit-min:hover { background: #333; }
+    .form-link {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #000;
+        text-decoration: none;
+        border-bottom: 1px solid #000;
+        padding-bottom: 1px;
+        transition: opacity 0.2s;
+    }
+    .form-link:hover { opacity: 0.55; color: #000; }
+    .validation-msg { font-size: 0.72rem; color: #c00; margin-top: 0.3rem; font-family: 'Inter', sans-serif; }
+    .alert-min-error {
+        background: #fff5f5;
+        border: 0;
+        border-left: 3px solid #c00;
+        border-radius: 0;
+        font-size: 0.82rem;
+        font-family: 'Inter', sans-serif;
+        color: #c00;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.75rem;
+    }
+    /* Password strength */
+    .strength-track {
+        height: 2px;
+        background: #eee;
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 3px;
+    }
+    .strength-seg {
+        flex: 1;
+        height: 100%;
+        background: #e0e0e0;
+        transition: background 0.3s;
+    }
+    @@media (max-width: 767px) {
+        .auth-panel-left { padding: 3rem 2rem; }
+        .auth-panel-right { padding: 3rem 2rem; }
+    }
+</style>
+
+<div class="auth-page">
+    <div class="row g-0 w-100">
+        <!-- Left black panel -->
+        <div class="col-md-4 auth-panel-left d-none d-md-flex">
+            <div>
+                <p class="panel-eyebrow">GymPro Management</p>
+                <h2>Bắt đầu<br>hành trình</h2>
+                <p>Tham gia hệ thống quản lý phòng Gym chuyên nghiệp. Dành cho thành viên, huấn luyện viên và chủ phòng gym.</p>
+                <ul class="benefit-list">
+                    <li>Quản lý thành viên</li>
+                    <li>Theo dõi lịch tập</li>
+                    <li>Thanh toán online</li>
+                    <li>Báo cáo doanh thu</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right form panel -->
+        <div class="col-md-8 auth-panel-right">
+            <div style="max-width: 560px; width: 100%;">
+                <p class="form-section-title">Tạo tài khoản mới</p>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert-min-error" role="alert">
+                        <asp-validation-summary asp-validation-type="All" class="mb-0" />
+                    </div>
+                }
+
+                <form id="registerForm" method="post" asp-controller="Account" asp-action="Register" novalidate>
+
+                    <div class="row g-0">
+                        <div class="col-12 mb-4">
+                            <label asp-for="FullName" class="form-label-min"></label>
+                            <input asp-for="FullName" class="form-control-min"
+                                   placeholder="Nguyễn Văn A" autocomplete="name" id="regFullName" />
+                            <span asp-validation-for="FullName" class="validation-msg"></span>
+                        </div>
+
+                        <div class="col-sm-6 mb-4 pe-sm-3">
+                            <label asp-for="Email" class="form-label-min"></label>
+                            <input asp-for="Email" class="form-control-min"
+                                   placeholder="email@example.com" autocomplete="email" id="regEmail" />
+                            <span asp-validation-for="Email" class="validation-msg"></span>
+                        </div>
+
+                        <div class="col-sm-6 mb-4 ps-sm-3">
+                            <label asp-for="PhoneNumber" class="form-label-min"></label>
+                            <input asp-for="PhoneNumber" class="form-control-min"
+                                   placeholder="0912 345 678" autocomplete="tel" id="regPhone" />
+                            <span asp-validation-for="PhoneNumber" class="validation-msg"></span>
+                        </div>
+
+                        <div class="col-sm-6 mb-4 pe-sm-3">
+                            <label asp-for="Password" class="form-label-min"></label>
+                            <div style="position:relative;">
+                                <input asp-for="Password" class="form-control-min"
+                                       placeholder="••••••••" autocomplete="new-password" id="regPassword"
+                                       style="padding-right:2rem;" oninput="updateStrength(this.value)" />
+                                <button type="button" onclick="togglePwd('regPassword','regPwdIcon')"
+                                        style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:0;padding:0;color:#aaa;cursor:pointer;font-size:0.85rem;">
+                                    <i class="bi bi-eye" id="regPwdIcon"></i>
+                                </button>
+                            </div>
+                            <div class="strength-track">
+                                <div class="strength-seg" id="seg0"></div>
+                                <div class="strength-seg" id="seg1"></div>
+                                <div class="strength-seg" id="seg2"></div>
+                                <div class="strength-seg" id="seg3"></div>
+                            </div>
+                            <span asp-validation-for="Password" class="validation-msg"></span>
+                        </div>
+
+                        <div class="col-sm-6 mb-4 ps-sm-3">
+                            <label asp-for="ConfirmPassword" class="form-label-min"></label>
+                            <div style="position:relative;">
+                                <input asp-for="ConfirmPassword" class="form-control-min"
+                                       placeholder="••••••••" autocomplete="new-password" id="regConfirmPwd"
+                                       style="padding-right:2rem;" />
+                                <button type="button" onclick="togglePwd('regConfirmPwd','confirmIcon')"
+                                        style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:0;padding:0;color:#aaa;cursor:pointer;font-size:0.85rem;">
+                                    <i class="bi bi-eye" id="confirmIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="validation-msg"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit-min" id="btnRegister">
+                        Tạo Tài Khoản
+                    </button>
+
+                    <p class="mt-4 mb-0" style="font-size:0.75rem; color:#aaa; font-family:'Montserrat',sans-serif;">
+                        Đã có tài khoản?
+                        <a asp-controller="Account" asp-action="Login" class="form-link ms-1">Đăng nhập</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePwd(inputId, iconId) {
+            const i = document.getElementById(inputId);
+            const ic = document.getElementById(iconId);
+            i.type = i.type === 'password' ? 'text' : 'password';
+            ic.className = i.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+        }
+
+        function updateStrength(val) {
+            let score = 0;
+            if (val.length >= 6) score++;
+            if (val.length >= 10) score++;
+            if (/[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+            const colors = ['#e0e0e0', '#c00', '#e07800', '#bbb', '#222'];
+            for (let idx = 0; idx < 4; idx++) {
+                document.getElementById('seg' + idx).style.background = idx < score ? colors[score] : '#e0e0e0';
+            }
+        }
+    </script>
+}

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 
 namespace GymManagement.Helpers
@@ -13,26 +13,47 @@ namespace GymManagement.Helpers
             _configuration = configuration;
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
-            var smtpSettings = _configuration.GetSection("SmtpSettings");
-
-            using var client = new SmtpClient(smtpSettings["Host"], int.Parse(smtpSettings["Port"]))
+            try
             {
-                Credentials = new NetworkCredential(smtpSettings["SenderEmail"], smtpSettings["Password"]),
-                EnableSsl = bool.Parse(smtpSettings["EnableSsl"])
-            };
+                var smtpSettings = _configuration.GetSection("SmtpSettings");
+                var senderEmail = smtpSettings["SenderEmail"];
+                var password = smtpSettings["Password"];
+                var host = smtpSettings["Host"];
+                var portStr = smtpSettings["Port"];
 
-            var mailMessage = new MailMessage
+                if (string.IsNullOrEmpty(senderEmail) || senderEmail.Contains("your-email") ||
+                    string.IsNullOrEmpty(password) || password.Contains("your-app-password"))
+                {
+                    return false;
+                }
+
+                int port = int.TryParse(portStr, out int p) ? p : 587;
+                bool enableSsl = bool.TryParse(smtpSettings["EnableSsl"], out bool ssl) ? ssl : true;
+
+                using var client = new SmtpClient(host, port)
+                {
+                    Credentials = new NetworkCredential(senderEmail, password),
+                    EnableSsl = enableSsl
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(senderEmail, smtpSettings["SenderName"] ?? "Gym Management System"),
+                    Subject = subject,
+                    Body = htmlBody,
+                    IsBodyHtml = true
+                };
+                mailMessage.To.Add(toEmail);
+
+                await client.SendMailAsync(mailMessage);
+                return true;
+            }
+            catch
             {
-                From = new MailAddress(smtpSettings["SenderEmail"], smtpSettings["SenderName"]),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
-            };
-            mailMessage.To.Add(toEmail);
-
-            await client.SendMailAsync(mailMessage);
+                return false;
+            }
         }
 
         // Template riêng cho email OTP, tránh lặp code HTML ở Controller

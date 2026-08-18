@@ -1,0 +1,268 @@
+<!-- Đường dẫn file: Views/Account/Login.cshtml -->
+@model GymManagement.ViewModels.LoginViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Đăng Nhập";
+}
+
+<style>
+    .auth-page {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: stretch;
+    }
+    /* Left — black panel */
+    .auth-panel-left {
+        background: #000;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 5rem 4rem;
+    }
+    .auth-panel-left .panel-eyebrow {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.45);
+        margin-bottom: 1.25rem;
+    }
+    .auth-panel-left h2 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.4rem;
+        font-weight: 900;
+        line-height: 1.15;
+        letter-spacing: -0.5px;
+        text-transform: uppercase;
+        margin-bottom: 1.25rem;
+    }
+    .auth-panel-left p {
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.5);
+        line-height: 1.8;
+        max-width: 340px;
+    }
+    /* Right — white form panel */
+    .auth-panel-right {
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 5rem 4rem;
+    }
+    .form-section-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #aaa;
+        margin-bottom: 2rem;
+    }
+    .form-label-min {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 0.45rem;
+        display: block;
+    }
+    .form-control-min {
+        display: block;
+        width: 100%;
+        border: 0;
+        border-bottom: 1.5px solid #d0d0d0;
+        border-radius: 0;
+        padding: 0.6rem 0;
+        font-size: 0.95rem;
+        font-family: 'Inter', sans-serif;
+        color: #111;
+        background: transparent;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-control-min:focus { border-bottom-color: #000; }
+    .form-control-min::placeholder { color: #bbb; }
+    .check-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        color: #666;
+    }
+    .form-check-input:checked {
+        background-color: #000;
+        border-color: #000;
+        border-radius: 0;
+    }
+    .form-check-input { border-radius: 0 !important; }
+    .btn-submit-min {
+        background: #000;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border: 0;
+        border-radius: 0;
+        padding: 0.85rem 2.5rem;
+        transition: background 0.2s;
+        width: 100%;
+        margin-top: 0.75rem;
+    }
+    .btn-submit-min:hover { background: #333; }
+    .form-link {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #000;
+        text-decoration: none;
+        border-bottom: 1px solid #000;
+        padding-bottom: 1px;
+        transition: opacity 0.2s;
+    }
+    .form-link:hover { opacity: 0.55; color: #000; }
+    .form-link-muted {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.63rem;
+        font-weight: 500;
+        color: #999;
+        text-decoration: none;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 1px;
+        transition: color 0.2s;
+    }
+    .form-link-muted:hover { color: #000; border-color: #000; }
+    .validation-msg { font-size: 0.72rem; color: #c00; margin-top: 0.3rem; font-family: 'Inter', sans-serif; }
+    .alert-min-success {
+        background: #f4f4f4;
+        border: 0;
+        border-left: 3px solid #000;
+        border-radius: 0;
+        font-size: 0.82rem;
+        font-family: 'Inter', sans-serif;
+        color: #333;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.75rem;
+    }
+    .alert-min-error {
+        background: #fff5f5;
+        border: 0;
+        border-left: 3px solid #c00;
+        border-radius: 0;
+        font-size: 0.82rem;
+        font-family: 'Inter', sans-serif;
+        color: #c00;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.75rem;
+    }
+    @@media (max-width: 767px) {
+        .auth-panel-left { padding: 3rem 2rem; }
+        .auth-panel-right { padding: 3rem 2rem; }
+    }
+</style>
+
+<div class="auth-page">
+    <div class="row g-0 w-100">
+        <!-- Left black panel -->
+        <div class="col-md-5 auth-panel-left d-none d-md-flex">
+            <div>
+                <p class="panel-eyebrow">GymPro Management</p>
+                <h2>Chào mừng<br>trở lại</h2>
+                <p>
+                    Quản lý hội viên, lịch tập và gói dịch vụ mọi lúc, mọi nơi — chuyên nghiệp và đơn giản.
+                </p>
+                <div class="mt-4 pt-2" style="border-top: 1px solid rgba(255,255,255,0.12);">
+                    <p style="font-size:0.75rem; color:rgba(255,255,255,0.35); font-family:'Montserrat',sans-serif; letter-spacing:1px; text-transform:uppercase;">
+                        Chưa có tài khoản?
+                        <a asp-controller="Account" asp-action="Register" style="color:#fff; border-bottom:1px solid rgba(255,255,255,0.4); text-decoration:none; margin-left:0.4rem;">
+                            Đăng ký ngay
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right form panel -->
+        <div class="col-md-7 auth-panel-right">
+            <div style="max-width: 420px; width: 100%;">
+                <p class="form-section-title">Đăng nhập tài khoản</p>
+
+                @if (TempData["Message"] != null)
+                {
+                    <div class="alert-min-success alert-dismissible fade show" role="alert">
+                        @TempData["Message"]
+                        <button type="button" class="btn-close btn-sm float-end p-0 mt-1" data-bs-dismiss="alert" aria-label="Close" style="font-size:0.7rem;"></button>
+                    </div>
+                }
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert-min-error" role="alert">
+                        <asp-validation-summary asp-validation-type="ModelOnly" class="mb-0" />
+                    </div>
+                }
+
+                <form id="loginForm" method="post" asp-controller="Account" asp-action="Login" novalidate>
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label-min"></label>
+                        <input asp-for="Email" class="form-control-min" placeholder="email@example.com"
+                               autocomplete="email" id="loginEmail" />
+                        <span asp-validation-for="Email" class="validation-msg"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-end mb-1">
+                            <label asp-for="Password" class="form-label-min mb-0"></label>
+                            <a asp-controller="Account" asp-action="ForgotPassword" class="form-link-muted">
+                                Quên mật khẩu?
+                            </a>
+                        </div>
+                        <div style="position:relative;">
+                            <input asp-for="Password" class="form-control-min" placeholder="••••••••"
+                                   autocomplete="current-password" id="loginPassword" style="padding-right:2rem;" />
+                            <button type="button" onclick="togglePwd('loginPassword','pwdIcon')"
+                                    style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:0;padding:0;color:#aaa;cursor:pointer;font-size:0.85rem;">
+                                <i class="bi bi-eye" id="pwdIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="validation-msg"></span>
+                    </div>
+
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" asp-for="RememberMe" id="rememberMe" />
+                        <label class="form-check-label check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+                    </div>
+
+                    <button type="submit" class="btn-submit-min" id="btnLogin">Đăng Nhập</button>
+                </form>
+
+                <p class="d-md-none mt-4 mb-0" style="font-size:0.75rem; color:#aaa; font-family:'Montserrat',sans-serif;">
+                    Chưa có tài khoản?
+                    <a asp-controller="Account" asp-action="Register" class="form-link ms-1">Đăng ký</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePwd(inputId, iconId) {
+            const i = document.getElementById(inputId);
+            const ic = document.getElementById(iconId);
+            i.type = i.type === 'password' ? 'text' : 'password';
+            ic.className = i.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+        }
+    </script>
+}

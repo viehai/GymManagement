@@ -1,0 +1,315 @@
+<!-- Đường dẫn file: Views/Account/VerifyOtp.cshtml -->
+@model GymManagement.ViewModels.VerifyOtpViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Xác Minh OTP";
+}
+
+<style>
+    .auth-centered {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 1rem;
+    }
+    .auth-box {
+        width: 100%;
+        max-width: 480px;
+    }
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 3rem;
+    }
+    .step-dot {
+        width: 28px;
+        height: 28px;
+        border: 1.5px solid #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #aaa;
+        flex-shrink: 0;
+    }
+    .step-dot.active { background: #000; border-color: #000; color: #fff; }
+    .step-dot.done { background: #333; border-color: #333; color: #fff; }
+    .step-line { flex: 1; height: 1.5px; background: #e0e0e0; }
+    .step-line.done { background: #333; }
+    .step-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #aaa;
+        display: block;
+        text-align: center;
+        margin-top: 0.4rem;
+    }
+    .step-label.done { color: #333; }
+    .step-label.active { color: #000; }
+    .page-eyebrow {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #bbb;
+        margin-bottom: 0.6rem;
+    }
+    .page-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.9rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: #000;
+        line-height: 1.1;
+        margin-bottom: 0.75rem;
+    }
+    .email-sent-to {
+        font-size: 0.85rem;
+        color: #555;
+        border-left: 2px solid #eee;
+        padding-left: 1rem;
+        margin-bottom: 2.5rem;
+        font-family: 'Inter', sans-serif;
+    }
+    .email-sent-to strong { color: #111; }
+    /* OTP boxes */
+    .otp-row {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 0.5rem;
+    }
+    .otp-input {
+        flex: 1;
+        height: 58px;
+        border: 0;
+        border-bottom: 2px solid #d0d0d0;
+        border-radius: 0;
+        background: transparent;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        text-align: center;
+        color: #000;
+        outline: none;
+        transition: border-color 0.2s;
+        -moz-appearance: textfield;
+    }
+    .otp-input::-webkit-outer-spin-button,
+    .otp-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .otp-input:focus { border-bottom-color: #000; }
+    .otp-input.has-val { border-bottom-color: #555; }
+    /* Timer */
+    .timer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 1.25rem 0 2rem;
+    }
+    .timer-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #aaa;
+    }
+    .timer-count {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #000;
+        letter-spacing: 1px;
+    }
+    .timer-count.expired { color: #c00; }
+    .btn-submit-min {
+        background: #000;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border: 0;
+        border-radius: 0;
+        padding: 0.85rem 2.5rem;
+        transition: background 0.2s;
+        width: 100%;
+    }
+    .btn-submit-min:hover { background: #333; }
+    .btn-submit-min:disabled { background: #ccc; cursor: not-allowed; }
+    .form-link-muted {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.63rem;
+        font-weight: 500;
+        color: #999;
+        text-decoration: none;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: color 0.2s;
+    }
+    .form-link-muted:hover { color: #000; }
+    .resend-link {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.63rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #000;
+        text-decoration: none;
+        border-bottom: 1px solid #000;
+        padding-bottom: 1px;
+    }
+    .validation-msg { font-size: 0.72rem; color: #c00; margin-top: 0.3rem; font-family: 'Inter', sans-serif; text-align: center; }
+    .alert-min-error {
+        background: #fff5f5;
+        border: 0;
+        border-left: 3px solid #c00;
+        border-radius: 0;
+        font-size: 0.82rem;
+        font-family: 'Inter', sans-serif;
+        color: #c00;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.75rem;
+    }
+</style>
+
+<div class="auth-centered">
+    <div class="auth-box">
+
+        <!-- Step indicator -->
+        <div class="mb-3">
+            <div class="step-indicator">
+                <div>
+                    <div class="step-dot done">✓</div>
+                    <span class="step-label done">Email</span>
+                </div>
+                <div class="step-line done"></div>
+                <div>
+                    <div class="step-dot active">2</div>
+                    <span class="step-label active">Xác minh</span>
+                </div>
+                <div class="step-line"></div>
+                <div>
+                    <div class="step-dot">3</div>
+                    <span class="step-label">Mật khẩu</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="page-eyebrow">Bước 2 / 3</p>
+        <h1 class="page-title">Nhập Mã OTP</h1>
+        <div class="email-sent-to">
+            Mã xác minh <strong>6 chữ số</strong> đã được gửi tới<br>
+            <strong>@Model.Email</strong>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert-min-error" role="alert">
+                <asp-validation-summary asp-validation-type="All" class="mb-0" />
+            </div>
+        }
+
+        <form id="otpForm" method="post" asp-controller="Account" asp-action="VerifyOtp" novalidate>
+            <input type="hidden" asp-for="Email" />
+            @* Hidden — composed from digit boxes by JS *@
+            <input type="hidden" asp-for="OtpCode" id="hiddenOtp" />
+
+            <div class="otp-row" id="otpBoxes">
+                <input type="number" class="otp-input" id="d0" inputmode="numeric" autocomplete="one-time-code" maxlength="1" />
+                <input type="number" class="otp-input" id="d1" inputmode="numeric" maxlength="1" />
+                <input type="number" class="otp-input" id="d2" inputmode="numeric" maxlength="1" />
+                <input type="number" class="otp-input" id="d3" inputmode="numeric" maxlength="1" />
+                <input type="number" class="otp-input" id="d4" inputmode="numeric" maxlength="1" />
+                <input type="number" class="otp-input" id="d5" inputmode="numeric" maxlength="1" />
+            </div>
+            <div class="validation-msg" id="otpErr"></div>
+            <span asp-validation-for="OtpCode" class="validation-msg d-block"></span>
+
+            <div class="timer-row">
+                <span class="timer-label">Hết hạn sau</span>
+                <span class="timer-count" id="countdown">05:00</span>
+            </div>
+
+            <button type="submit" class="btn-submit-min" id="btnVerify" onclick="return composeOtp()">
+                Xác Nhận
+            </button>
+        </form>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top:1px solid #f0f0f0;">
+            <a asp-controller="Account" asp-action="Login" class="form-link-muted">
+                <i class="bi bi-arrow-left" style="font-size:0.7rem;"></i>
+                Đăng nhập
+            </a>
+            <a asp-controller="Account" asp-action="ForgotPassword" class="resend-link">
+                Gửi lại
+            </a>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const boxes = document.querySelectorAll('.otp-input');
+
+        boxes.forEach((box, i) => {
+            box.addEventListener('input', function () {
+                this.value = this.value.toString().replace(/\D/g, '').slice(-1);
+                this.classList.toggle('has-val', this.value !== '');
+                if (this.value && i < boxes.length - 1) boxes[i + 1].focus();
+            });
+            box.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !this.value && i > 0) boxes[i - 1].focus();
+            });
+            box.addEventListener('paste', function (e) {
+                e.preventDefault();
+                const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                [...pasted].forEach((ch, idx) => {
+                    if (boxes[idx]) { boxes[idx].value = ch; boxes[idx].classList.add('has-val'); }
+                });
+                if (pasted.length > 0) boxes[Math.min(pasted.length, 5)].focus();
+            });
+        });
+
+        function composeOtp() {
+            const code = [...boxes].map(b => b.value).join('');
+            if (code.length < 6) {
+                document.getElementById('otpErr').textContent = 'Vui lòng nhập đủ 6 chữ số.';
+                return false;
+            }
+            document.getElementById('hiddenOtp').value = code;
+            document.getElementById('otpErr').textContent = '';
+            return true;
+        }
+
+        let secs = 300;
+        const display = document.getElementById('countdown');
+        const btn = document.getElementById('btnVerify');
+        const timer = setInterval(() => {
+            secs--;
+            if (secs <= 0) {
+                clearInterval(timer);
+                display.textContent = '00:00';
+                display.classList.add('expired');
+                btn.disabled = true;
+                btn.textContent = 'Mã đã hết hạn';
+                return;
+            }
+            const m = String(Math.floor(secs / 60)).padStart(2, '0');
+            const s = String(secs % 60).padStart(2, '0');
+            display.textContent = `${m}:${s}`;
+        }, 1000);
+    </script>
+}

@@ -1,4 +1,4 @@
-﻿using GymManagement.Helpers;
+using GymManagement.Helpers;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Identity;
@@ -78,9 +78,19 @@ namespace GymManagement.Controllers
                         <p><a href='{confirmLink}'>Xác nhận email</a></p>
                     </div>";
 
-                await _emailHelper.SendEmailAsync(user.Email, subject, body);
+                bool emailSent = await _emailHelper.SendEmailAsync(user.Email, subject, body);
 
-                TempData["Message"] = "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.";
+                if (emailSent)
+                {
+                    TempData["Message"] = "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.";
+                }
+                else
+                {
+                    user.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(user);
+                    TempData["Message"] = "Đăng ký thành công! (Tự động xác nhận email do chưa cấu hình SMTP). Bạn có thể đăng nhập ngay.";
+                }
+
                 return RedirectToAction("Login");
             }
 
