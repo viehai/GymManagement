@@ -1,0 +1,393 @@
+<!-- Đường dẫn file: Views/Gym/Search.cshtml -->
+@model IEnumerable<GymManagement.ViewModels.GymSearchViewModel>
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Tìm kiếm phòng Gym";
+    var keyword = ViewData["Keyword"] as string ?? string.Empty;
+    var totalResults = Model?.Count() ?? 0;
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       PAGE: GYM SEARCH — INK WASH PALETTE
+       Flat Design · No border-radius · No box-shadow
+    ═══════════════════════════════════════════════ */
+
+    /* ── Hero / Search section ── */
+    .search-hero {
+        background: #F7F7F7;
+        border-bottom: 1px solid #CFCFCF;
+        padding: 4rem 0 3.5rem;
+    }
+    .search-hero-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(2rem, 5vw, 3rem);
+        letter-spacing: -0.5px;
+        color: #252525;
+        margin-bottom: 0.5rem;
+    }
+    .search-hero-subtitle {
+        font-size: 0.95rem;
+        color: #7D7D7D;
+        margin-bottom: 2rem;
+    }
+
+    /* ── Search bar ── */
+    .search-bar-wrap {
+        background: #CFCFCF;
+        padding: 3px;
+        display: flex;
+        gap: 0;
+        width: 100%;
+        max-width: 680px;
+    }
+    .search-bar-wrap .form-control {
+        border: none;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #FFFFFF;
+        color: #252525;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        padding: 0.8rem 1.2rem;
+        flex: 1;
+    }
+    .search-bar-wrap .form-control::placeholder { color: #7D7D7D; }
+    .search-bar-wrap .form-control:focus { outline: none; box-shadow: none; border: none; }
+
+    .btn-search {
+        background: #252525;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 0.8rem 1.8rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        white-space: nowrap;
+    }
+    .btn-search:hover { background: #545454; }
+    .btn-search .bi { font-size: 1rem; }
+
+    /* ── Result count bar ── */
+    .result-meta {
+        padding: 1.5rem 0 0;
+        font-size: 0.8rem;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        border-top: 1px solid #CFCFCF;
+        margin-top: 2.5rem;
+    }
+    .result-meta strong { color: #252525; }
+
+    /* ── Gym Cards Grid ── */
+    .gym-grid {
+        padding: 3rem 0 4rem;
+    }
+    .gym-card {
+        background: #FFFFFF;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: border-color 0.2s;
+    }
+    .gym-card:hover { border-color: #7D7D7D; }
+
+    /* 16:9 image ratio */
+    .gym-card-img-wrap {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 */
+        overflow: hidden;
+        background: #F0F0F0;
+    }
+    .gym-card-img-wrap img {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform 0.35s ease;
+    }
+    .gym-card:hover .gym-card-img-wrap img { transform: scale(1.04); }
+
+    /* Card body */
+    .gym-card-body {
+        padding: 1.4rem 1.4rem 1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .gym-card-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: #252525;
+        line-height: 1.3;
+        margin: 0;
+    }
+    .gym-card-address {
+        font-size: 0.8rem;
+        color: #7D7D7D;
+        display: flex;
+        align-items: flex-start;
+        gap: 5px;
+        margin: 0;
+    }
+    .gym-card-address .bi { flex-shrink: 0; margin-top: 2px; color: #CFCFCF; }
+    .gym-card-desc {
+        font-size: 0.84rem;
+        color: #7D7D7D;
+        line-height: 1.6;
+        flex: 1;
+        margin: 0;
+    }
+
+    /* Card footer */
+    .gym-card-footer {
+        padding: 0 1.4rem 1.4rem;
+    }
+    .btn-detail {
+        display: block;
+        width: 100%;
+        text-align: center;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent;
+        color: #252525;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 0.7rem 1rem;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-detail:hover {
+        background: #252525;
+        color: #FFFFFF;
+        text-decoration: none;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+        padding: 5rem 1rem;
+        text-align: center;
+    }
+    .empty-state .empty-icon {
+        font-size: 3.5rem;
+        color: #CFCFCF;
+        display: block;
+        margin-bottom: 1.5rem;
+    }
+    .empty-state h3 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.3rem;
+        color: #252525;
+        margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+        font-size: 0.9rem;
+        color: #7D7D7D;
+        margin-bottom: 2rem;
+    }
+    .btn-reset-search {
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #252525;
+        color: #FFFFFF;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 0.75rem 2rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: background 0.2s;
+    }
+    .btn-reset-search:hover { background: #545454; color: #FFFFFF; text-decoration: none; }
+
+    /* ── Divider ── */
+    .ink-divider {
+        border: none;
+        border-top: 1px solid #CFCFCF;
+        margin: 0;
+    }
+
+    /* ── Pagination (placeholder style) ── */
+    .page-item .page-link {
+        border-radius: 0 !important;
+        border-color: #CFCFCF;
+        color: #252525;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .page-item.active .page-link {
+        background: #252525;
+        border-color: #252525;
+        color: #FFFFFF;
+    }
+    .page-item .page-link:hover { background: #F0F0F0; }
+    .page-item.active .page-link:hover { background: #545454; }
+</style>
+
+<!-- ═══════════════════════════════════════════════
+     HERO / SEARCH SECTION
+═══════════════════════════════════════════════ -->
+<section class="search-hero" aria-label="Tìm kiếm phòng Gym">
+    <div class="container">
+        <h1 class="search-hero-title">Tìm Phòng Gym</h1>
+        <p class="search-hero-subtitle">Khám phá các phòng Gym chất lượng gần bạn</p>
+
+        <form method="get" asp-controller="Gym" asp-action="Search" role="search">
+            <div class="search-bar-wrap">
+                <input id="gymSearchInput"
+                       type="search"
+                       name="keyword"
+                       class="form-control"
+                       placeholder="Tìm theo tên hoặc địa chỉ..."
+                       value="@keyword"
+                       autocomplete="off"
+                       aria-label="Từ khóa tìm kiếm" />
+                <button id="btnSearch" type="submit" class="btn-search" aria-label="Tìm kiếm">
+                    <i class="bi bi-search me-1"></i> TÌM KIẾM
+                </button>
+            </div>
+        </form>
+
+        <div class="result-meta">
+            @if (!string.IsNullOrEmpty(keyword))
+            {
+                <span>Kết quả cho "<strong>@keyword</strong>" &mdash; </span>
+            }
+            <strong>@totalResults</strong> phòng Gym được tìm thấy
+        </div>
+    </div>
+</section>
+
+<hr class="ink-divider" />
+
+<!-- ═══════════════════════════════════════════════
+     GYM CARD GRID
+═══════════════════════════════════════════════ -->
+<section class="gym-grid" aria-label="Danh sách phòng Gym">
+    <div class="container">
+
+        @if (totalResults == 0)
+        {
+            <!-- Empty state -->
+            <div class="empty-state">
+                <i class="bi bi-building-slash empty-icon" aria-hidden="true"></i>
+                <h3>Không tìm thấy phòng Gym</h3>
+                <p>
+                    @if (!string.IsNullOrEmpty(keyword))
+                    {
+                        <span>Không có kết quả nào phù hợp với từ khóa "<strong>@keyword</strong>".</span>
+                    }
+                    else
+                    {
+                        <span>Hiện chưa có phòng Gym nào được đăng ký trong hệ thống.</span>
+                    }
+                </p>
+                <a href="@Url.Action("Search", "Gym")" class="btn-reset-search">
+                    Xem tất cả phòng Gym
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Grid -->
+            <div class="row g-4 mb-5">
+                @foreach (var item in Model!)
+                {
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <article class="gym-card" aria-label="@item.Name">
+
+                            <!-- Ảnh 16:9 -->
+                            <div class="gym-card-img-wrap">
+                                <img src="@item.DisplayImage"
+                                     alt="Ảnh phòng Gym @item.Name"
+                                     loading="lazy"
+                                     onerror="this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_1905,h_945,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';" />
+                            </div>
+
+                            <!-- Thông tin -->
+                            <div class="gym-card-body">
+                                <h2 class="gym-card-name">@item.Name</h2>
+
+                                <p class="gym-card-address">
+                                    <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                                    <span>@item.Address</span>
+                                </p>
+
+                                <p class="gym-card-desc">@item.ShortDescription</p>
+                            </div>
+
+                            <!-- Nút CTA -->
+                            <div class="gym-card-footer">
+                                <a id="btn-detail-@item.Id"
+                                   asp-controller="Gym"
+                                   asp-action="Details"
+                                   asp-route-id="@item.Id"
+                                   class="btn-detail"
+                                   aria-label="Xem chi tiết @item.Name">
+                                    XEM CHI TIẾT
+                                </a>
+                            </div>
+
+                        </article>
+                    </div>
+                }
+            </div>
+
+            <!-- Khoảng trắng cuối trang (pagination placeholder) -->
+            @if (totalResults > 9)
+            {
+                <div class="d-flex justify-content-center mt-2 mb-5">
+                    <nav aria-label="Phân trang danh sách phòng Gym">
+                        <ul class="pagination">
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">1</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Auto-focus vào ô tìm kiếm nếu có keyword
+        (function () {
+            var kw = '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(keyword))';
+            if (!kw) {
+                var input = document.getElementById('gymSearchInput');
+                if (input) input.focus();
+            }
+        })();
+    </script>
+}

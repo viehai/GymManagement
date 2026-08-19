@@ -1,0 +1,488 @@
+<!-- Đường dẫn file: Views/Gym/Details.cshtml -->
+@model GymManagement.ViewModels.GymDetailsViewModel
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = Model.Name + " — Chi tiết phòng Gym";
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       PAGE: GYM DETAILS — INK WASH PALETTE
+       Flat Design · No border-radius · No box-shadow
+    ═══════════════════════════════════════════════ */
+
+    /* ── Hero banner ── */
+    .gym-hero {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 21 / 7;
+        overflow: hidden;
+        background: #E8E8E8;
+    }
+    .gym-hero img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .gym-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(37,37,37,0.75) 0%, transparent 55%);
+    }
+    .gym-hero-caption {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        padding: 2rem 2.5rem;
+    }
+    .gym-hero-caption h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.6rem, 4vw, 2.8rem);
+        color: #FFFFFF;
+        margin: 0 0 0.4rem;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+    }
+    .gym-hero-caption .gym-address {
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.8);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* ── Breadcrumb ── */
+    .gym-breadcrumb {
+        padding: 1rem 0;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        border-bottom: 1px solid #CFCFCF;
+    }
+    .gym-breadcrumb a { color: #7D7D7D; text-decoration: none; }
+    .gym-breadcrumb a:hover { color: #252525; }
+    .gym-breadcrumb span { color: #252525; }
+
+    /* ── Layout chính: content + sidebar ── */
+    .gym-details-layout {
+        padding: 3rem 0 5rem;
+    }
+
+    /* ── Section heading ── */
+    .section-heading {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid #CFCFCF;
+    }
+
+    /* ── Description ── */
+    .gym-description {
+        font-size: 0.95rem;
+        color: #545454;
+        line-height: 1.8;
+        white-space: pre-line;
+    }
+
+    /* ── Ink divider ── */
+    .ink-divider-v {
+        border: none;
+        border-top: 1px solid #CFCFCF;
+        margin: 2.5rem 0;
+    }
+
+    /* ── Equipment Grid ── */
+    .equipment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+    .equipment-card {
+        border: 1px solid #CFCFCF;
+        background: #FFFFFF;
+        overflow: hidden;
+        text-align: center;
+        transition: border-color 0.2s;
+    }
+    .equipment-card:hover { border-color: #7D7D7D; }
+    .equipment-img-wrap {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        background: #F5F5F5;
+    }
+    .equipment-img-wrap img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .equipment-card:hover .equipment-img-wrap img { transform: scale(1.06); }
+    .equipment-no-img {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: #CFCFCF;
+        font-size: 2rem;
+    }
+    .equipment-name {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        color: #252525;
+        padding: 0.6rem 0.5rem;
+        line-height: 1.3;
+    }
+    .equipment-badge-custom {
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        border: 1px solid #CFCFCF;
+        padding: 2px 6px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ── Empty equipment state ── */
+    .empty-section {
+        padding: 2rem 1rem;
+        text-align: center;
+        border: 1px dashed #CFCFCF;
+        color: #7D7D7D;
+        font-size: 0.85rem;
+    }
+    .empty-section .bi { font-size: 2rem; display: block; margin-bottom: 0.5rem; color: #CFCFCF; }
+
+    /* ── Sidebar: sticky container ── */
+    .gym-sidebar {
+        position: sticky;
+        top: 80px;
+    }
+
+    /* ── Package cards ── */
+    .package-card {
+        border: 1px solid #CFCFCF;
+        background: #FFFFFF;
+        padding: 1.2rem 1.4rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        transition: border-color 0.2s;
+    }
+    .package-card:hover { border-color: #545454; }
+    .package-card:last-child { margin-bottom: 0; }
+
+    .package-type-badge {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        display: inline-block;
+        padding: 3px 8px;
+        border: 1px solid #CFCFCF;
+        color: #7D7D7D;
+        width: fit-content;
+    }
+    .package-type-badge.daily {
+        border-color: #252525;
+        color: #252525;
+    }
+    .package-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #252525;
+        margin: 0.3rem 0 0;
+    }
+    .package-price {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: 1.3rem;
+        color: #252525;
+        letter-spacing: -0.5px;
+    }
+    .package-price span {
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: #7D7D7D;
+        letter-spacing: 0;
+    }
+
+    /* ── CTA Buttons ── */
+    .btn-cta-primary {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: #252525;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 0.9rem 1rem;
+        text-decoration: none;
+        transition: background 0.2s;
+        margin-bottom: 0.5rem;
+    }
+    .btn-cta-primary:hover { background: #545454; color: #FFFFFF; text-decoration: none; }
+
+    .btn-cta-outline {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: transparent;
+        color: #252525;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 0.9rem 1rem;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-cta-outline:hover { background: #252525; color: #FFFFFF; text-decoration: none; }
+
+    .cta-divider {
+        border: none;
+        border-top: 1px solid #CFCFCF;
+        margin: 1rem 0;
+    }
+
+    .cta-note {
+        font-size: 0.72rem;
+        color: #7D7D7D;
+        text-align: center;
+        margin-top: 0.75rem;
+    }
+    .cta-note a { color: #7D7D7D; }
+    .cta-note a:hover { color: #252525; }
+
+    /* ── No packages state ── */
+    .no-packages {
+        border: 1px dashed #CFCFCF;
+        padding: 2rem 1rem;
+        text-align: center;
+        color: #7D7D7D;
+        font-size: 0.85rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .gym-hero { aspect-ratio: 16 / 9; }
+        .gym-hero-caption { padding: 1.2rem 1rem; }
+        .gym-hero-caption h1 { font-size: 1.4rem; }
+        .gym-sidebar { position: static; }
+    }
+</style>
+
+<!-- ═══════════════════════════════════════════════
+     HERO BANNER
+═══════════════════════════════════════════════ -->
+<div class="gym-hero">
+    <img src="@Model.DisplayImage"
+         alt="Ảnh đại diện @Model.Name"
+         onerror="this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_1905,h_945,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';" />
+    <div class="gym-hero-overlay"></div>
+    <div class="gym-hero-caption">
+        <h1>@Model.Name</h1>
+        <p class="gym-address">
+            <i class="bi bi-geo-alt" aria-hidden="true"></i>
+            <span>@Model.Address</span>
+        </p>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<div class="container">
+    <nav class="gym-breadcrumb" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Trang Chủ</a>
+        &nbsp;/&nbsp;
+        <a asp-controller="Gym" asp-action="Search">Tìm Phòng Gym</a>
+        &nbsp;/&nbsp;
+        <span>@Model.Name</span>
+    </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN LAYOUT: CONTENT + SIDEBAR
+═══════════════════════════════════════════════ -->
+<div class="container gym-details-layout">
+    <div class="row g-5">
+
+        <!-- ── LEFT: Main content ── -->
+        <div class="col-12 col-lg-8">
+
+            <!-- 1. Mô tả -->
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <section aria-label="Giới thiệu phòng Gym">
+                    <p class="section-heading">Giới thiệu</p>
+                    <p class="gym-description">@Model.Description</p>
+                </section>
+
+                <hr class="ink-divider-v" />
+            }
+
+            <!-- 2. Thiết bị -->
+            <section aria-label="Danh sách thiết bị">
+                <p class="section-heading">Thiết bị & Máy tập</p>
+
+                @if (Model.HasEquipments)
+                {
+                    <div class="equipment-grid">
+                        @foreach (var eq in Model.Equipments)
+                        {
+                            <div class="equipment-card">
+                                <div class="equipment-img-wrap">
+                                    @if (!string.IsNullOrWhiteSpace(eq.DisplayImage))
+                                    {
+                                        <img src="@eq.DisplayImage"
+                                             alt="@eq.DisplayName"
+                                             loading="lazy"
+                                             onerror="this.parentElement.innerHTML='<div class=\'equipment-no-img\'><i class=\'bi bi-gear\'></i></div>';" />
+                                    }
+                                    else
+                                    {
+                                        <div class="equipment-no-img">
+                                            <i class="bi bi-gear" aria-hidden="true"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="equipment-name">
+                                    @eq.DisplayName
+                                    @if (eq.IsCustom)
+                                    {
+                                        <br />
+                                        <span class="equipment-badge-custom">Độc quyền</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-section">
+                        <i class="bi bi-gear"></i>
+                        Chưa có thông tin thiết bị cho phòng Gym này.
+                    </div>
+                }
+            </section>
+
+        </div>
+
+        <!-- ── RIGHT: Sidebar / Đặt vé ── -->
+        <div class="col-12 col-lg-4">
+            <aside class="gym-sidebar" aria-label="Đặt vé tập Gym">
+
+                <p class="section-heading">Gói vé & Đặt chỗ</p>
+
+                @if (Model.HasPackages)
+                {
+                    <!-- Danh sách gói -->
+                    <div class="mb-3">
+                        @foreach (var pkg in Model.Packages)
+                        {
+                            <div class="package-card" id="pkg-@pkg.Id">
+                                <span class="package-type-badge @(pkg.PackageType == "Daily" ? "daily" : "")">
+                                    @pkg.TypeLabel
+                                </span>
+                                <p class="package-name">@pkg.Name</p>
+                                <p class="package-price">
+                                    @pkg.Price.ToString("N0") đ
+                                    @if (pkg.PackageType == "Monthly")
+                                    {
+                                        <span>&nbsp;/ @pkg.DurationInMonths tháng</span>
+                                    }
+                                    else
+                                    {
+                                        <span>&nbsp;/ lượt</span>
+                                    }
+                                </p>
+                            </div>
+                        }
+                    </div>
+
+                    <hr class="cta-divider" />
+
+                    <!-- CTA buttons -->
+                    @if (Model.HasDailyPass)
+                    {
+                        <a id="btn-daily-pass-@Model.Id"
+                           asp-controller="Purchase"
+                           asp-action="DailyPass"
+                           asp-route-gymId="@Model.Id"
+                           class="btn-cta-primary">
+                            <i class="bi bi-ticket-perforated me-2"></i>Mua vé ngày
+                        </a>
+                    }
+
+                    @if (Model.HasMonthlyPackage)
+                    {
+                        <a id="btn-monthly-package-@Model.Id"
+                           asp-controller="Purchase"
+                           asp-action="Package"
+                           asp-route-gymId="@Model.Id"
+                           class="btn-cta-outline">
+                            <i class="bi bi-calendar-check me-2"></i>Đăng ký gói tháng
+                        </a>
+                    }
+
+                    <p class="cta-note">
+                        @if (!User.Identity!.IsAuthenticated)
+                        {
+                            <span>
+                                <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                                để tiến hành thanh toán.
+                            </span>
+                        }
+                        else
+                        {
+                            <span>Giá hiển thị chưa bao gồm phí dịch vụ (nếu có).</span>
+                        }
+                    </p>
+                }
+                else
+                {
+                    <div class="no-packages">
+                        <i class="bi bi-ticket-slash d-block mb-2" style="font-size:1.8rem;color:#CFCFCF;"></i>
+                        Phòng Gym chưa mở bán vé.
+                        <br /><small>Vui lòng quay lại sau.</small>
+                    </div>
+                }
+
+                <hr class="cta-divider" />
+
+                <!-- Back link -->
+                <a asp-controller="Gym" asp-action="Search"
+                   style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;
+                          letter-spacing:1.5px;text-transform:uppercase;color:#7D7D7D;
+                          text-decoration:none;display:flex;align-items:center;gap:5px;">
+                    <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                </a>
+
+            </aside>
+        </div>
+
+    </div>
+</div>
