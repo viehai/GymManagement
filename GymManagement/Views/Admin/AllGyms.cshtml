@@ -1,0 +1,85 @@
+@model List<GymManagement.Models.Gym>
+@{
+    ViewData["Title"] = "Tất cả phòng Gym";
+    Layout = "_AdminLayout";
+    var currentStatus = ViewBag.CurrentStatus as string;
+}
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a asp-action="AllGyms" class="@(currentStatus == null ? "btn-admin-primary" : "")"
+       style="@(currentStatus != null ? "background:#fff;color:#374151;border:1px solid #d1d5db;padding:0.5rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;" : "")">
+        Tất cả (@Model.Count)
+    </a>
+    @foreach (var s in new[] { "Pending", "Approved", "Rejected", "Suspended" })
+    {
+        string label = s switch { "Pending" => "Chờ duyệt", "Approved" => "Đã duyệt", "Rejected" => "Từ chối", _ => s };
+        <a asp-action="AllGyms" asp-route-status="@s"
+           class="@(currentStatus == s ? "btn-admin-primary" : "")"
+           style="@(currentStatus != s ? "background:#fff;color:#374151;border:1px solid #d1d5db;padding:0.5rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;" : "")">
+            @label
+        </a>
+    }
+</div>
+
+<div class="content-card">
+    <div class="content-card-body">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5" style="color:#bbb;">
+                <i class="bi bi-inbox" style="font-size:2.5rem;"></i>
+                <p class="mt-2" style="font-size:0.85rem;">Không có dữ liệu.</p>
+            </div>
+        }
+        else
+        {
+            <table class="data-table w-100">
+                <thead>
+                    <tr>
+                        <th>Tên Gym</th>
+                        <th>Chủ sở hữu</th>
+                        <th>Địa chỉ</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày đăng ký</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var gym in Model)
+                    {
+                        string badgeCls = gym.Status switch {
+                            "Approved" => "badge-approved", "Rejected" => "badge-rejected",
+                            "Suspended" => "badge-suspended", _ => "badge-pending"
+                        };
+                        string statusText = gym.Status switch {
+                            "Approved" => "Đã duyệt", "Rejected" => "Từ chối",
+                            "Pending" => "Chờ duyệt", "Suspended" => "Tạm dừng", _ => gym.Status
+                        };
+                        <tr>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    @if (!string.IsNullOrEmpty(gym.ImageUrl))
+                                    {
+                                        <img src="@gym.ImageUrl" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width:36px;height:36px;border-radius:6px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.7);font-size:0.9rem;">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                    }
+                                    <span style="font-weight:600;color:#111;">@gym.Name</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size:0.85rem;font-weight:600;">@(gym.Owner?.FullName ?? "—")</div>
+                                <div style="font-size:0.75rem;color:#999;">@gym.Owner?.Email</div>
+                            </td>
+                            <td style="max-width:200px;font-size:0.82rem;color:#555;">@gym.Address</td>
+                            <td><span class="badge-status @badgeCls">@statusText</span></td>
+                            <td style="font-size:0.78rem;color:#888;">@gym.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

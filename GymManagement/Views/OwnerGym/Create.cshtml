@@ -1,0 +1,97 @@
+@model GymManagement.ViewModels.RegisterGymViewModel
+@{
+    ViewData["Title"] = "Thêm phòng Gym mới";
+    Layout = "_OwnerAdminLayout";
+}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Index" class="btn-owner-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="bi bi-building-add me-2" style="color:#6366f1;"></i>Thông tin phòng Gym</h5>
+            </div>
+            <div class="content-card-body">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <div class="owner-form-group">
+                        <label asp-for="Name">Tên phòng Gym <span style="color:#ef4444;">*</span></label>
+                        <input asp-for="Name" class="form-control" placeholder="Ví dụ: Gym Star — Quận 1" />
+                        <span asp-validation-for="Name" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="Address">Địa chỉ <span style="color:#ef4444;">*</span></label>
+                        <input asp-for="Address" class="form-control" placeholder="Số nhà, đường, quận, tỉnh/thành phố" />
+                        <span asp-validation-for="Address" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="Description">Mô tả</label>
+                        <textarea asp-for="Description" class="form-control" rows="4"
+                                  placeholder="Giới thiệu về phòng Gym, thiết bị, dịch vụ nổi bật..."></textarea>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label>Hình ảnh đại diện</label>
+                        <div style="border:2px dashed #d1d5db;border-radius:10px;padding:2rem;text-align:center;cursor:pointer;position:relative;background:#fafafa;transition:all 0.18s;" id="uploadZone">
+                            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp"
+                                   id="imageInput" onchange="previewImage(event)"
+                                   style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                            <div id="uploadPlaceholder">
+                                <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:#cbd5e1;"></i>
+                                <p style="font-size:0.82rem;color:#64748b;margin:0.4rem 0 0;">Kéo thả hoặc click để chọn ảnh</p>
+                                <p style="font-size:0.72rem;color:#94a3b8;margin:0;">JPG, PNG, WebP — tối đa 5MB</p>
+                            </div>
+                            <img id="imagePreview" style="max-width:100%;max-height:200px;border-radius:8px;display:none;object-fit:cover;margin-top:0.5rem;" />
+                        </div>
+                        <span asp-validation-for="ImageFile" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-2">
+                        <button type="submit" class="btn-owner-primary flex-grow-1">
+                            <i class="bi bi-send"></i> Gửi yêu cầu
+                        </button>
+                        <a asp-action="Index" class="btn-owner-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div style="background:#0f172a;border-radius:12px;padding:1.8rem;">
+            <p style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;">Lưu ý</p>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.55);line-height:1.7;">
+                <p><i class="bi bi-info-circle me-1" style="color:#a5b4fc;"></i> Gym mới tạo sẽ có trạng thái <strong style="color:#fbbf24;">Chờ duyệt</strong>.</p>
+                <p><i class="bi bi-envelope me-1" style="color:#a5b4fc;"></i> Bạn sẽ nhận email khi Admin phê duyệt.</p>
+                <p><i class="bi bi-card-list me-1" style="color:#a5b4fc;"></i> Sau khi được duyệt, bạn có thể thêm gói dịch vụ.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('uploadPlaceholder');
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+}

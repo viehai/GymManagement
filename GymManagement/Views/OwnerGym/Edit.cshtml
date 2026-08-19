@@ -1,0 +1,95 @@
+@model GymManagement.ViewModels.RegisterGymViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa phòng Gym";
+    Layout = "_OwnerAdminLayout";
+    var existingImage = ViewBag.ExistingImage as string;
+    var gymId = (int)ViewBag.GymId;
+}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Index" class="btn-owner-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="bi bi-pencil-square me-2" style="color:#6366f1;"></i>Chỉnh sửa thông tin</h5>
+            </div>
+            <div class="content-card-body">
+                <form asp-action="Edit" asp-route-id="@gymId" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <div class="owner-form-group">
+                        <label asp-for="Name">Tên phòng Gym <span style="color:#ef4444;">*</span></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="Address">Địa chỉ <span style="color:#ef4444;">*</span></label>
+                        <input asp-for="Address" class="form-control" />
+                        <span asp-validation-for="Address" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="Description">Mô tả</label>
+                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label>Hình ảnh</label>
+                        @if (!string.IsNullOrEmpty(existingImage))
+                        {
+                            <div style="margin-bottom:0.8rem;">
+                                <p style="font-size:0.75rem;color:#888;margin-bottom:0.4rem;">Ảnh hiện tại:</p>
+                                <img src="@existingImage" id="imagePreview"
+                                     style="max-height:180px;border-radius:10px;object-fit:cover;" />
+                            </div>
+                        }
+                        else
+                        {
+                            <img id="imagePreview" style="max-height:180px;border-radius:10px;object-fit:cover;display:none;" />
+                        }
+                        <div style="border:2px dashed #d1d5db;border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;position:relative;background:#fafafa;" id="uploadZone">
+                            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp"
+                                   onchange="updatePreview(event)"
+                                   style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                            <i class="bi bi-image" style="font-size:1.5rem;color:#cbd5e1;"></i>
+                            <p style="font-size:0.78rem;color:#64748b;margin:0.3rem 0 0;">
+                                @(string.IsNullOrEmpty(existingImage) ? "Chọn ảnh mới" : "Thay ảnh mới (tùy chọn)")
+                            </p>
+                        </div>
+                        <span asp-validation-for="ImageFile" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-2">
+                        <button type="submit" class="btn-owner-primary flex-grow-1">
+                            <i class="bi bi-floppy"></i> Lưu thay đổi
+                        </button>
+                        <a asp-action="Index" class="btn-owner-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function updatePreview(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const preview = document.getElementById('imagePreview');
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+}

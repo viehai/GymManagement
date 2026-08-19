@@ -1,0 +1,142 @@
+@model List<GymManagement.Models.Gym>
+@{
+    ViewData["Title"] = "Gym Chờ Phê Duyệt";
+    Layout = "_AdminLayout";
+}
+
+@if (!Model.Any())
+{
+    <div class="content-card">
+        <div class="content-card-body" style="padding:4rem 2rem;text-align:center;">
+            <div style="width:80px;height:80px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;">
+                <i class="bi bi-check-circle" style="font-size:2.2rem;color:#10b981;"></i>
+            </div>
+            <h5 style="font-family:'Montserrat',sans-serif;font-weight:700;color:#111;margin-bottom:0.4rem;">
+                Không có Gym nào đang chờ duyệt
+            </h5>
+            <p style="color:#888;font-size:0.88rem;">
+                Tất cả các yêu cầu đã được xử lý. Kiểm tra lại sau!
+            </p>
+            <a asp-action="AllGyms" style="display:inline-flex;align-items:center;gap:6px;margin-top:0.8rem;color:#6366f1;font-weight:600;font-size:0.85rem;text-decoration:none;">
+                <i class="bi bi-building"></i> Xem tất cả Gym
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <p style="margin:0;font-size:0.85rem;color:#888;">
+            Có <strong style="color:#111;">@Model.Count</strong> phòng Gym đang chờ phê duyệt
+        </p>
+    </div>
+
+    @foreach (var gym in Model)
+    {
+        <div class="content-card mb-3">
+            <div style="padding:1.5rem;">
+                <div class="row g-3 align-items-start">
+                    <!-- Ảnh -->
+                    <div class="col-md-2 col-sm-3">
+                        @if (!string.IsNullOrEmpty(gym.ImageUrl))
+                        {
+                            <img src="@gym.ImageUrl" alt="@gym.Name"
+                                 style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;" />
+                        }
+                        else
+                        {
+                            <div style="width:100%;aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:2rem;color:rgba(255,255,255,0.6);">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Info -->
+                    <div class="col-md-7 col-sm-9">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0.5rem;">
+                            <h5 style="margin:0;font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.05rem;color:#111;">@gym.Name</h5>
+                            <span class="badge-status badge-pending">Chờ duyệt</span>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:0.9rem;">
+                            <div style="font-size:0.82rem;color:#555;">
+                                <i class="bi bi-geo-alt me-1" style="color:#6366f1;"></i>@gym.Address
+                            </div>
+                            <div style="font-size:0.82rem;color:#555;">
+                                <i class="bi bi-person me-1" style="color:#6366f1;"></i>
+                                <strong>@(gym.Owner?.FullName ?? "Không rõ")</strong>
+                                — <span style="color:#999;">@gym.Owner?.Email</span>
+                            </div>
+                            <div style="font-size:0.78rem;color:#aaa;">
+                                <i class="bi bi-calendar3 me-1"></i>Đăng ký: @gym.CreatedAt.ToString("HH:mm — dd/MM/yyyy")
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(gym.Description))
+                        {
+                            <div style="background:#f8f9fa;border-radius:8px;padding:0.8rem 1rem;">
+                                <p style="font-size:0.82rem;color:#555;margin:0;line-height:1.6;">
+                                    <i class="bi bi-chat-left-text me-1" style="color:#9ca3af;"></i>@gym.Description
+                                </p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="col-md-3 d-flex flex-column gap-2">
+                        <!-- Approve -->
+                        <form asp-action="ApproveGym" asp-route-id="@gym.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-admin-approve w-100"
+                                    onclick="return confirm('Phê duyệt phòng Gym \"@gym.Name\"? Chủ sở hữu sẽ được nâng cấp lên role Owner.')">
+                                <i class="bi bi-check-lg"></i> Phê duyệt
+                            </button>
+                        </form>
+
+                        <!-- Reject with reason -->
+                        <button type="button" class="btn-admin-reject w-100"
+                                data-bs-toggle="modal" data-bs-target="#rejectModal-@gym.Id">
+                            <i class="bi bi-x-lg"></i> Từ chối
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reject Modal -->
+        <div class="modal fade" id="rejectModal-@gym.Id" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius:14px;border:none;overflow:hidden;">
+                    <div class="modal-header" style="background:#fef2f2;border-bottom:1px solid #fee2e2;padding:1.2rem 1.5rem;">
+                        <h5 class="modal-title" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.95rem;color:#991b1b;">
+                            <i class="bi bi-x-circle me-2"></i>Từ chối phòng Gym
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form asp-action="RejectGym" asp-route-id="@gym.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-body" style="padding:1.5rem;">
+                            <p style="font-size:0.88rem;color:#555;margin-bottom:1rem;">
+                                Bạn đang từ chối phòng Gym <strong>"@gym.Name"</strong>. Một email thông báo sẽ được gửi đến chủ sở hữu.
+                            </p>
+                            <div>
+                                <label style="font-size:0.8rem;font-weight:700;color:#374151;margin-bottom:0.4rem;display:block;">
+                                    Lý do từ chối (tùy chọn)
+                                </label>
+                                <textarea name="reason" rows="3" class="form-control"
+                                          style="border-radius:8px;font-size:0.85rem;"
+                                          placeholder="Nhập lý do để thông báo cho chủ Gym..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="border-top:1px solid #f0f0f0;padding:1rem 1.5rem;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="bi bi-x-lg me-1"></i>Xác nhận từ chối
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+}

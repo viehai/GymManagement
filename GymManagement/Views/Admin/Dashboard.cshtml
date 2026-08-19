@@ -1,0 +1,133 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_AdminLayout";
+    var recentGyms = ViewBag.RecentGyms as List<GymManagement.Models.Gym> ?? new List<GymManagement.Models.Gym>();
+}
+
+<div class="row g-3 mb-4">
+    <!-- Stat: Tổng Gym -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(99,102,241,0.1);color:#6366f1;">
+                <i class="bi bi-building"></i>
+            </div>
+            <div class="stat-value">@ViewBag.TotalGyms</div>
+            <div class="stat-label">Tổng phòng Gym</div>
+        </div>
+    </div>
+    <!-- Stat: Chờ duyệt -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b;">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-value">@ViewBag.PendingGyms</div>
+            <div class="stat-label">Chờ phê duyệt</div>
+        </div>
+    </div>
+    <!-- Stat: Đã duyệt -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,0.1);color:#10b981;">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-value">@ViewBag.ApprovedGyms</div>
+            <div class="stat-label">Đã phê duyệt</div>
+        </div>
+    </div>
+    <!-- Stat: Tổng User -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-value">@ViewBag.TotalUsers</div>
+            <div class="stat-label">Tổng người dùng</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick actions -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="bi bi-lightning-charge me-2"></i>Thao tác nhanh</h5>
+            </div>
+            <div class="content-card-body" style="padding:1.2rem 1.5rem;">
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-action="PendingGyms" class="btn-admin-primary">
+                        <i class="bi bi-hourglass-split"></i>
+                        Xem Gym chờ duyệt
+                        @if (ViewBag.PendingGyms > 0)
+                        {
+                            <span class="badge rounded-pill ms-1" style="background:#ff3e3e;font-size:0.65rem;">@ViewBag.PendingGyms</span>
+                        }
+                    </a>
+                    <a asp-action="AllGyms" style="background:#fff;color:#111;border:1px solid #d1d5db;padding:0.55rem 1.2rem;border-radius:6px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.78rem;letter-spacing:0.8px;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="bi bi-building"></i> Tất cả Gym
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent gyms -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5><i class="bi bi-clock-history me-2"></i>Phòng Gym đăng ký gần đây</h5>
+        <a asp-action="AllGyms" style="font-size:0.78rem;color:#6366f1;text-decoration:none;font-weight:600;">Xem tất cả</a>
+    </div>
+    <div class="content-card-body">
+        @if (!recentGyms.Any())
+        {
+            <div class="text-center py-5" style="color:#bbb;">
+                <i class="bi bi-inbox" style="font-size:2.5rem;"></i>
+                <p class="mt-2" style="font-size:0.85rem;">Chưa có dữ liệu.</p>
+            </div>
+        }
+        else
+        {
+            <table class="data-table w-100">
+                <thead>
+                    <tr>
+                        <th>Tên Gym</th>
+                        <th>Chủ sở hữu</th>
+                        <th>Địa chỉ</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày đăng ký</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var gym in recentGyms)
+                    {
+                        string badgeCls = gym.Status switch {
+                            "Approved" => "badge-approved",
+                            "Rejected" => "badge-rejected",
+                            "Pending"  => "badge-pending",
+                            _          => "badge-pending"
+                        };
+                        string statusText = gym.Status switch {
+                            "Approved" => "Đã duyệt",
+                            "Rejected" => "Từ chối",
+                            "Pending"  => "Chờ duyệt",
+                            _          => gym.Status
+                        };
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;color:#111;">@gym.Name</div>
+                            </td>
+                            <td>@(gym.Owner?.FullName ?? "—")</td>
+                            <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@gym.Address</td>
+                            <td>
+                                <span class="badge-status @badgeCls">@statusText</span>
+                            </td>
+                            <td style="font-size:0.8rem;color:#888;">@gym.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

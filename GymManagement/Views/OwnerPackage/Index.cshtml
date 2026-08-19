@@ -1,0 +1,117 @@
+@model List<GymManagement.Models.MembershipPackage>
+@{
+    ViewData["Title"] = "Gói dịch vụ";
+    Layout = "_OwnerAdminLayout";
+    var myGyms = ViewBag.MyGyms as List<GymManagement.Models.Gym> ?? new List<GymManagement.Models.Gym>();
+    var selectedGymId = ViewBag.SelectedGymId as int?;
+}
+
+<!-- Filter by gym -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" style="@(selectedGymId == null ? "" : "")background:@(selectedGymId == null ? "#6366f1" : "#fff");color:@(selectedGymId == null ? "#fff" : "#374151");border:1px solid @(selectedGymId == null ? "#6366f1" : "#d1d5db");padding:0.45rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">
+        Tất cả
+    </a>
+    @foreach (var gym in myGyms)
+    {
+        bool isSelected = selectedGymId == gym.Id;
+        <a asp-action="Index" asp-route-gymId="@gym.Id"
+           style="background:@(isSelected ? "#6366f1" : "#fff");color:@(isSelected ? "#fff" : "#374151");border:1px solid @(isSelected ? "#6366f1" : "#d1d5db");padding:0.45rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">
+            @gym.Name
+        </a>
+    }
+
+    <div class="ms-auto">
+        <a asp-action="Create" asp-route-gymId="@selectedGymId" class="btn-owner-primary">
+            <i class="bi bi-plus-lg"></i> Thêm gói mới
+        </a>
+    </div>
+</div>
+
+@if (!myGyms.Any())
+{
+    <div class="content-card">
+        <div class="content-card-body" style="padding:3rem;text-align:center;">
+            <i class="bi bi-building-x" style="font-size:2.5rem;color:#e0e0e0;"></i>
+            <p style="color:#bbb;font-size:0.85rem;margin-top:0.8rem;">Bạn chưa có phòng Gym nào được phê duyệt.</p>
+            <a asp-controller="OwnerGym" asp-action="Index" class="btn-owner-primary mt-2">
+                <i class="bi bi-building"></i> Quản lý Gym
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="content-card">
+        <div class="content-card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5" style="color:#bbb;">
+                    <i class="bi bi-card-list" style="font-size:2.5rem;"></i>
+                    <p class="mt-2" style="font-size:0.85rem;">Chưa có gói dịch vụ nào.</p>
+                    <a asp-action="Create" asp-route-gymId="@selectedGymId" class="btn-owner-primary mt-1">
+                        <i class="bi bi-plus-lg"></i> Tạo gói đầu tiên
+                    </a>
+                </div>
+            }
+            else
+            {
+                <table class="data-table w-100">
+                    <thead>
+                        <tr>
+                            <th>Tên gói</th>
+                            <th>Phòng Gym</th>
+                            <th>Loại</th>
+                            <th>Thời hạn</th>
+                            <th>Giá</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pkg in Model)
+                        {
+                            <tr>
+                                <td style="font-weight:600;color:#111;">@pkg.Name</td>
+                                <td style="font-size:0.82rem;color:#555;">@pkg.Gym?.Name</td>
+                                <td>
+                                    <span style="background:@(pkg.PackageType=="Daily"?"#eff6ff":"#f0fdf4");color:@(pkg.PackageType=="Daily"?"#1d4ed8":"#166534");padding:3px 8px;border-radius:4px;font-size:0.72rem;font-weight:700;">
+                                        @pkg.PackageType
+                                    </span>
+                                </td>
+                                <td style="font-size:0.82rem;">
+                                    @(pkg.PackageType == "Daily" ? "Theo ngày" : $"{pkg.DurationInMonths} tháng")
+                                </td>
+                                <td><span style="font-weight:700;font-size:0.85rem;color:#6366f1;">@String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", pkg.Price)₫</span></td>
+                                <td>
+                                    <span class="badge-status @(pkg.IsActive ? "badge-active" : "badge-inactive")">
+                                        @(pkg.IsActive ? "Đang hoạt động" : "Tạm dừng")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display:flex;gap:6px;flex-wrap:nowrap;">
+                                        <a asp-action="Edit" asp-route-id="@pkg.Id" class="btn-owner-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="ToggleActive" asp-route-id="@pkg.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-owner-secondary" title="@(pkg.IsActive ? "Tạm dừng" : "Kích hoạt")">
+                                                <i class="bi @(pkg.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="Delete" asp-route-id="@pkg.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-owner-danger"
+                                                    onclick="return confirm('Xóa gói \"@pkg.Name\"?')">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}

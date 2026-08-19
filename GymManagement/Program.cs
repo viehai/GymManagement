@@ -79,6 +79,15 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+// Cấu hình Culture: dùng en-US để định dạng số kiểu 200,000 (dấu phẩy ngăn cách hàng nghìn)
+var cultureInfo = new System.Globalization.CultureInfo("en-US");
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture(cultureInfo),
+    SupportedCultures = new[] { cultureInfo },
+    SupportedUICultures = new[] { cultureInfo }
+});
+
 // Bắt buộc UseAuthentication TRƯỚC UseAuthorization
 app.UseAuthentication();
 app.UseAuthorization();

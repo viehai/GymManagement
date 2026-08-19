@@ -1,0 +1,108 @@
+@model List<GymManagement.Models.Gym>
+@{
+    ViewData["Title"] = "Phòng Gym của tôi";
+    Layout = "_OwnerAdminLayout";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <p style="margin:0;font-size:0.85rem;color:#888;">
+            Bạn đang quản lý <strong style="color:#111;">@Model.Count</strong> phòng Gym
+        </p>
+    </div>
+    <a asp-action="Create" class="btn-owner-primary">
+        <i class="bi bi-plus-lg"></i> Thêm Gym mới
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="content-card">
+        <div class="content-card-body" style="padding:4rem 2rem;text-align:center;">
+            <div style="width:80px;height:80px;background:#ede9fe;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;">
+                <i class="bi bi-building-add" style="font-size:2rem;color:#6366f1;"></i>
+            </div>
+            <h5 style="font-family:'Montserrat',sans-serif;font-weight:700;color:#111;margin-bottom:0.4rem;">Bạn chưa có phòng Gym nào</h5>
+            <p style="color:#888;font-size:0.88rem;">Hãy tạo phòng Gym đầu tiên để bắt đầu quản lý.</p>
+            <a asp-action="Create" class="btn-owner-primary mt-2">
+                <i class="bi bi-plus-lg"></i> Tạo ngay
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var gym in Model)
+        {
+            string badgeCls = gym.Status switch {
+                "Approved" => "badge-approved", "Rejected" => "badge-rejected",
+                "Pending" => "badge-pending", _ => "badge-suspended"
+            };
+            string statusText = gym.Status switch {
+                "Approved" => "Đã duyệt", "Rejected" => "Từ chối",
+                "Pending" => "Chờ duyệt", _ => gym.Status
+            };
+            <div class="col-md-6 col-xl-4">
+                <div class="gym-card">
+                    @if (!string.IsNullOrEmpty(gym.ImageUrl))
+                    {
+                        <img src="@gym.ImageUrl" class="gym-card-img" alt="@gym.Name" />
+                    }
+                    else
+                    {
+                        <div class="gym-card-img-placeholder">
+                            <i class="bi bi-building"></i>
+                        </div>
+                    }
+                    <div class="gym-card-body">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="gym-card-name">@gym.Name</div>
+                                <div class="gym-card-address"><i class="bi bi-geo-alt me-1"></i>@gym.Address</div>
+                            </div>
+                            <span class="badge-status @badgeCls" style="flex-shrink:0;">@statusText</span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(gym.Description))
+                        {
+                            <p style="font-size:0.78rem;color:#888;margin:0.6rem 0;line-height:1.5;
+                                      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                                @gym.Description
+                            </p>
+                        }
+
+                        <div style="display:flex;gap:6px;align-items:center;margin-top:0.9rem;flex-wrap:wrap;">
+                            @if (gym.Status == "Approved")
+                            {
+                                <a asp-action="Details" asp-route-id="@gym.Id" class="btn-owner-secondary">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@gym.Id" class="btn-owner-secondary">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <a asp-controller="OwnerPackage" asp-action="Index" asp-route-gymId="@gym.Id"
+                                   class="btn-owner-primary" style="font-size:0.72rem;padding:0.42rem 0.8rem;">
+                                    <i class="bi bi-card-list"></i> Gói DV
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="Edit" asp-route-id="@gym.Id" class="btn-owner-secondary">
+                                    <i class="bi bi-pencil"></i> Chỉnh sửa
+                                </a>
+                            }
+                            <form asp-action="Delete" asp-route-id="@gym.Id" method="post" class="d-inline ms-auto">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-owner-danger"
+                                        onclick="return confirm('Xóa phòng Gym \"@gym.Name\"? Thao tác này không thể hoàn tác.')">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,110 @@
+@model GymManagement.Models.MembershipPackage
+@{
+    ViewData["Title"] = "Thêm gói dịch vụ";
+    Layout = "_OwnerAdminLayout";
+}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Index" class="btn-owner-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="bi bi-card-list me-2" style="color:#6366f1;"></i>Thông tin gói dịch vụ</h5>
+            </div>
+            <div class="content-card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="owner-form-group">
+                        <label asp-for="GymId">Phòng Gym <span style="color:#ef4444;">*</span></label>
+                        <select asp-for="GymId" asp-items="ViewBag.GymSelectList" class="form-control">
+                            <option value="">— Chọn phòng Gym —</option>
+                        </select>
+                        <span asp-validation-for="GymId" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="Name">Tên gói <span style="color:#ef4444;">*</span></label>
+                        <input asp-for="Name" class="form-control" placeholder="Ví dụ: Gói Tháng Premium" />
+                        <span asp-validation-for="Name" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="PackageType">Loại gói <span style="color:#ef4444;">*</span></label>
+                        <select asp-for="PackageType" class="form-control" id="packageTypeSelect" onchange="toggleDuration()">
+                            <option value="">— Chọn loại —</option>
+                            <option value="Daily">Daily (Theo ngày)</option>
+                            <option value="Monthly">Monthly (Theo tháng)</option>
+                        </select>
+                        <span asp-validation-for="PackageType" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group" id="durationGroup" style="display:none;">
+                        <label asp-for="DurationInMonths">Số tháng <span style="color:#ef4444;">*</span></label>
+                        <input asp-for="DurationInMonths" type="number" min="1" max="120" class="form-control" placeholder="Ví dụ: 1, 3, 6, 12" />
+                        <span asp-validation-for="DurationInMonths" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="owner-form-group">
+                        <label asp-for="Price">Giá (VNĐ) <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="priceDisplayInput" class="form-control" placeholder="Ví dụ: 500,000" autocomplete="off" />
+                        <input type="hidden" asp-for="Price" id="priceRealInput" />
+                        <span asp-validation-for="Price" class="text-danger" style="font-size:0.78rem;"></span>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn-owner-primary flex-grow-1">
+                            <i class="bi bi-plus-lg"></i> Tạo gói
+                        </button>
+                        <a asp-action="Index" class="btn-owner-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div style="background:#0f172a;border-radius:12px;padding:1.8rem;">
+            <p style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;">Hướng dẫn</p>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.55);line-height:1.7;">
+                <p><strong style="color:#a5b4fc;">Daily:</strong> Khách mua theo ngày, không có thời hạn cố định.</p>
+                <p><strong style="color:#a5b4fc;">Monthly:</strong> Khách mua theo tháng, cần nhập số tháng (1, 3, 6, 12...).</p>
+                <p>Gói có thể được tạm dừng hoặc kích hoạt lại bất cứ lúc nào.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function toggleDuration() {
+            const type = document.getElementById('packageTypeSelect').value;
+            document.getElementById('durationGroup').style.display = type === 'Monthly' ? '' : 'none';
+        }
+        toggleDuration();
+
+        const displayInput = document.getElementById('priceDisplayInput');
+        const realInput = document.getElementById('priceRealInput');
+
+        if (realInput.value && realInput.value !== "0") {
+            displayInput.value = Number(realInput.value).toLocaleString('en-US');
+        }
+
+        displayInput.addEventListener('input', function (e) {
+            let rawValue = e.target.value.replace(/,/g, '').replace(/\D/g, '');
+            if (rawValue) {
+                realInput.value = rawValue;
+                e.target.value = Number(rawValue).toLocaleString('en-US');
+            } else {
+                realInput.value = '';
+                e.target.value = '';
+            }
+        });
+    </script>
+}

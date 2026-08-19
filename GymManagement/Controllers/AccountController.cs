@@ -156,7 +156,18 @@ namespace GymManagement.Controllers
                 if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                     return Redirect(model.ReturnUrl);
 
-                return RedirectToAction("Index", "Home");
+                // Điều hướng theo Role
+                var loggedInUser = await _userManager.FindByEmailAsync(model.Email);
+                if (loggedInUser != null)
+                {
+                    if (await _userManager.IsInRoleAsync(loggedInUser, "Admin"))
+                        return RedirectToAction("Dashboard", "Admin");
+
+                    if (await _userManager.IsInRoleAsync(loggedInUser, "Owner"))
+                        return RedirectToAction("Index", "OwnerGym");
+                }
+
+                return RedirectToAction("Profile", "Member");
             }
 
             if (result.IsLockedOut)

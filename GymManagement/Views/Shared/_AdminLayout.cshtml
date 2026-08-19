@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GymPro Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-bg: #0a0a0a;
+            --sidebar-border: rgba(255,255,255,0.08);
+            --accent: #ff3e3e;
+            --accent-hover: #ff5a5a;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f5f7;
+            color: #1a1a2e;
+            -webkit-font-smoothing: antialiased;
+            margin: 0;
+        }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+
+        /* ── Sidebar ── */
+        .admin-sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 1.8rem 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+        .sidebar-brand .brand-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            color: #fff;
+            display: block;
+            text-decoration: none;
+        }
+        .sidebar-brand .badge-admin {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 8px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-radius: 3px;
+        }
+        .sidebar-nav { padding: 1rem 0; flex: 1; }
+        .nav-section-label {
+            padding: 0.6rem 1.5rem 0.3rem;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.72rem 1.5rem;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            border-left: 3px solid transparent;
+            transition: all 0.18s;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border-left-color: rgba(255,255,255,0.2);
+        }
+        .sidebar-link.active {
+            background: rgba(255,62,62,0.12);
+            color: #fff;
+            border-left-color: var(--accent);
+        }
+        .sidebar-link .bi { font-size: 1rem; }
+        .sidebar-footer {
+            padding: 1.2rem 1.5rem;
+            border-top: 1px solid var(--sidebar-border);
+        }
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.8rem;
+        }
+        .sidebar-user .avatar {
+            width: 36px; height: 36px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .sidebar-user .user-info .name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+        .sidebar-user .user-info .role {
+            font-size: 0.65rem;
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .btn-logout-sidebar {
+            width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.6);
+            padding: 0.45rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-logout-sidebar:hover {
+            background: rgba(255,255,255,0.13);
+            color: #fff;
+        }
+
+        /* ── Main content ── */
+        .admin-main {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+        .admin-topbar {
+            background: #fff;
+            border-bottom: 1px solid #e8eaed;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #111;
+            margin: 0;
+        }
+        .topbar-breadcrumb {
+            font-size: 0.78rem;
+            color: #888;
+            margin: 0;
+        }
+        .admin-content {
+            padding: 2rem;
+        }
+
+        /* ── Alerts ── */
+        .alert-success-custom {
+            background: #d1fae5; border-left: 4px solid #10b981;
+            color: #065f46; border-radius: 6px; padding: 0.9rem 1.2rem;
+            display: flex; align-items: center; gap: 8px; font-size: 0.88rem;
+        }
+        .alert-warning-custom {
+            background: #fef3c7; border-left: 4px solid #f59e0b;
+            color: #92400e; border-radius: 6px; padding: 0.9rem 1.2rem;
+            display: flex; align-items: center; gap: 8px; font-size: 0.88rem;
+        }
+        .alert-danger-custom {
+            background: #fee2e2; border-left: 4px solid #ef4444;
+            color: #991b1b; border-radius: 6px; padding: 0.9rem 1.2rem;
+            display: flex; align-items: center; gap: 8px; font-size: 0.88rem;
+        }
+
+        /* ── Stat cards ── */
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e8eaed;
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .stat-card .stat-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+        .stat-card .stat-value {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 2rem;
+            color: #111;
+        }
+        .stat-card .stat-label {
+            font-size: 0.78rem;
+            color: #888;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* ── Data table ── */
+        .data-table { border-collapse: separate; border-spacing: 0; }
+        .data-table thead th {
+            background: #f8f9fa;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #888;
+            padding: 0.85rem 1rem;
+            border-bottom: 2px solid #e8eaed;
+        }
+        .data-table tbody td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+            font-size: 0.88rem;
+            color: #333;
+        }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr:hover td { background: #fafafa; }
+
+        /* ── Badges ── */
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-approved { background: #d1fae5; color: #065f46; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; }
+        .badge-suspended { background: #e0e7ff; color: #3730a3; }
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ── Card ── */
+        .content-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e8eaed;
+            overflow: hidden;
+        }
+        .content-card-header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .content-card-header h5 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #111;
+        }
+        .content-card-body { padding: 0; }
+
+        /* ── Buttons ── */
+        .btn-admin-primary {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 0.55rem 1.2rem;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.78rem;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.18s;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-admin-primary:hover { background: #333; color: #fff; }
+        .btn-admin-approve {
+            background: #10b981; color: #fff; border: none;
+            padding: 0.42rem 0.9rem; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 700;
+            cursor: pointer; transition: background 0.18s;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-admin-approve:hover { background: #059669; }
+        .btn-admin-reject {
+            background: #fff; color: #ef4444; border: 1px solid #ef4444;
+            padding: 0.42rem 0.9rem; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 700;
+            cursor: pointer; transition: all 0.18s;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-admin-reject:hover { background: #ef4444; color: #fff; }
+
+        @@media (max-width: 768px) {
+            .admin-sidebar { transform: translateX(-100%); }
+            .admin-main { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <a asp-controller="Home" asp-action="Index" class="brand-text">GYMPRO</a>
+            <span class="badge-admin">Admin Panel</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <p class="nav-section-label">Tổng quan</p>
+            <a asp-controller="Admin" asp-action="Dashboard"
+               class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+
+            <p class="nav-section-label" style="margin-top:1rem;">Quản lý Gym</p>
+            <a asp-controller="Admin" asp-action="PendingGyms"
+               class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "PendingGyms" ? "active" : "")">
+                <i class="bi bi-hourglass-split"></i> Chờ phê duyệt
+                @{
+                    var pendingCount = ViewBag.PendingBadge as int?;
+                }
+                @if (pendingCount.HasValue && pendingCount.Value > 0)
+                {
+                    <span class="ms-auto badge rounded-pill" style="background:var(--accent);font-size:0.65rem;">@pendingCount</span>
+                }
+            </a>
+            <a asp-controller="Admin" asp-action="AllGyms"
+               class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllGyms" ? "active" : "")">
+                <i class="bi bi-building"></i> Tất cả Gym
+            </a>
+
+            <p class="nav-section-label" style="margin-top:1rem;">Hệ thống</p>
+            <a asp-controller="Home" asp-action="Index" class="sidebar-link">
+                <i class="bi bi-house"></i> Trang chủ
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="avatar">@(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")</div>
+                <div class="user-info">
+                    <div class="name">@User.Identity?.Name</div>
+                    <div class="role">Administrator</div>
+                </div>
+            </div>
+            <form method="post" asp-controller="Account" asp-action="Logout">
+                <button type="submit" class="btn-logout-sidebar">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <div>
+                <h1 class="topbar-title">@(ViewData["Title"] ?? "Admin Dashboard")</h1>
+                <p class="topbar-breadcrumb">GymPro &rsaquo; Admin</p>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert-success-custom mb-3">
+                    <i class="bi bi-check-circle-fill"></i> @TempData["Success"]
+                </div>
+            }
+            @if (TempData["Warning"] != null)
+            {
+                <div class="alert-warning-custom mb-3">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @TempData["Warning"]
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert-danger-custom mb-3">
+                    <i class="bi bi-x-circle-fill"></i> @TempData["Error"]
+                </div>
+            }
+
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

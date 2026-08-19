@@ -158,6 +158,30 @@
                     <ul class="navbar-nav ms-auto mb-2 mb-md-0 align-items-center gap-1">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Admin" asp-action="Dashboard">
+                                        <i class="bi bi-shield-lock me-1"></i>Admin
+                                    </a>
+                                </li>
+                            }
+                            else if (User.IsInRole("Owner"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="OwnerGym" asp-action="Index">
+                                        <i class="bi bi-building me-1"></i>Quản lý Gym
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Member" asp-action="Profile">
+                                        <i class="bi bi-person-circle me-1"></i>Cá nhân
+                                    </a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <span class="nav-link nav-user-name">
                                     <i class="bi bi-person me-1"></i>@User.Identity.Name
