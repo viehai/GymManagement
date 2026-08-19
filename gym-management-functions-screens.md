@@ -11,8 +11,8 @@
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
 | GUE-01 | Xem trang chủ | `Home/Index` | Banner giới thiệu, danh sách gym nổi bật | ✅ Đã làm |
-| GUE-02 | Tìm kiếm / lọc gym | `Gym/Search` | Lọc theo khu vực, khoảng giá, tên gym | ⏳ Chưa làm |
-| GUE-03 | Xem chi tiết gym | `Gym/Details/{id}` | Ảnh, mô tả, địa chỉ, danh sách equipment, danh sách package + giá | ⏳ Chưa làm |
+| GUE-02 | Tìm kiếm / lọc gym | `Gym/Search` | Lọc theo khu vực, khoảng giá, tên gym | ✅ Đã làm |
+| GUE-03 | Xem chi tiết gym | `Gym/Details/{id}` | Ảnh, mô tả, địa chỉ, danh sách equipment, danh sách package + giá | ✅ Đã làm |
 | GUE-04 | Đăng ký tài khoản | `Account/Register` | Form nhập Email, Password, FullName, Phone | ✅ Đã làm |
 | GUE-05 | Đăng nhập | `Account/Login` | Form Email + Password (điều hướng theo Role) | ✅ Đã làm |
 | GUE-06 | Quên mật khẩu — nhập email | `Account/ForgotPassword` | Nhập email để nhận OTP | ✅ Đã làm |
@@ -38,8 +38,8 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| MEM-04 | Tìm kiếm / lọc gym | `Gym/Search` | Giống Guest nhưng thêm gợi ý gym đã tập | ⏳ Chưa làm |
-| MEM-05 | Xem chi tiết gym | `Gym/Details/{id}` | Giống Guest, thêm nút "Mua vé ngày" / "Đăng ký gói" | ⏳ Chưa làm |
+| MEM-04 | Tìm kiếm / lọc gym | `Gym/Search` | Giống Guest nhưng thêm gợi ý gym đã tập | ✅ Đã làm |
+| MEM-05 | Xem chi tiết gym | `Gym/Details/{id}` | Giống Guest, thêm nút "Mua vé ngày" / "Đăng ký gói" | ✅ Đã làm |
 
 ### Nhóm 3: Mua vé & thanh toán
 
@@ -157,10 +157,10 @@
 
 | Role | Tổng số Function | Đã hoàn thành | Chưa thực hiện | Tỷ lệ hoàn thành |
 |---|---|---|---|---|
-| **Guest** | 9 | 7 | 2 | **77.8%** |
-| **Member** | 16 | 2 | 14 | **12.5%** |
+| **Guest** | 9 | 9 | 0 | **100.0%** |
+| **Member** | 16 | 4 | 12 | **25.0%** |
 | **Owner** | 20 | 10 | 10 | **50.0%** |
 | **Admin** | 16 | 3 | 13 | **18.8%** |
-| **TỔNG CỘNG** | **61** | **22** | **39** | **36.1%** |
+| **TỔNG CỘNG** | **61** | **26** | **35** | **42.6%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.
