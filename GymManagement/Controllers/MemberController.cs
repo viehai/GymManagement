@@ -36,8 +36,16 @@ namespace GymManagement.Controllers
                 .OrderByDescending(g => g.CreatedAt)
                 .ToListAsync();
 
+            var activeMembershipsCount = await _context.MemberMemberships
+                .CountAsync(m => m.MemberId == user.Id && m.EndDate >= DateTime.Today);
+
+            var transactionCount = await _context.Transactions
+                .CountAsync(t => t.MemberId == user.Id);
+
             ViewBag.Roles = roles;
             ViewBag.Gyms = myGyms;
+            ViewBag.ActiveMembershipsCount = activeMembershipsCount;
+            ViewBag.TransactionCount = transactionCount;
             return View(user);
         }
 
@@ -105,5 +113,85 @@ namespace GymManagement.Controllers
             TempData["Success"] = "Yêu cầu đăng ký phòng Gym đã được gửi! Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.";
             return RedirectToAction("Profile");
         }
+
+        // ==================== MEM-11: LỊCH SỬ GIAO DỊCH ====================
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> TransactionHistory()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var transactions = await _context.Transactions
+                .Where(t => t.MemberId == user.Id)
+                .Include(t => t.Membership)
+                    .ThenInclude(m => m.Gym)
+                .Include(t => t.Membership)
+                    .ThenInclude(m => m.Package)
+                .Include(t => t.Invoice)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            var vm = transactions.Select(t => new TransactionHistoryViewModel
+            {
+                TransactionId    = t.Id,
+                GymName          = t.Membership?.Gym?.Name ?? "—",
+                PackageName      = t.Membership?.Package?.Name ?? "—",
+                PackageTypeLabel = t.Membership?.Package?.PackageType == "Daily"
+                                       ? "Vé ngày"
+                                       : $"Gói {t.Membership?.Package?.DurationInMonths} tháng",
+                Amount    = t.Amount,
+                Status    = t.Status,
+                CreatedAt = t.CreatedAt,
+                InvoiceId = t.Invoice?.Id
+            }).ToList();
+
+            return View(vm);
+        }
+
+        // ==================== MEM-12: CHI TIẾT HÓA ĐƠN ====================
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> InvoiceDetails(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var invoice = await _context.Invoices
+                .Include(i => i.Transaction)
+                    .ThenInclude(t => t.Member)
+                .Include(i => i.Transaction)
+                    .ThenInclude(t => t.Membership)
+                        .ThenInclude(m => m.Gym)
+                .Include(i => i.Transaction)
+                    .ThenInclude(t => t.Membership)
+                        .ThenInclude(m => m.Package)
+                .FirstOrDefaultAsync(i => i.Id == id && i.Transaction.MemberId == user.Id);
+
+            if (invoice == null) return NotFound();
+
+            var membership = invoice.Transaction.Membership;
+            var member     = invoice.Transaction.Member;
+            var pkg        = membership?.Package;
+            var gym        = membership?.Gym;
+
+            var vm = new InvoiceDetailsViewModel
+            {
+                InvoiceId        = invoice.Id,
+                InvoiceCode      = invoice.InvoiceCode,
+                IssuedDate       = invoice.IssuedDate,
+                MemberName       = member?.FullName ?? string.Empty,
+                MemberEmail      = member?.Email ?? string.Empty,
+                GymName          = gym?.Name ?? string.Empty,
+                GymAddress       = gym?.Address ?? string.Empty,
+                PackageName      = pkg?.Name ?? string.Empty,
+                PackageType      = pkg?.PackageType ?? string.Empty,
+                DurationInMonths = pkg?.DurationInMonths,
+                Amount           = invoice.Transaction.Amount,
+                StartDate        = membership?.StartDate ?? DateTime.Today,
+                EndDate          = membership?.EndDate ?? DateTime.Today
+            };
+
+            return View(vm);
+        }
     }
 }
+

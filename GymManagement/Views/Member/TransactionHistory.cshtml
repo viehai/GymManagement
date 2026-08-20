@@ -1,0 +1,176 @@
+<!-- Đường dẫn file: Views/Member/TransactionHistory.cshtml -->
+@model IEnumerable<GymManagement.ViewModels.TransactionHistoryViewModel>
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Lịch sử giao dịch";
+}
+
+<style>
+    .history-hero { background: #252525; padding: 2.5rem 0 2rem; }
+    .history-hero-label {
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(255,255,255,0.5); margin-bottom: 0.4rem;
+    }
+    .history-hero h1 {
+        font-family: 'Montserrat', sans-serif; font-weight: 900;
+        font-size: clamp(1.4rem,3vw,2rem); color: #fff; margin: 0;
+    }
+
+    .history-body { padding: 3rem 0 5rem; }
+    .section-label {
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+        color: #7D7D7D; margin-bottom: 1.2rem;
+        padding-bottom: 0.6rem; border-bottom: 1px solid #CFCFCF;
+    }
+
+    /* Table */
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th {
+        font-family: 'Montserrat', sans-serif; font-size: 0.62rem;
+        font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+        color: #7D7D7D; padding: 0.7rem 0.8rem;
+        border-bottom: 1px solid #CFCFCF; text-align: left;
+        background: transparent;
+    }
+    .history-table td {
+        padding: 1rem 0.8rem; font-size: 0.88rem;
+        border-bottom: 1px solid #CFCFCF; vertical-align: middle;
+        color: #252525;
+    }
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table tr:hover td { background: #fafafa; }
+
+    .gym-name-cell {
+        font-family: 'Montserrat', sans-serif; font-weight: 700;
+        font-size: 0.88rem; color: #252525;
+    }
+    .pkg-cell { font-size: 0.82rem; color: #545454; }
+    .amount-cell {
+        font-family: 'Montserrat', sans-serif; font-weight: 800;
+        font-size: 0.92rem; white-space: nowrap;
+    }
+    .date-cell { font-size: 0.8rem; color: #7D7D7D; white-space: nowrap; }
+
+    /* Status badges */
+    .badge-success, .badge-failed, .badge-pending {
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.6rem; font-weight: 700;
+        letter-spacing: 1px; text-transform: uppercase;
+        padding: 3px 10px;
+    }
+    .badge-success { border: 1px solid #252525; color: #252525; }
+    .badge-failed  { border: 1px solid #CFCFCF; color: #7D7D7D; }
+    .badge-pending { border: 1px solid #CFCFCF; color: #7D7D7D; }
+
+    .invoice-link {
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+        color: #252525; text-decoration: none;
+        border-bottom: 1px solid #CFCFCF; padding-bottom: 1px;
+        transition: border-color 0.2s;
+    }
+    .invoice-link:hover { border-color: #252525; text-decoration: none; color: #252525; }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center; padding: 4rem 1rem;
+        border: 1px dashed #CFCFCF;
+    }
+    .empty-state .bi { font-size: 2.5rem; color: #CFCFCF; display: block; margin-bottom: 1rem; }
+    .empty-state p { color: #7D7D7D; font-size: 0.9rem; }
+
+    .btn-find-gym {
+        display: inline-block; margin-top: 1rem;
+        background: #252525; color: #fff;
+        border: none; border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 0.68rem;
+        letter-spacing: 1.5px; text-transform: uppercase;
+        padding: 0.7rem 1.4rem; text-decoration: none;
+        transition: background 0.2s;
+    }
+    .btn-find-gym:hover { background: #545454; color: #fff; text-decoration: none; }
+
+    @@media (max-width: 768px) {
+        .history-table th:nth-child(4),
+        .history-table td:nth-child(4) { display: none; }
+    }
+</style>
+
+<div class="history-hero">
+    <div class="container">
+        <p class="history-hero-label">Tài khoản</p>
+        <h1>Lịch sử giao dịch</h1>
+    </div>
+</div>
+
+<div class="container history-body">
+    <p class="section-label">Tất cả giao dịch của bạn</p>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-receipt"></i>
+            <p>Bạn chưa có giao dịch nào.</p>
+            <a id="btn-find-gym-empty" class="btn-find-gym" asp-controller="Gym" asp-action="Search">
+                <i class="bi bi-search me-2"></i>Tìm phòng Gym ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="history-table" aria-label="Lịch sử giao dịch">
+                <thead>
+                    <tr>
+                        <th>Phòng Gym / Gói</th>
+                        <th>Loại</th>
+                        <th>Số tiền</th>
+                        <th>Ngày mua</th>
+                        <th>Trạng thái</th>
+                        <th>Hóa đơn</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tx in Model)
+                    {
+                        <tr id="tx-row-@tx.TransactionId">
+                            <td>
+                                <p class="gym-name-cell mb-0">@tx.GymName</p>
+                                <p class="pkg-cell mb-0">@tx.PackageName</p>
+                            </td>
+                            <td>
+                                <span class="badge-pending">@tx.PackageTypeLabel</span>
+                            </td>
+                            <td class="amount-cell">@tx.Amount.ToString("N0") đ</td>
+                            <td class="date-cell">@tx.CreatedAt.ToString("HH:mm — dd/MM/yyyy")</td>
+                            <td>
+                                <span class="@tx.StatusBadgeClass">@tx.StatusLabel</span>
+                            </td>
+                            <td>
+                                @if (tx.InvoiceId.HasValue)
+                                {
+                                    <a id="invoice-link-@tx.InvoiceId"
+                                       asp-controller="Member"
+                                       asp-action="InvoiceDetails"
+                                       asp-route-id="@tx.InvoiceId"
+                                       class="invoice-link">
+                                        <i class="bi bi-receipt me-1"></i>Xem
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span style="font-size:0.78rem;color:#CFCFCF;">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

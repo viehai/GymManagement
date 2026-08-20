@@ -1,288 +1,620 @@
+<!-- Đường dẫn file: Views/Member/Profile.cshtml -->
 @using Microsoft.AspNetCore.Identity
 @model GymManagement.Models.ApplicationUser
 
 @{
+    Layout = "_MemberLayout";
     ViewData["Title"] = "Trang cá nhân";
     var roles = ViewBag.Roles as IList<string> ?? new List<string>();
     var gyms = ViewBag.Gyms as List<GymManagement.Models.Gym> ?? new List<GymManagement.Models.Gym>();
+    int activeMembershipsCount = ViewBag.ActiveMembershipsCount is int amc ? amc : 0;
+    int transactionCount = ViewBag.TransactionCount is int tc ? tc : 0;
     bool isOwner = roles.Contains("Owner");
     bool hasPendingGym = gyms.Any(g => g.Status == "Pending");
 }
 
 <style>
+    /* ═══════════════════════════════════════════════
+       PROFILE PAGE — INK WASH PALETTE
+       #252525  Xám than   → nền hero / text chính / nút CTA
+       #545454  Xám đậm    → hover / border active
+       #7D7D7D  Xám trung  → văn bản phụ / nhãn
+       #CFCFCF  Xám nhạt  → đường kẻ / viền card
+       #FFFFFF  Trắng      → nền trang / nền card
+    ═══════════════════════════════════════════════ */
+
     .profile-hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
-        padding: 4rem 0 3rem;
-        position: relative;
-        overflow: hidden;
-    }
-    .profile-hero::before {
-        content: '';
-        position: absolute;
-        top: -50%; left: -20%;
-        width: 600px; height: 600px;
-        background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
-        pointer-events: none;
+        background: #252525;
+        color: #fff;
+        padding: 3.5rem 0 3rem;
+        border-bottom: 1px solid #CFCFCF;
     }
     .profile-avatar {
-        width: 96px; height: 96px;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
+        width: 84px;
+        height: 84px;
+        background: #fff;
+        color: #252525;
+        border: 2px solid #fff;
+        border-radius: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-family: 'Montserrat', sans-serif;
-        font-weight: 900; font-size: 2.2rem; color: #fff;
-        margin: 0 auto 1.2rem;
-        box-shadow: 0 0 0 4px rgba(99,102,241,0.3);
+        font-weight: 900;
+        font-size: 2rem;
+        margin: 0 auto 1rem;
     }
     .profile-name {
         font-family: 'Montserrat', sans-serif;
-        font-weight: 800; font-size: 1.6rem; color: #fff; margin: 0;
+        font-weight: 900;
+        font-size: 1.6rem;
+        color: #fff;
+        letter-spacing: 0.5px;
+        margin: 0;
     }
     .profile-email {
-        color: rgba(255,255,255,0.55); font-size: 0.88rem; margin-top: 4px;
+        color: rgba(255,255,255,0.6);
+        font-size: 0.85rem;
+        margin-top: 4px;
     }
-    .role-badge {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 4px 12px; border-radius: 20px;
-        font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
-        text-transform: uppercase; margin: 0 3px;
-    }
-    .role-member { background: rgba(99,102,241,0.2); color: #a5b4fc; }
-    .role-owner { background: rgba(16,185,129,0.2); color: #6ee7b7; }
-    .role-admin { background: rgba(239,68,68,0.2); color: #fca5a5; }
-
-    .profile-section { padding: 3rem 0; }
-    .info-card {
-        background: #fff; border-radius: 14px;
-        border: 1px solid #e8eaed; padding: 1.8rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-    }
-    .info-card h5 {
+    .role-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 0;
         font-family: 'Montserrat', sans-serif;
-        font-size: 0.75rem; font-weight: 700;
-        letter-spacing: 1.5px; text-transform: uppercase;
-        color: #888; margin-bottom: 1.2rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin: 0 4px;
+        border: 1px solid rgba(255,255,255,0.3);
+        background: transparent;
+        color: #fff;
     }
-    .info-row {
-        display: flex; align-items: center;
-        padding: 0.65rem 0; border-bottom: 1px solid #f5f5f5;
-    }
-    .info-row:last-child { border-bottom: none; }
-    .info-icon { width: 32px; color: #6366f1; font-size: 1rem; flex-shrink: 0; }
-    .info-label { width: 120px; font-size: 0.78rem; color: #999; font-weight: 500; flex-shrink: 0; }
-    .info-value { font-size: 0.88rem; color: #111; font-weight: 500; flex: 1; }
 
-    /* Gym registration CTA */
-    .gym-cta-card {
-        background: linear-gradient(135deg, #0f172a, #1e293b);
-        border-radius: 14px; padding: 2.2rem;
-        border: 1px solid rgba(99,102,241,0.3);
-        position: relative; overflow: hidden;
+    .profile-body {
+        padding: 3rem 0 5rem;
+        background: #fafafa;
     }
-    .gym-cta-card::before {
-        content: '';
-        position: absolute;
-        right: -40px; top: -40px;
-        width: 200px; height: 200px;
-        background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);
-        pointer-events: none;
+
+    /* Tiêu đề nhóm trải nghiệm */
+    .experience-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.2rem;
     }
-    .gym-cta-card .cta-label {
-        font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
-        text-transform: uppercase; color: #a5b4fc; margin-bottom: 0.5rem;
-    }
-    .gym-cta-card h3 {
+    .experience-tag {
         font-family: 'Montserrat', sans-serif;
-        font-weight: 800; font-size: 1.25rem; color: #fff; margin-bottom: 0.6rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        background: #252525;
+        color: #fff;
+        padding: 4px 10px;
     }
-    .gym-cta-card p { color: rgba(255,255,255,0.55); font-size: 0.85rem; margin-bottom: 1.4rem; }
-    .btn-cta-register {
-        display: inline-flex; align-items: center; gap: 8px;
-        background: #6366f1; color: #fff;
-        padding: 0.65rem 1.5rem; border-radius: 8px;
-        font-family: 'Montserrat', sans-serif; font-weight: 700;
-        font-size: 0.82rem; letter-spacing: 0.5px;
-        text-decoration: none; transition: background 0.18s, transform 0.18s;
+    .experience-line {
+        flex: 1;
+        height: 1px;
+        background: #CFCFCF;
     }
-    .btn-cta-register:hover { background: #4f46e5; color: #fff; transform: translateX(2px); }
 
-    /* Gym list */
-    .gym-item {
-        display: flex; align-items: center; gap: 14px;
-        padding: 1rem 0; border-bottom: 1px solid #f5f5f5;
+    /* Flat Card System */
+    .ink-card {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1.8rem;
+        transition: border-color 0.2s;
     }
-    .gym-item:last-child { border-bottom: none; }
-    .gym-item-img {
-        width: 56px; height: 56px; border-radius: 10px;
-        object-fit: cover; flex-shrink: 0; background: #f0f0f0;
+    .ink-card:hover {
+        border-color: #7D7D7D;
     }
-    .gym-item-img-ph {
-        width: 56px; height: 56px; border-radius: 10px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.5rem; color: rgba(255,255,255,0.6); flex-shrink: 0;
+    .ink-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.8rem;
+        margin-bottom: 1.2rem;
+        border-bottom: 1px solid #CFCFCF;
     }
-    .gym-item-name { font-weight: 700; font-size: 0.88rem; color: #111; }
-    .gym-item-address { font-size: 0.75rem; color: #999; }
-    .badge-gym-status {
-        padding: 3px 9px; border-radius: 20px;
-        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;
-        text-transform: uppercase; white-space: nowrap;
+    .ink-card-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #252525;
+        margin: 0;
     }
-    .bg-pending { background: #fef3c7; color: #92400e; }
-    .bg-approved { background: #d1fae5; color: #065f46; }
-    .bg-rejected { background: #fee2e2; color: #991b1b; }
+    .ink-card-sub {
+        font-size: 0.75rem;
+        color: #7D7D7D;
+    }
+
+    /* Thông tin bảng dữ liệu */
+    .info-row-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.86rem;
+    }
+    .info-row-item:last-child {
+        border-bottom: none;
+    }
+    .info-row-label {
+        color: #7D7D7D;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.82rem;
+    }
+    .info-row-val {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        color: #252525;
+        text-align: right;
+    }
+
+    /* Thống kê hộp nhỏ */
+    .stat-metric-box {
+        border: 1px solid #CFCFCF;
+        padding: 1rem;
+        text-align: center;
+        background: #fff;
+    }
+    .stat-metric-num {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #252525;
+        line-height: 1;
+        margin-bottom: 0.3rem;
+    }
+    .stat-metric-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+    }
+
+    /* Buttons */
+    .btn-ink-solid {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #252525;
+        color: #fff !important;
+        border: 1px solid #252525;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.7rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 1.4rem;
+        text-decoration: none;
+        transition: background 0.2s;
+        width: 100%;
+    }
+    .btn-ink-solid:hover {
+        background: #545454;
+        border-color: #545454;
+    }
+
+    .btn-ink-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: transparent;
+        color: #252525 !important;
+        border: 1px solid #CFCFCF;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.7rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 1.4rem;
+        text-decoration: none;
+        transition: border-color 0.2s, background 0.2s;
+        width: 100%;
+    }
+    .btn-ink-outline:hover {
+        border-color: #252525;
+        background: #f5f5f5;
+    }
+
+    /* Business Promo Box */
+    .business-promo {
+        background: #252525;
+        color: #fff;
+        padding: 1.5rem;
+        border: 1px solid #252525;
+    }
+    .business-promo-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+        color: #fff;
+    }
+    .business-promo-desc {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.82rem;
+        line-height: 1.5;
+        margin-bottom: 1.2rem;
+    }
+    .btn-promo-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #fff;
+        color: #252525 !important;
+        border: none;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 0.7rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 1.2rem;
+        text-decoration: none;
+        transition: background 0.2s;
+        width: 100%;
+    }
+    .btn-promo-cta:hover {
+        background: #CFCFCF;
+    }
+
+    /* Gym List Items */
+    .gym-mini-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .gym-mini-item:last-child {
+        border-bottom: none;
+    }
+    .gym-mini-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 0;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid #CFCFCF;
+        background: #f0f0f0;
+    }
+    .gym-mini-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #252525;
+        margin: 0;
+    }
+    .gym-mini-addr {
+        font-size: 0.75rem;
+        color: #7D7D7D;
+        margin: 0;
+    }
+
+    /* Status Badges */
+    .status-badge-ink {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 0;
+        white-space: nowrap;
+    }
+    .status-approved {
+        background: #252525;
+        color: #fff;
+        border: 1px solid #252525;
+    }
+    .status-pending {
+        background: #fff;
+        color: #7D7D7D;
+        border: 1px solid #CFCFCF;
+    }
+    .status-rejected {
+        background: #fff;
+        color: #252525;
+        border: 1px dashed #7D7D7D;
+    }
+
+    /* Empty state */
+    .empty-box {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        border: 1px dashed #CFCFCF;
+        color: #7D7D7D;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+    .empty-box i {
+        font-size: 2rem;
+        color: #CFCFCF;
+        margin-bottom: 0.6rem;
+    }
 </style>
 
-<!-- Hero -->
+<!-- Hero Section -->
 <div class="profile-hero">
     <div class="container text-center">
-        <div class="profile-avatar">@Model.FullName.Substring(0,1).ToUpper()</div>
+        <div class="profile-avatar">
+            @(string.IsNullOrWhiteSpace(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+        </div>
         <h1 class="profile-name">@Model.FullName</h1>
         <p class="profile-email"><i class="bi bi-envelope me-1"></i>@Model.Email</p>
-        <div class="mt-3">
+        <div class="mt-2">
             @foreach (var role in roles)
             {
-                string cls = role == "Owner" ? "role-owner" : role == "Admin" ? "role-admin" : "role-member";
-                <span class="role-badge @cls">
-                    <i class="bi bi-shield-check"></i> @role
+                <span class="role-badge-pill">
+                    <i class="bi bi-shield-check me-1"></i>@role
                 </span>
             }
         </div>
     </div>
 </div>
 
-<!-- Content -->
-<div class="profile-section">
+<!-- Profile Main Content -->
+<div class="profile-body">
     <div class="container">
+
         @if (TempData["Success"] != null)
         {
-            <div style="background:#d1fae5;border-left:4px solid #10b981;color:#065f46;border-radius:8px;padding:0.9rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:8px;">
-                <i class="bi bi-check-circle-fill"></i> @TempData["Success"]
+            <div style="background:#fff; border-left:4px solid #252525; border:1px solid #CFCFCF; padding:1rem 1.2rem; margin-bottom:2rem; display:flex; align-items:center; gap:10px; font-size:0.88rem;">
+                <i class="bi bi-check-circle-fill text-dark fs-5"></i>
+                <span>@TempData["Success"]</span>
             </div>
         }
 
-        <div class="row g-4">
-            <!-- Left: Thông tin cá nhân -->
-            <div class="col-lg-5">
-                <div class="info-card">
-                    <h5>Thông tin tài khoản</h5>
-                    <div class="info-row">
-                        <span class="info-icon"><i class="bi bi-person"></i></span>
-                        <span class="info-label">Họ tên</span>
-                        <span class="info-value">@Model.FullName</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon"><i class="bi bi-envelope"></i></span>
-                        <span class="info-label">Email</span>
-                        <span class="info-value">@Model.Email</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon"><i class="bi bi-telephone"></i></span>
-                        <span class="info-label">Điện thoại</span>
-                        <span class="info-value">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-icon"><i class="bi bi-patch-check"></i></span>
-                        <span class="info-label">Email xác nhận</span>
-                        <span class="info-value">
-                            @if (Model.EmailConfirmed)
-                            {
-                                <span style="color:#10b981;font-weight:600;"><i class="bi bi-check-circle-fill me-1"></i>Đã xác nhận</span>
-                            }
-                            else
-                            {
-                                <span style="color:#f59e0b;"><i class="bi bi-clock me-1"></i>Chưa xác nhận</span>
-                            }
-                        </span>
-                    </div>
-                </div>
+        <!-- ═══════════════════════════════════════════════════════
+             HÀNG 1: TRẢI NGHIỆM HỘI VIÊN (CÁ NHÂN + MUA SẮM)
+             ═══════════════════════════════════════════════════════ -->
+        <div class="experience-header">
+            <span class="experience-tag">Trải nghiệm Hội viên</span>
+            <div class="experience-line"></div>
+        </div>
 
-                <!-- CTA: Đăng ký mở Gym (chỉ hiện với Member chưa có gym pending) -->
-                @if (!isOwner && !hasPendingGym)
-                {
-                    <div class="gym-cta-card">
-                        <p class="cta-label"><i class="bi bi-star-fill me-1"></i> Cơ hội kinh doanh</p>
-                        <h3>Trở thành đối tác GymPro</h3>
-                        <p>Đăng ký mở phòng Gym của bạn trên nền tảng và tiếp cận hàng nghìn thành viên tiềm năng.</p>
-                        <a asp-controller="Member" asp-action="RegisterGym" class="btn-cta-register">
-                            <i class="bi bi-building-add"></i> Đăng ký mở phòng Gym
-                        </a>
-                    </div>
-                }
-                else if (hasPendingGym)
-                {
-                    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:1.4rem;">
-                        <p style="font-size:0.8rem;font-weight:700;color:#92400e;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.4rem;">
-                            <i class="bi bi-hourglass-split me-1"></i> Đang chờ phê duyệt
-                        </p>
-                        <p style="font-size:0.85rem;color:#78350f;margin:0;">
-                            Đơn đăng ký phòng Gym của bạn đang được xem xét. Chúng tôi sẽ thông báo qua email khi có kết quả.
-                        </p>
-                    </div>
-                }
-                else if (isOwner)
-                {
-                    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:1.4rem;">
-                        <p style="font-size:0.8rem;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.4rem;">
-                            <i class="bi bi-check-circle-fill me-1"></i> Bạn là Gym Owner
-                        </p>
-                        <a asp-controller="OwnerGym" asp-action="Index"
-                           style="display:inline-flex;align-items:center;gap:6px;color:#166534;font-weight:700;font-size:0.85rem;text-decoration:none;">
-                            Vào bảng điều khiển Owner <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                }
-            </div>
-
-            <!-- Right: Danh sách Gym -->
-            <div class="col-lg-7">
-                <div class="info-card">
-                    <h5>Phòng Gym của tôi (@gyms.Count)</h5>
-                    @if (!gyms.Any())
-                    {
-                        <div class="text-center py-4">
-                            <i class="bi bi-building" style="font-size:2.5rem;color:#e0e0e0;"></i>
-                            <p style="color:#bbb;font-size:0.85rem;margin-top:0.8rem;">Bạn chưa có phòng Gym nào.</p>
+        <div class="row g-4 mb-5 align-items-stretch">
+            <!-- Cột 1: Thông tin tài khoản -->
+            <div class="col-12 col-md-6 d-flex">
+                <div class="ink-card w-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ink-card-header">
+                            <h2 class="ink-card-title"><i class="bi bi-person-badge me-2"></i>Hồ sơ cá nhân</h2>
+                            <span class="ink-card-sub">Thông tin cơ bản</span>
                         </div>
-                    }
-                    else
-                    {
-                        @foreach (var gym in gyms)
-                        {
-                            <div class="gym-item">
-                                @if (!string.IsNullOrEmpty(gym.ImageUrl))
+                        <div class="info-row-item">
+                            <span class="info-row-label"><i class="bi bi-person"></i> Họ và tên</span>
+                            <span class="info-row-val">@Model.FullName</span>
+                        </div>
+                        <div class="info-row-item">
+                            <span class="info-row-label"><i class="bi bi-envelope"></i> Email</span>
+                            <span class="info-row-val">@Model.Email</span>
+                        </div>
+                        <div class="info-row-item">
+                            <span class="info-row-label"><i class="bi bi-telephone"></i> Điện thoại</span>
+                            <span class="info-row-val">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</span>
+                        </div>
+                        <div class="info-row-item">
+                            <span class="info-row-label"><i class="bi bi-patch-check"></i> Xác thực Email</span>
+                            <span class="info-row-val">
+                                @if (Model.EmailConfirmed)
                                 {
-                                    <img src="@gym.ImageUrl" class="gym-item-img" alt="@gym.Name" />
+                                    <span style="color:#252525;"><i class="bi bi-check-circle-fill me-1"></i>Đã kích hoạt</span>
                                 }
                                 else
                                 {
-                                    <div class="gym-item-img-ph"><i class="bi bi-building"></i></div>
+                                    <span style="color:#7D7D7D;"><i class="bi bi-clock me-1"></i>Chưa kích hoạt</span>
                                 }
-                                <div class="flex-grow-1">
-                                    <div class="gym-item-name">@gym.Name</div>
-                                    <div class="gym-item-address"><i class="bi bi-geo-alt me-1"></i>@gym.Address</div>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-2">
+                        <a id="btn-change-password-profile" asp-controller="Member" asp-action="ChangePassword" class="btn-ink-outline">
+                            <i class="bi bi-key me-1"></i> Đổi mật khẩu
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột 2: Hoạt động & Mua sắm -->
+            <div class="col-12 col-md-6 d-flex">
+                <div class="ink-card w-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ink-card-header">
+                            <h2 class="ink-card-title"><i class="bi bi-bag-check me-2"></i>Hoạt động & Mua sắm</h2>
+                            <span class="ink-card-sub">Tổng quan dịch vụ</span>
+                        </div>
+
+                        <!-- 2 ô thống kê số liệu ngang nhau -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <div class="stat-metric-box">
+                                    <div class="stat-metric-num">@activeMembershipsCount</div>
+                                    <div class="stat-metric-label">Vé đang hiệu lực</div>
                                 </div>
-                                @{
-                                    string statusClass = gym.Status switch {
-                                        "Approved" => "bg-approved",
-                                        "Rejected" => "bg-rejected",
-                                        _ => "bg-pending"
-                                    };
-                                    string statusText = gym.Status switch {
-                                        "Approved" => "Đã duyệt",
-                                        "Rejected" => "Từ chối",
-                                        "Pending" => "Chờ duyệt",
-                                        _ => gym.Status
-                                    };
-                                }
-                                <span class="badge-gym-status @statusClass">@statusText</span>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-metric-box">
+                                    <div class="stat-metric-num">@transactionCount</div>
+                                    <div class="stat-metric-label">Lịch sử giao dịch</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p style="font-size:0.8rem; color:#7D7D7D; margin-bottom:1rem; line-height:1.4;">
+                            Quản lý các gói tập đã mua, xem lại hóa đơn điện tử và kiểm tra thời hạn vé của bạn bất cứ lúc nào.
+                        </p>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 mt-auto">
+                        <a id="btn-view-transactions-profile" asp-controller="Member" asp-action="TransactionHistory" class="btn-ink-solid">
+                            <i class="bi bi-clock-history me-1"></i> Xem lịch sử giao dịch & Hóa đơn
+                        </a>
+                        <a id="btn-search-gyms-profile" asp-controller="Gym" asp-action="Search" class="btn-ink-outline">
+                            <i class="bi bi-search me-1"></i> Khám phá phòng Gym mới
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ═══════════════════════════════════════════════════════
+             HÀNG 2: TRẢI NGHIỆM KINH DOANH (MỞ PHÒNG + QUẢN LÝ)
+             ═══════════════════════════════════════════════════════ -->
+        <div class="experience-header">
+            <span class="experience-tag">Trải nghiệm Kinh doanh</span>
+            <div class="experience-line"></div>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+            <!-- Cột 1: Cơ hội đối tác / Quản lý kinh doanh -->
+            <div class="col-12 col-md-6 d-flex">
+                <div class="ink-card w-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ink-card-header">
+                            <h2 class="ink-card-title"><i class="bi bi-briefcase me-2"></i>Đối tác GymPro</h2>
+                            <span class="ink-card-sub">Hợp tác & Vận hành</span>
+                        </div>
+
+                        @if (!isOwner && !hasPendingGym)
+                        {
+                            <div class="business-promo">
+                                <div class="business-promo-title"><i class="bi bi-award me-1"></i> Trở thành đối tác GymPro</div>
+                                <p class="business-promo-desc">
+                                    Đăng ký mở phòng Gym của bạn trên nền tảng để tiếp cận hàng nghìn hội viên tiềm năng và tối ưu doanh thu.
+                                </p>
+                                <a id="btn-register-gym-profile" asp-controller="Member" asp-action="RegisterGym" class="btn-promo-cta">
+                                    <i class="bi bi-plus-circle me-1"></i> Đăng ký mở phòng Gym
+                                </a>
                             </div>
                         }
+                        else if (hasPendingGym)
+                        {
+                            <div style="border:1px solid #252525; padding:1.4rem; background:#fff;">
+                                <p style="font-family:'Montserrat',sans-serif; font-size:0.75rem; font-weight:800; color:#252525; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">
+                                    <i class="bi bi-hourglass-split me-1"></i> Đang chờ ban quản trị phê duyệt
+                                </p>
+                                <p style="font-size:0.82rem; color:#7D7D7D; margin:0; line-height:1.5;">
+                                    Hồ sơ đăng ký phòng Gym của bạn đang được duyệt. Sau khi được duyệt, quyền <strong>Owner</strong> sẽ tự động được kích hoạt trên tài khoản của bạn.
+                                </p>
+                            </div>
+                        }
+                        else if (isOwner)
+                        {
+                            <div style="border:1px solid #252525; padding:1.4rem; background:#fff;">
+                                <p style="font-family:'Montserrat',sans-serif; font-size:0.75rem; font-weight:800; color:#252525; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Quyền Chủ phòng Gym (Owner)
+                                </p>
+                                <p style="font-size:0.82rem; color:#7D7D7D; margin-bottom:1rem; line-height:1.5;">
+                                    Bạn có toàn quyền thêm cơ sở phòng tập, cấu hình thiết bị và thiết lập các gói tập cho khách hàng.
+                                </p>
+                            </div>
+                        }
+                    </div>
+
+                    @if (isOwner)
+                    {
+                        <div class="mt-4 pt-2">
+                            <a id="btn-owner-dashboard-profile" asp-controller="OwnerGym" asp-action="Index" class="btn-ink-solid">
+                                <i class="bi bi-speedometer2 me-1"></i> Vào bảng điều khiển quản lý Gym
+                            </a>
+                        </div>
+                    }
+                    else if (!isOwner && !hasPendingGym)
+                    {
+                        <div class="mt-3">
+                            <span style="font-size:0.72rem; color:#7D7D7D;">
+                                <i class="bi bi-shield-check me-1"></i> Hỗ trợ nhanh chóng & duyệt hồ sơ trong 24h.
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Cột 2: Phòng Gym của tôi -->
+            <div class="col-12 col-md-6 d-flex">
+                <div class="ink-card w-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ink-card-header">
+                            <h2 class="ink-card-title"><i class="bi bi-building me-2"></i>Phòng Gym của tôi</h2>
+                            <span class="ink-card-sub">(@gyms.Count cơ sở)</span>
+                        </div>
+
+                        @if (!gyms.Any())
+                        {
+                            <div class="empty-box">
+                                <i class="bi bi-building"></i>
+                                <p class="mb-0" style="font-size:0.85rem;">Bạn chưa sở hữu phòng Gym nào trên hệ thống.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="gym-mini-list">
+                                @foreach (var gym in gyms)
+                                {
+                                    <div class="gym-mini-item">
+                                        <img src="@(string.IsNullOrEmpty(gym.ImageUrl) ? "https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_120,h_120,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg" : gym.ImageUrl)"
+                                             class="gym-mini-img"
+                                             alt="@gym.Name" />
+                                        <div class="flex-grow-1">
+                                            <p class="gym-mini-name">@gym.Name</p>
+                                            <p class="gym-mini-addr"><i class="bi bi-geo-alt me-1"></i>@gym.Address</p>
+                                        </div>
+                                        @{
+                                            string statusClass = gym.Status switch {
+                                                "Approved" => "status-approved",
+                                                "Rejected" => "status-rejected",
+                                                _ => "status-pending"
+                                            };
+                                            string statusText = gym.Status switch {
+                                                "Approved" => "Đã duyệt",
+                                                "Rejected" => "Từ chối",
+                                                "Pending" => "Chờ duyệt",
+                                                _ => gym.Status
+                                            };
+                                        }
+                                        <span class="status-badge-ink @statusClass">@statusText</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (isOwner)
+                    {
+                        <div class="mt-4 pt-2">
+                            <a id="btn-create-new-gym-profile" asp-controller="OwnerGym" asp-action="Create" class="btn-ink-outline">
+                                <i class="bi bi-plus-lg me-1"></i> Thêm phòng Gym mới
+                            </a>
+                        </div>
                     }
                 </div>
             </div>
         </div>
+
     </div>
 </div>

@@ -1,0 +1,186 @@
+<!-- Đường dẫn file: Views/Purchase/Checkout.cshtml -->
+@model GymManagement.ViewModels.PurchaseCheckoutViewModel
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Xác nhận thanh toán";
+}
+
+<style>
+    .checkout-hero { background: #252525; padding: 2.5rem 0 2rem; }
+    .checkout-hero-label {
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(255,255,255,0.5); margin-bottom: 0.4rem;
+    }
+    .checkout-hero h1 {
+        font-family: 'Montserrat', sans-serif; font-weight: 900;
+        font-size: clamp(1.4rem,3vw,2rem); color: #fff; margin: 0;
+    }
+
+    .checkout-body { padding: 3rem 0 5rem; }
+    .section-label {
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+        color: #7D7D7D; margin-bottom: 1.2rem;
+        padding-bottom: 0.6rem; border-bottom: 1px solid #CFCFCF;
+    }
+
+    .order-summary-table { width: 100%; }
+    .order-summary-table td {
+        padding: 0.65rem 0.5rem;
+        border-bottom: 1px solid #CFCFCF;
+        font-size: 0.88rem;
+        vertical-align: top;
+    }
+    .order-summary-table td:first-child { color: #7D7D7D; width: 40%; }
+    .order-summary-table td:last-child {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600; color: #252525;
+    }
+    .order-total td {
+        border-bottom: none; border-top: 2px solid #252525;
+        padding-top: 0.9rem;
+    }
+    .order-total td:last-child {
+        font-size: 1.3rem; font-weight: 900; letter-spacing: -0.5px;
+    }
+
+    .payment-method {
+        border: 1px solid #252525; padding: 1rem 1.2rem;
+        display: flex; align-items: center; gap: 0.8rem;
+        margin-bottom: 1.2rem;
+    }
+    .payment-method .pm-icon { font-size: 1.4rem; color: #252525; }
+    .payment-method .pm-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem; font-weight: 700;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: #252525;
+    }
+    .payment-method .pm-desc { font-size: 0.75rem; color: #7D7D7D; margin: 0; }
+
+    .btn-pay {
+        display: block; width: 100%;
+        background: #252525; color: #fff;
+        border: none; border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 0.72rem;
+        letter-spacing: 2px; text-transform: uppercase;
+        padding: 1rem; cursor: pointer;
+        transition: background 0.2s; margin-top: 0.5rem;
+    }
+    .btn-pay:hover { background: #545454; }
+
+    .legal-note {
+        font-size: 0.72rem; color: #7D7D7D;
+        text-align: center; margin-top: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .btn-back {
+        display: inline-block; margin-top: 1rem;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 1.5px; text-transform: uppercase;
+        color: #7D7D7D; text-decoration: none;
+    }
+    .btn-back:hover { color: #252525; }
+</style>
+
+<div class="checkout-hero">
+    <div class="container">
+        <p class="checkout-hero-label">Bước cuối</p>
+        <h1>Xác nhận đơn hàng</h1>
+    </div>
+</div>
+
+<div class="container checkout-body">
+    <div class="row g-5">
+
+        <!-- Chi tiết đơn -->
+        <div class="col-12 col-lg-7">
+            <p class="section-label">Chi tiết đơn hàng</p>
+            <table class="order-summary-table">
+                <tr>
+                    <td>Phòng Gym</td>
+                    <td>@Model.GymName</td>
+                </tr>
+                <tr>
+                    <td>Địa chỉ</td>
+                    <td style="color:#7D7D7D; font-family:inherit; font-weight:400;">@Model.GymAddress</td>
+                </tr>
+                <tr>
+                    <td>Gói dịch vụ</td>
+                    <td>@Model.PackageName</td>
+                </tr>
+                <tr>
+                    <td>Loại</td>
+                    <td>@Model.TypeLabel</td>
+                </tr>
+                <tr>
+                    <td>Ngày bắt đầu</td>
+                    <td>@Model.StartDate.ToString("dd/MM/yyyy")</td>
+                </tr>
+                @if (Model.PackageType == "Monthly")
+                {
+                    <tr>
+                        <td>Ngày kết thúc</td>
+                        <td>@(DateTime.Today.AddMonths(Model.DurationInMonths ?? 0).ToString("dd/MM/yyyy"))</td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>Hiệu lực đến</td>
+                        <td>@Model.StartDate.ToString("dd/MM/yyyy") lúc 23:59</td>
+                    </tr>
+                }
+                <tr class="order-total">
+                    <td>Tổng thanh toán</td>
+                    <td>@Model.Price.ToString("N0") đ</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Thanh toán -->
+        <div class="col-12 col-lg-5">
+            <p class="section-label">Phương thức thanh toán</p>
+
+            <div class="payment-method">
+                <i class="bi bi-credit-card-2-front pm-icon"></i>
+                <div>
+                    <p class="pm-label">VNPay</p>
+                    <p class="pm-desc">Ví điện tử / ATM / QR Code</p>
+                </div>
+            </div>
+
+            <form asp-controller="Purchase" asp-action="Checkout" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="GymId"           value="@Model.GymId" />
+                <input type="hidden" name="GymName"         value="@Model.GymName" />
+                <input type="hidden" name="GymAddress"      value="@Model.GymAddress" />
+                <input type="hidden" name="GymImage"        value="@Model.GymImage" />
+                <input type="hidden" name="PackageId"       value="@Model.PackageId" />
+                <input type="hidden" name="PackageName"     value="@Model.PackageName" />
+                <input type="hidden" name="PackageType"     value="@Model.PackageType" />
+                <input type="hidden" name="DurationInMonths" value="@Model.DurationInMonths" />
+                <input type="hidden" name="Price"           value="@Model.Price" />
+
+                <button id="btn-confirm-checkout" type="submit" class="btn-pay">
+                    <i class="bi bi-lock me-2"></i>Xác nhận & Thanh toán — @Model.Price.ToString("N0") đ
+                </button>
+            </form>
+
+            <p class="legal-note">
+                Bằng cách bấm "Xác nhận", bạn đồng ý với <a href="#" style="color:#7D7D7D;">Điều khoản dịch vụ</a> của GymPro.
+                Giao dịch được mã hoá và bảo mật.
+            </p>
+
+            <a class="btn-back d-block" asp-controller="Gym" asp-action="Details" asp-route-id="@Model.GymId">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại chi tiết gym
+            </a>
+        </div>
+
+    </div>
+</div>

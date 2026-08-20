@@ -45,13 +45,13 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| MEM-06 | Mua vé ngày | `Purchase/DailyPass/{gymId}` | Xác nhận gym, giá, bấm thanh toán | ⏳ Chưa làm |
-| MEM-07 | Chọn gói tháng | `Purchase/Package/{gymId}` | Danh sách package của gym kèm giá | ⏳ Chưa làm |
-| MEM-08 | Xác nhận đơn hàng | `Purchase/Checkout` | Tóm tắt đơn hàng trước thanh toán | ⏳ Chưa làm |
-| MEM-09 | Thanh toán qua VNPay | Redirect `VNPay Sandbox` | Chuyển hướng thanh toán | ⏳ Chưa làm |
-| MEM-10 | Kết quả thanh toán | `Purchase/Result` | Hiện thành công/thất bại sau callback | ⏳ Chưa làm |
-| MEM-11 | Lịch sử giao dịch | `Member/TransactionHistory` | Danh sách các lần mua, trạng thái, số tiền | ⏳ Chưa làm |
-| MEM-12 | Xem & tải hóa đơn | `Member/InvoiceDetails/{id}` | Chi tiết hóa đơn, tải PDF / gửi email | ⏳ Chưa làm |
+| MEM-06 | Mua vé ngày | `Purchase/DailyPass/{gymId}` | Xác nhận gym, giá, bấm thanh toán | ✅ Đã làm |
+| MEM-07 | Chọn gói tháng | `Purchase/Package/{gymId}` | Danh sách package của gym kèm giá | ✅ Đã làm |
+| MEM-08 | Xác nhận đơn hàng | `Purchase/Checkout` | Tóm tắt đơn hàng trước thanh toán | ✅ Đã làm |
+| MEM-09 | Thanh toán qua VNPay | Redirect `VNPay Sandbox` | Chuyển hướng thanh toán | ✅ Đã làm (Mock) |
+| MEM-10 | Kết quả thanh toán | `Purchase/Result` | Hiện thành công/thất bại sau callback | ✅ Đã làm |
+| MEM-11 | Lịch sử giao dịch | `Member/TransactionHistory` | Danh sách các lần mua, trạng thái, số tiền | ✅ Đã làm |
+| MEM-12 | Xem & tải hóa đơn | `Member/InvoiceDetails/{id}` | Chi tiết hóa đơn, in qua browser | ✅ Đã làm |
 
 ### Nhóm 4: Theo dõi vé / hội viên
 
@@ -158,9 +158,9 @@
 | Role | Tổng số Function | Đã hoàn thành | Chưa thực hiện | Tỷ lệ hoàn thành |
 |---|---|---|---|---|
 | **Guest** | 9 | 9 | 0 | **100.0%** |
-| **Member** | 16 | 4 | 12 | **25.0%** |
+| **Member** | 16 | 11 | 5 | **68.8%** |
 | **Owner** | 20 | 10 | 10 | **50.0%** |
 | **Admin** | 16 | 3 | 13 | **18.8%** |
-| **TỔNG CỘNG** | **61** | **26** | **35** | **42.6%** |
+| **TỔNG CỘNG** | **61** | **33** | **28** | **54.1%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.

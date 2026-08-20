@@ -1,0 +1,150 @@
+<!-- Đường dẫn file: Views/Purchase/Package.cshtml -->
+@model IEnumerable<GymManagement.ViewModels.PackageDisplayViewModel>
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Chọn gói tháng — " + ViewBag.GymName;
+    int gymId      = (int)ViewBag.GymId;
+    string gymName = (string)ViewBag.GymName;
+    string gymAddr = (string)ViewBag.GymAddress;
+    string gymImg  = (string)ViewBag.GymImage;
+}
+
+<style>
+    .purchase-hero {
+        background: #252525;
+        padding: 2.5rem 0 2rem;
+    }
+    .purchase-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(255,255,255,0.5); margin-bottom: 0.4rem;
+    }
+    .purchase-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        color: #fff; margin: 0;
+    }
+    .purchase-breadcrumb {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem; font-weight: 600;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: rgba(255,255,255,0.45); margin-top: 0.75rem;
+    }
+    .purchase-breadcrumb a { color: rgba(255,255,255,0.45); text-decoration: none; }
+    .purchase-breadcrumb a:hover { color: #fff; }
+
+    .purchase-body { padding: 3rem 0 5rem; }
+    .section-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: #7D7D7D; margin-bottom: 1.2rem;
+        padding-bottom: 0.6rem; border-bottom: 1px solid #CFCFCF;
+    }
+
+    .pkg-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .pkg-card {
+        border: 1px solid #CFCFCF;
+        padding: 1.5rem 1.4rem 1.2rem;
+        cursor: pointer;
+        transition: border-color 0.2s, transform 0.15s;
+        position: relative;
+        background: #fff;
+    }
+    .pkg-card:hover { border-color: #252525; transform: translateY(-2px); }
+    .pkg-card.selected { border-color: #252525; border-width: 2px; }
+
+    .pkg-badge {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.58rem; font-weight: 700;
+        letter-spacing: 1.5px; text-transform: uppercase;
+        border: 1px solid #CFCFCF; color: #7D7D7D;
+        padding: 2px 8px; display: inline-block;
+        margin-bottom: 0.8rem;
+    }
+    .pkg-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800; font-size: 0.95rem;
+        color: #252525; margin-bottom: 0.5rem;
+    }
+    .pkg-price {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900; font-size: 1.5rem;
+        color: #252525; letter-spacing: -0.5px;
+    }
+    .pkg-price span {
+        font-size: 0.78rem; font-weight: 400;
+        color: #7D7D7D; letter-spacing: 0;
+    }
+    .pkg-select-btn {
+        display: block; width: 100%;
+        background: #252525; color: #fff;
+        border: none; border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 0.65rem;
+        letter-spacing: 1.5px; text-transform: uppercase;
+        padding: 0.6rem; margin-top: 1rem;
+        cursor: pointer; transition: background 0.2s;
+    }
+    .pkg-select-btn:hover { background: #545454; }
+
+    .btn-back {
+        display: inline-block; margin-top: 1.5rem;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 1.5px; text-transform: uppercase;
+        color: #7D7D7D; text-decoration: none;
+    }
+    .btn-back:hover { color: #252525; }
+</style>
+
+<!-- Hero -->
+<div class="purchase-hero">
+    <div class="container">
+        <p class="purchase-hero-label">Đăng ký gói tháng</p>
+        <h1>@gymName</h1>
+        <nav class="purchase-breadcrumb" aria-label="breadcrumb">
+            <a asp-controller="Home" asp-action="Index">Trang Chủ</a> /
+            <a asp-controller="Gym" asp-action="Search">Tìm Gym</a> /
+            <a asp-controller="Gym" asp-action="Details" asp-route-id="@gymId">@gymName</a> /
+            <span style="color:rgba(255,255,255,0.75);">Chọn gói tháng</span>
+        </nav>
+    </div>
+</div>
+
+<div class="container purchase-body">
+    <p class="section-label">Chọn gói phù hợp với bạn</p>
+
+    <div class="pkg-grid">
+        @foreach (var pkg in Model)
+        {
+            <form asp-controller="Purchase" asp-action="Package" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="gymId"    value="@gymId" />
+                <input type="hidden" name="packageId" value="@pkg.Id" />
+                <div class="pkg-card" id="pkg-select-@pkg.Id">
+                    <span class="pkg-badge">@pkg.TypeLabel</span>
+                    <p class="pkg-name">@pkg.Name</p>
+                    <p class="pkg-price">
+                        @pkg.Price.ToString("N0") đ
+                        <span>&nbsp;/ @pkg.DurationInMonths tháng</span>
+                    </p>
+                    <button type="submit" class="pkg-select-btn">
+                        Chọn gói này <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        }
+    </div>
+
+    <a class="btn-back" asp-controller="Gym" asp-action="Details" asp-route-id="@gymId">
+        <i class="bi bi-arrow-left me-1"></i>Quay lại chi tiết gym
+    </a>
+</div>

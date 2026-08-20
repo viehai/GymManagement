@@ -1,0 +1,222 @@
+<!-- Đường dẫn file: Views/Member/InvoiceDetails.cshtml -->
+@model GymManagement.ViewModels.InvoiceDetailsViewModel
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Hóa đơn " + Model.InvoiceCode;
+}
+
+<style>
+    .invoice-hero { background: #252525; padding: 2rem 0 1.5rem; }
+    .invoice-hero-label {
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(255,255,255,0.5); margin-bottom: 0.4rem;
+    }
+    .invoice-hero h1 {
+        font-family: 'Montserrat', sans-serif; font-weight: 900;
+        font-size: clamp(1.2rem,2.5vw,1.7rem); color: #fff; margin: 0;
+        letter-spacing: 1px;
+    }
+
+    .invoice-body { padding: 3rem 0 5rem; }
+
+    /* Printable invoice document */
+    .invoice-doc {
+        max-width: 680px;
+        margin: 0 auto;
+        border: 1px solid #CFCFCF;
+    }
+    .invoice-doc-header {
+        background: #252525;
+        color: #fff;
+        padding: 2rem 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .invoice-brand {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900; font-size: 1.5rem;
+        letter-spacing: 4px; color: #fff;
+    }
+    .invoice-code-block { text-align: right; }
+    .invoice-code {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 1rem;
+        letter-spacing: 1.5px; color: #fff;
+    }
+    .invoice-date { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem; }
+
+    .invoice-doc-body { padding: 2rem 2.5rem; }
+
+    .invoice-section-title {
+        font-family: 'Montserrat', sans-serif; font-size: 0.62rem;
+        font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+        color: #7D7D7D; margin-bottom: 0.8rem;
+        padding-bottom: 0.4rem; border-bottom: 1px solid #CFCFCF;
+    }
+    .invoice-info-table { width: 100%; margin-bottom: 1.5rem; }
+    .invoice-info-table td {
+        padding: 0.45rem 0; font-size: 0.88rem; vertical-align: top;
+    }
+    .invoice-info-table td:first-child { color: #7D7D7D; width: 40%; }
+    .invoice-info-table td:last-child {
+        font-family: 'Montserrat', sans-serif; font-weight: 600; color: #252525;
+    }
+
+    .invoice-divider { border: none; border-top: 1px solid #CFCFCF; margin: 1.5rem 0; }
+
+    .invoice-total-row {
+        display: flex; justify-content: space-between;
+        align-items: center;
+        background: #252525; color: #fff;
+        padding: 1rem 2.5rem;
+    }
+    .invoice-total-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem; font-weight: 600;
+        letter-spacing: 2px; text-transform: uppercase;
+    }
+    .invoice-total-amount {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900; font-size: 1.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .invoice-footer-note {
+        padding: 1rem 2.5rem;
+        font-size: 0.72rem; color: #7D7D7D;
+        border-top: 1px solid #CFCFCF;
+    }
+
+    /* Action buttons */
+    .invoice-actions {
+        max-width: 680px; margin: 1.2rem auto 0;
+        display: flex; gap: 0.75rem; flex-wrap: wrap;
+    }
+    .btn-invoice-print {
+        background: #252525; color: #fff; border: none; border-radius: 0;
+        font-family: 'Montserrat', sans-serif; font-weight: 700;
+        font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase;
+        padding: 0.7rem 1.4rem; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-invoice-print:hover { background: #545454; }
+    .btn-invoice-back {
+        background: transparent; color: #252525;
+        border: 1px solid #CFCFCF; border-radius: 0;
+        font-family: 'Montserrat', sans-serif; font-weight: 600;
+        font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase;
+        padding: 0.7rem 1.4rem; text-decoration: none;
+        transition: border-color 0.2s;
+    }
+    .btn-invoice-back:hover { border-color: #252525; color: #252525; text-decoration: none; }
+
+    /* Print styles */
+    @@media print {
+        .invoice-hero, .invoice-actions, header, footer { display: none !important; }
+        .invoice-body { padding: 0; }
+        .invoice-doc { border: none; max-width: 100%; }
+    }
+</style>
+
+<div class="invoice-hero">
+    <div class="container">
+        <p class="invoice-hero-label">Hóa đơn điện tử</p>
+        <h1>@Model.InvoiceCode</h1>
+    </div>
+</div>
+
+<div class="container invoice-body">
+
+    <!-- Invoice document -->
+    <div class="invoice-doc" id="invoice-document">
+
+        <!-- Header -->
+        <div class="invoice-doc-header">
+            <div>
+                <p class="invoice-brand">GYMPRO</p>
+                <p style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin:0.3rem 0 0;">
+                    Hệ thống quản lý phòng Gym chuyên nghiệp
+                </p>
+            </div>
+            <div class="invoice-code-block">
+                <p class="invoice-code">@Model.InvoiceCode</p>
+                <p class="invoice-date">Ngày xuất: @Model.IssuedDate.ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="invoice-doc-body">
+
+            <!-- Khách hàng -->
+            <p class="invoice-section-title">Thông tin khách hàng</p>
+            <table class="invoice-info-table">
+                <tr>
+                    <td>Họ và tên</td>
+                    <td>@Model.MemberName</td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>@Model.MemberEmail</td>
+                </tr>
+            </table>
+
+            <hr class="invoice-divider" />
+
+            <!-- Dịch vụ -->
+            <p class="invoice-section-title">Chi tiết dịch vụ</p>
+            <table class="invoice-info-table">
+                <tr>
+                    <td>Phòng Gym</td>
+                    <td>@Model.GymName</td>
+                </tr>
+                <tr>
+                    <td>Địa chỉ</td>
+                    <td style="font-weight:400;color:#545454;font-family:inherit;">@Model.GymAddress</td>
+                </tr>
+                <tr>
+                    <td>Gói dịch vụ</td>
+                    <td>@Model.PackageName</td>
+                </tr>
+                <tr>
+                    <td>Loại</td>
+                    <td>@Model.TypeLabel</td>
+                </tr>
+                <tr>
+                    <td>Ngày bắt đầu</td>
+                    <td>@Model.StartDate.ToString("dd/MM/yyyy")</td>
+                </tr>
+                <tr>
+                    <td>Ngày hết hạn</td>
+                    <td>@Model.EndDate.ToString("dd/MM/yyyy")</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Total bar -->
+        <div class="invoice-total-row">
+            <span class="invoice-total-label">Tổng thanh toán</span>
+            <span class="invoice-total-amount">@Model.Amount.ToString("N0") đ</span>
+        </div>
+
+        <!-- Footer note -->
+        <div class="invoice-footer-note">
+            <i class="bi bi-shield-check me-1"></i>
+            Đây là hóa đơn điện tử hợp lệ được xuất bởi GymPro. Giao dịch đã được xác nhận thành công.
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="invoice-actions">
+        <button id="btn-print-invoice" class="btn-invoice-print" onclick="window.print()">
+            <i class="bi bi-printer me-2"></i>In hóa đơn
+        </button>
+        <a id="btn-back-history"
+           asp-controller="Member" asp-action="TransactionHistory"
+           class="btn-invoice-back">
+            <i class="bi bi-arrow-left me-2"></i>Lịch sử giao dịch
+        </a>
+    </div>
+
+</div>

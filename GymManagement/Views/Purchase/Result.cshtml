@@ -1,0 +1,160 @@
+<!-- Đường dẫn file: Views/Purchase/Result.cshtml -->
+@model GymManagement.Models.Transaction
+
+@{
+    Layout = "_MemberLayout";
+    bool isSuccess = Model.Status == "Success";
+    ViewData["Title"] = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
+}
+
+<style>
+    .result-hero {
+        background: @(isSuccess ? "#252525" : "#7D7D7D");
+        padding: 2.5rem 0 2rem;
+    }
+    .result-hero h1 {
+        font-family: 'Montserrat', sans-serif; font-weight: 900;
+        font-size: clamp(1.4rem,3vw,2rem); color: #fff; margin: 0;
+    }
+    .result-hero p {
+        color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 0.4rem;
+    }
+
+    .result-body { padding: 3.5rem 0 5rem; }
+
+    .result-status-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    .result-status-icon.success { color: #252525; }
+    .result-status-icon.failed  { color: #CFCFCF; }
+
+    .result-card {
+        border: 1px solid #CFCFCF;
+        padding: 2rem;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+    .result-card-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800; font-size: 1.1rem;
+        color: #252525; margin-bottom: 0.3rem;
+    }
+    .result-card-sub { font-size: 0.85rem; color: #7D7D7D; margin-bottom: 1.5rem; }
+
+    .result-info-row {
+        display: flex; justify-content: space-between;
+        padding: 0.55rem 0; border-bottom: 1px solid #CFCFCF;
+        font-size: 0.85rem;
+    }
+    .result-info-row:last-of-type { border-bottom: none; }
+    .result-info-row .ri-label { color: #7D7D7D; }
+    .result-info-row .ri-value {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600; color: #252525;
+    }
+
+    .result-actions { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .btn-result-primary {
+        display: block; text-align: center;
+        background: #252525; color: #fff;
+        border: none; border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 0.7rem;
+        letter-spacing: 2px; text-transform: uppercase;
+        padding: 0.85rem; text-decoration: none;
+        transition: background 0.2s;
+    }
+    .btn-result-primary:hover { background: #545454; color: #fff; text-decoration: none; }
+    .btn-result-outline {
+        display: block; text-align: center;
+        background: transparent; color: #252525;
+        border: 1px solid #CFCFCF; border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600; font-size: 0.7rem;
+        letter-spacing: 2px; text-transform: uppercase;
+        padding: 0.85rem; text-decoration: none;
+        transition: border-color 0.2s;
+    }
+    .btn-result-outline:hover { border-color: #252525; color: #252525; text-decoration: none; }
+</style>
+
+<div class="result-hero">
+    <div class="container">
+        <h1>@(isSuccess ? "Thanh toán thành công!" : "Thanh toán thất bại")</h1>
+        <p>@(isSuccess ? "Vé của bạn đã được kích hoạt. Chúc bạn tập luyện hiệu quả!" : "Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.")</p>
+    </div>
+</div>
+
+<div class="container result-body">
+    <div class="text-center mb-3">
+        @if (isSuccess)
+        {
+            <i class="bi bi-patch-check-fill result-status-icon success"></i>
+        }
+        else
+        {
+            <i class="bi bi-x-circle result-status-icon failed"></i>
+        }
+    </div>
+
+    <div class="result-card">
+        @if (isSuccess && Model.Membership != null)
+        {
+            <p class="result-card-title">Chi tiết giao dịch</p>
+            <p class="result-card-sub">Mã tham chiếu: @Model.VnpTxnRef</p>
+
+            <div class="result-info-row">
+                <span class="ri-label">Phòng Gym</span>
+                <span class="ri-value">@(Model.Membership.Gym?.Name ?? "—")</span>
+            </div>
+            <div class="result-info-row">
+                <span class="ri-label">Gói dịch vụ</span>
+                <span class="ri-value">@(Model.Membership.Package?.Name ?? "—")</span>
+            </div>
+            <div class="result-info-row">
+                <span class="ri-label">Hiệu lực từ</span>
+                <span class="ri-value">@Model.Membership.StartDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="result-info-row">
+                <span class="ri-label">Hiệu lực đến</span>
+                <span class="ri-value">@Model.Membership.EndDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="result-info-row">
+                <span class="ri-label">Số tiền</span>
+                <span class="ri-value" style="font-size:1.1rem; font-weight:900;">@Model.Amount.ToString("N0") đ</span>
+            </div>
+            <div class="result-info-row">
+                <span class="ri-label">Thời gian</span>
+                <span class="ri-value">@Model.CreatedAt.ToString("HH:mm — dd/MM/yyyy")</span>
+            </div>
+        }
+        else
+        {
+            <p class="result-card-title">Giao dịch thất bại</p>
+            <p class="result-card-sub">Không thể hoàn tất thanh toán. Kiểm tra lại thông tin và thử lại.</p>
+        }
+
+        <div class="result-actions">
+            @if (isSuccess && Model.Invoice != null)
+            {
+                <a id="btn-view-invoice-@Model.Invoice.Id"
+                   asp-controller="Member" asp-action="InvoiceDetails" asp-route-id="@Model.Invoice.Id"
+                   class="btn-result-primary">
+                    <i class="bi bi-receipt me-2"></i>Xem hóa đơn
+                </a>
+            }
+            <a id="btn-view-history"
+               asp-controller="Member" asp-action="TransactionHistory"
+               class="btn-result-outline">
+                <i class="bi bi-clock-history me-2"></i>Lịch sử giao dịch
+            </a>
+            <a id="btn-back-search"
+               asp-controller="Gym" asp-action="Search"
+               class="btn-result-outline">
+                <i class="bi bi-search me-2"></i>Tìm phòng Gym khác
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GymManagement.Models
@@ -17,7 +17,7 @@ namespace GymManagement.Models
         public DateTime IssuedDate { get; set; } = DateTime.Now;
 
         [StringLength(500)]
-        public string PdfUrl { get; set; }
+        public string PdfUrl { get; set; } = string.Empty;
 
         // Navigation property
         [ForeignKey("TransactionId")]
