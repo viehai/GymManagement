@@ -11,15 +11,18 @@ namespace GymManagement.Controllers
     public class MemberController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly GymDbContext _context;
         private readonly IWebHostEnvironment _env;
 
         public MemberController(
             UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
             GymDbContext context,
             IWebHostEnvironment env)
         {
             _userManager = userManager;
+            _signInManager = signInManager;
             _context = context;
             _env = env;
         }
@@ -47,6 +50,46 @@ namespace GymManagement.Controllers
             ViewBag.ActiveMembershipsCount = activeMembershipsCount;
             ViewBag.TransactionCount = transactionCount;
             return View(user);
+        }
+
+        // ==================== MEM-02 / OWN-20: ĐỔI MẬT KHẨU ====================
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (result.Succeeded)
+            {
+                await _signInManager.RefreshSignInAsync(user);
+                TempData["Success"] = "Đổi mật khẩu thành công!";
+                return RedirectToAction("Profile");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                // Dịch thông báo lỗi phổ biến của Identity
+                string desc = error.Code switch
+                {
+                    "PasswordMismatch" => "Mật khẩu hiện tại không chính xác.",
+                    "PasswordTooShort" => "Mật khẩu mới quá ngắn.",
+                    _ => error.Description
+                };
+                ModelState.AddModelError(string.Empty, desc);
+            }
+
+            return View(model);
         }
 
         // ==================== ĐĂNG KÝ MỞ PHÒNG GYM ====================

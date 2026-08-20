@@ -31,7 +31,7 @@
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
 | MEM-01 | Xem/sửa hồ sơ cá nhân | `Member/Profile` | Trang cá nhân, nút Đăng ký mở phòng Gym | ✅ Đã làm |
-| MEM-02 | Đổi mật khẩu | `Member/ChangePassword` | Nhập password cũ + mới (khi đã đăng nhập) | ⏳ Chưa làm |
+| MEM-02 | Đổi mật khẩu | `Member/ChangePassword` | Nhập password cũ + mới (khi đã đăng nhập) | ✅ Đã làm |
 | MEM-03 | Đăng xuất | — (action) | Xóa cookie session | ✅ Đã làm |
 
 ### Nhóm 2: Tìm & xem gym
@@ -109,7 +109,7 @@
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
 | OWN-19 | Xem/sửa hồ sơ | `Member/Profile` | Dùng chung với Member | ✅ Đã làm |
-| OWN-20 | Đổi mật khẩu | `Member/ChangePassword` | Dùng chung với Member | ⏳ Chưa làm |
+| OWN-20 | Đổi mật khẩu | `Member/ChangePassword` | Dùng chung với Member | ✅ Đã làm |
 
 ---
 
@@ -158,9 +158,9 @@
 | Role | Tổng số Function | Đã hoàn thành | Chưa thực hiện | Tỷ lệ hoàn thành |
 |---|---|---|---|---|
 | **Guest** | 9 | 9 | 0 | **100.0%** |
-| **Member** | 16 | 15 | 1 | **93.8%** |
-| **Owner** | 20 | 14 | 6 | **70.0%** |
+| **Member** | 16 | 16 | 0 | **100.0%** 🚀 |
+| **Owner** | 20 | 15 | 5 | **75.0%** |
 | **Admin** | 16 | 3 | 13 | **18.8%** |
-| **TỔNG CỘNG** | **61** | **41** | **20** | **67.2%** |
+| **TỔNG CỘNG** | **61** | **43** | **18** | **70.5%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.
