@@ -1,0 +1,221 @@
+<!-- Đường dẫn file: Views/OwnerDashboard/Revenue.cshtml -->
+@model GymManagement.ViewModels.OwnerRevenueDashboardViewModel
+
+@{
+    ViewData["Title"] = "Báo cáo doanh thu";
+    Layout = "_OwnerAdminLayout";
+    decimal maxChartRevenue = Model.MonthlyRevenueChart.Any() ? Model.MonthlyRevenueChart.Max(m => m.Revenue) : 0;
+    if (maxChartRevenue == 0) maxChartRevenue = 1; // tránh chia cho 0
+}
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h2 style="font-family:'Montserrat',sans-serif; font-size:1.25rem; font-weight:800; color:#111; margin:0 0 4px;">
+            Báo cáo doanh thu & Tăng trưởng
+        </h2>
+        <p style="margin:0; font-size:0.85rem; color:#888;">
+            Phân tích số liệu kinh doanh, doanh thu định kỳ và gói dịch vụ bán chạy nhất.
+        </p>
+    </div>
+
+    <!-- Dropdown lọc theo phòng Gym -->
+    @if (Model.MyGyms.Any())
+    {
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label style="font-size:0.8rem; font-weight:600; color:#555; white-space:nowrap;">Cơ sở Gym:</label>
+            <select name="gymId" class="form-select form-select-sm" style="border-radius:6px; min-width:200px;" onchange="this.form.submit()">
+                <option value="">-- Tất cả cơ sở (@Model.MyGyms.Count) --</option>
+                @foreach (var g in Model.MyGyms)
+                {
+                    <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
+                }
+            </select>
+        </form>
+    }
+</div>
+
+<!-- 4 Thẻ chỉ số chính -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card h-100" style="padding:1.4rem; border-left:4px solid #10b981;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng doanh thu</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:900; color:#10b981; margin-top:4px;">
+                @Model.TotalRevenue.ToString("N0") đ
+            </div>
+            <span style="font-size:0.75rem; color:#999; margin-top:4px; display:block;">Toàn bộ các cơ sở</span>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card h-100" style="padding:1.4rem; border-left:4px solid var(--accent);">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Doanh thu tháng này</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:900; color:#111; margin-top:4px;">
+                @Model.ThisMonthRevenue.ToString("N0") đ
+            </div>
+            <span style="font-size:0.75rem; color:#999; margin-top:4px; display:block;">Tháng trước: @Model.LastMonthRevenue.ToString("N0") đ</span>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card h-100" style="padding:1.4rem; border-left:4px solid #3b82f6;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Hội viên đang tập</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:900; color:#3b82f6; margin-top:4px;">
+                @Model.TotalActiveMembers
+            </div>
+            <span style="font-size:0.75rem; color:#999; margin-top:4px; display:block;">Vé còn hạn sử dụng</span>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card h-100" style="padding:1.4rem; border-left:4px solid #8b5cf6;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Giao dịch thành công</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:900; color:#111; margin-top:4px;">
+                @Model.TotalSuccessfulTransactions
+            </div>
+            <span style="font-size:0.75rem; color:#999; margin-top:4px; display:block;">Đơn hàng đã thanh toán</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cột trái: Biểu đồ doanh thu 6 tháng gần nhất -->
+    <div class="col-12 col-lg-7">
+        <div class="content-card h-100">
+            <div class="content-card-header d-flex justify-content-between align-items-center">
+                <h5 class="content-card-title"><i class="bi bi-bar-chart-line me-2"></i>Doanh thu 6 tháng gần nhất</h5>
+                <span style="font-size:0.75rem; color:#888; font-weight:600;">(VNĐ)</span>
+            </div>
+            <div class="content-card-body" style="padding:1.8rem 1.4rem;">
+                @if (!Model.MonthlyRevenueChart.Any(m => m.Revenue > 0))
+                {
+                    <div style="padding:3rem 1rem; text-align:center; color:#999;">
+                        <i class="bi bi-graph-up" style="font-size:2.5rem; color:#d1d5db; display:block; margin-bottom:0.5rem;"></i>
+                        <p style="font-size:0.85rem; margin:0;">Chưa có dữ liệu doanh thu trong 6 tháng qua.</p>
+                    </div>
+                }
+                else
+                {
+                    <!-- Visual Chart CSS Bar -->
+                    <div style="display:flex; align-items:flex-end; justify-content:space-between; height:200px; padding-top:20px; border-bottom:2px solid #e5e7eb; gap:8px;">
+                        @foreach (var m in Model.MonthlyRevenueChart)
+                        {
+                            double pct = (double)(m.Revenue / maxChartRevenue) * 100;
+                            if (pct < 4 && m.Revenue > 0) pct = 4; // hiển thị tối thiểu nếu có doanh thu
+
+                            <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">
+                                <span style="font-size:0.68rem; font-weight:700; color:#111; margin-bottom:4px; font-family:'Montserrat',sans-serif; text-align:center;">
+                                    @(m.Revenue > 0 ? (m.Revenue >= 1000000 ? (m.Revenue / 1000000).ToString("0.#") + "tr" : (m.Revenue / 1000).ToString("0") + "k") : "0")
+                                </span>
+                                <div style="width:100%; max-width:38px; height:@(pct)%; background:var(--sidebar-bg); border-radius:3px 3px 0 0; transition:height 0.4s ease;" title="@m.MonthLabel: @m.Revenue.ToString("N0") đ (@m.TransactionCount GD)"></div>
+                                <span style="font-size:0.7rem; font-weight:600; color:#888; margin-top:8px; white-space:nowrap;">
+                                    @m.MonthLabel
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột phải: Top gói bán chạy -->
+    <div class="col-12 col-lg-5">
+        <div class="content-card h-100">
+            <div class="content-card-header">
+                <h5 class="content-card-title"><i class="bi bi-trophy me-2"></i>Gói tập bán chạy nhất</h5>
+            </div>
+            <div class="content-card-body p-0">
+                @if (!Model.TopPackages.Any())
+                {
+                    <div style="padding:3rem 1rem; text-align:center; color:#999;">
+                        <p style="font-size:0.85rem; margin:0;">Chưa có dữ liệu bán gói.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <tbody>
+                                @foreach (var (pkg, idx) in Model.TopPackages.Select((p, i) => (p, i + 1)))
+                                {
+                                    <tr>
+                                        <td style="width:30px; text-align:center;">
+                                            <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.85rem; color:#888;">
+                                                #@idx
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight:700; color:#111; font-size:0.88rem;">@pkg.PackageName</div>
+                                            <div style="font-size:0.75rem; color:#888;">@pkg.GymName &bull; @pkg.PackageTypeLabel</div>
+                                        </td>
+                                        <td class="text-end">
+                                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#10b981; font-size:0.9rem;">
+                                                @pkg.TotalRevenue.ToString("N0") đ
+                                            </div>
+                                            <div style="font-size:0.72rem; color:#888;">@pkg.TotalSold lượt bán</div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Giao dịch gần nhất -->
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <h5 class="content-card-title"><i class="bi bi-clock-history me-2"></i>Giao dịch gần nhất</h5>
+        <a asp-controller="OwnerTransaction" asp-action="Index" asp-route-gymId="@Model.SelectedGymId" style="font-size:0.8rem; font-weight:600; color:var(--accent); text-decoration:none;">
+            Xem tất cả &rarr;
+        </a>
+    </div>
+
+    @if (!Model.RecentTransactions.Any())
+    {
+        <div style="padding:2.5rem 1rem; text-align:center; color:#999;">
+            <p style="font-size:0.85rem; margin:0;">Chưa có giao dịch nào.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã GD</th>
+                        <th>Hội viên</th>
+                        <th>Cơ sở Gym</th>
+                        <th>Gói dịch vụ</th>
+                        <th>Số tiền</th>
+                        <th>Thời gian</th>
+                        <th class="text-end">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tx in Model.RecentTransactions)
+                    {
+                        <tr>
+                            <td><strong style="color:#111;">#@tx.TransactionId</strong></td>
+                            <td>
+                                <div style="font-weight:600; color:#111;">@tx.MemberName</div>
+                                <div style="font-size:0.75rem; color:#888;">@tx.MemberEmail</div>
+                            </td>
+                            <td><span style="font-size:0.85rem; color:#374151;">@tx.GymName</span></td>
+                            <td><span style="font-size:0.85rem;">@tx.PackageName</span></td>
+                            <td>
+                                <span style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111;">
+                                    @tx.Amount.ToString("N0") đ
+                                </span>
+                            </td>
+                            <td><span style="font-size:0.8rem; color:#888;">@tx.CreatedAt.ToString("HH:mm — dd/MM/yyyy")</span></td>
+                            <td class="text-end">
+                                <span class="@tx.StatusBadgeClass">@tx.StatusLabel</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,181 @@
+<!-- Đường dẫn file: Views/OwnerTransaction/Index.cshtml -->
+@model GymManagement.ViewModels.OwnerTransactionListViewModel
+
+@{
+    ViewData["Title"] = "Lịch sử giao dịch";
+    Layout = "_OwnerAdminLayout";
+}
+
+<div class="mb-4">
+    <h2 style="font-family:'Montserrat',sans-serif; font-size:1.25rem; font-weight:800; color:#111; margin:0 0 4px;">
+        Lịch sử giao dịch
+    </h2>
+    <p style="margin:0; font-size:0.85rem; color:#888;">
+        Toàn bộ các đơn hàng thanh toán vé ngày và gói tháng tại các cơ sở phòng Gym của bạn.
+    </p>
+</div>
+
+<!-- Bộ lọc giao dịch -->
+<div class="content-card mb-4" style="padding:1.4rem;">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+            <label class="form-label" style="font-size:0.78rem; font-weight:600; color:#555;">Cơ sở Gym</label>
+            <select name="gymId" class="form-select form-select-sm">
+                <option value="">-- Tất cả cơ sở --</option>
+                @foreach (var g in Model.MyGyms)
+                {
+                    <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label" style="font-size:0.78rem; font-weight:600; color:#555;">Trạng thái</label>
+            <select name="status" class="form-select form-select-sm">
+                <option value="">-- Tất cả --</option>
+                <option value="Success" selected="@(Model.SelectedStatus == "Success")">Thành công</option>
+                <option value="Pending" selected="@(Model.SelectedStatus == "Pending")">Đang xử lý</option>
+                <option value="Failed" selected="@(Model.SelectedStatus == "Failed")">Thất bại</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label" style="font-size:0.78rem; font-weight:600; color:#555;">Từ ngày</label>
+            <input type="date" name="fromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label" style="font-size:0.78rem; font-weight:600; color:#555;">Đến ngày</label>
+            <input type="date" name="toDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn-owner-primary flex-grow-1" style="padding:0.45rem 1rem; font-size:0.8rem;">
+                <i class="bi bi-funnel me-1"></i> Lọc dữ liệu
+            </button>
+            <a asp-action="Index" class="btn-owner-secondary" style="padding:0.45rem 0.8rem; font-size:0.8rem;">
+                Xóa lọc
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid #10b981;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng tiền thực thu</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.5rem; font-weight:900; color:#10b981; margin-top:4px;">
+                @Model.TotalAmount.ToString("N0") đ
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid var(--accent);">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">GD Thành công</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.5rem; font-weight:900; color:#111; margin-top:4px;">
+                @Model.SuccessCount
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid #f59e0b;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Đang xử lý</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.5rem; font-weight:900; color:#f59e0b; margin-top:4px;">
+                @Model.PendingCount
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid #ef4444;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Thất bại</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.5rem; font-weight:900; color:#ef4444; margin-top:4px;">
+                @Model.FailedCount
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Danh sách giao dịch -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="content-card-title"><i class="bi bi-receipt me-2"></i>Chi tiết các giao dịch (@Model.Transactions.Count)</h5>
+    </div>
+
+    @if (!Model.Transactions.Any())
+    {
+        <div style="padding:3.5rem 1.5rem; text-align:center; color:#999;">
+            <i class="bi bi-credit-card-2-front" style="font-size:2.8rem; color:#d1d5db; display:block; margin-bottom:0.8rem;"></i>
+            <p style="font-size:0.92rem; margin:0;">Không tìm thấy giao dịch nào phù hợp với điều kiện lọc.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã GD</th>
+                        <th>Hội viên</th>
+                        <th>Cơ sở Gym / Gói tập</th>
+                        <th>Số tiền</th>
+                        <th>Phương thức</th>
+                        <th>Thời gian</th>
+                        <th>Hóa đơn</th>
+                        <th class="text-end">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tx in Model.Transactions)
+                    {
+                        <tr id="tx-row-@tx.TransactionId">
+                            <td>
+                                <span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.8rem; color:#111;">
+                                    #@tx.TransactionId
+                                </span>
+                                @if (!string.IsNullOrEmpty(tx.VnpTxnRef))
+                                {
+                                    <div style="font-size:0.72rem; color:#888;">@tx.VnpTxnRef</div>
+                                }
+                            </td>
+                            <td>
+                                <div style="font-weight:700; color:#111;">@tx.MemberName</div>
+                                <div style="font-size:0.78rem; color:#888;">@tx.MemberEmail</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600; font-size:0.85rem; color:#374151;">@tx.GymName</div>
+                                <div style="font-size:0.78rem; color:#666;">@tx.PackageName</div>
+                            </td>
+                            <td>
+                                <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.95rem; color:#111;">
+                                    @tx.Amount.ToString("N0") đ
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-size:0.8rem; font-weight:600; color:#555;">@tx.PaymentMethod</span>
+                            </td>
+                            <td>
+                                <span style="font-size:0.82rem; color:#888;">
+                                    @tx.CreatedAt.ToString("HH:mm — dd/MM/yyyy")
+                                </span>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(tx.InvoiceCode))
+                                {
+                                    <span style="font-family:'Montserrat',sans-serif; font-size:0.78rem; font-weight:600; color:#111;">
+                                        @tx.InvoiceCode
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color:#ccc;">—</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <span class="@tx.StatusBadgeClass">
+                                    @tx.StatusLabel
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -99,10 +99,10 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| OWN-15 | Danh sách hội viên | `OwnerMember/Index/{gymId}` | Tên, gói đang dùng, ngày hết hạn | ⏳ Chưa làm |
-| OWN-16 | Chi tiết 1 hội viên | `OwnerMember/Details/{memberId}` | Lịch sử mua vé tại gym này | ⏳ Chưa làm |
-| OWN-17 | Danh sách giao dịch | `OwnerTransaction/Index/{gymId}` | Lọc theo ngày, trạng thái thanh toán | ⏳ Chưa làm |
-| OWN-18 | Báo cáo doanh thu | `OwnerDashboard/Revenue/{gymId}` | Biểu đồ doanh thu, số lượng hội viên active | ⏳ Chưa làm |
+| OWN-15 | Danh sách hội viên | `OwnerMember/Index/{gymId}` | Tên, gói đang dùng, ngày hết hạn | ✅ Đã làm |
+| OWN-16 | Chi tiết 1 hội viên | `OwnerMember/Details/{memberId}` | Lịch sử mua vé tại gym này | ✅ Đã làm |
+| OWN-17 | Danh sách giao dịch | `OwnerTransaction/Index/{gymId}` | Lọc theo ngày, trạng thái thanh toán | ✅ Đã làm |
+| OWN-18 | Báo cáo doanh thu | `OwnerDashboard/Revenue/{gymId}` | Biểu đồ doanh thu, số lượng hội viên active | ✅ Đã làm |
 
 ### Nhóm 5: Tài khoản cá nhân
 
@@ -159,8 +159,8 @@
 |---|---|---|---|---|
 | **Guest** | 9 | 9 | 0 | **100.0%** |
 | **Member** | 16 | 15 | 1 | **93.8%** |
-| **Owner** | 20 | 10 | 10 | **50.0%** |
+| **Owner** | 20 | 14 | 6 | **70.0%** |
 | **Admin** | 16 | 3 | 13 | **18.8%** |
-| **TỔNG CỘNG** | **61** | **37** | **24** | **60.7%** |
+| **TỔNG CỘNG** | **61** | **41** | **20** | **67.2%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.

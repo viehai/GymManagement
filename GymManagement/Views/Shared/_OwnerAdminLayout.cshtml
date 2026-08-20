@@ -340,6 +340,10 @@
 
         <nav class="sidebar-nav">
             <p class="nav-section-label">Quản lý</p>
+            <a asp-controller="OwnerDashboard" asp-action="Revenue"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerDashboard" ? "active" : "")">
+                <i class="bi bi-graph-up-arrow"></i> Báo cáo doanh thu
+            </a>
             <a asp-controller="OwnerGym" asp-action="Index"
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerGym" ? "active" : "")">
                 <i class="bi bi-building"></i> Phòng Gym của tôi
@@ -348,8 +352,16 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerPackage" ? "active" : "")">
                 <i class="bi bi-card-list"></i> Gói dịch vụ
             </a>
+            <a asp-controller="OwnerMember" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerMember" ? "active" : "")">
+                <i class="bi bi-people"></i> Quản lý hội viên
+            </a>
+            <a asp-controller="OwnerTransaction" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerTransaction" ? "active" : "")">
+                <i class="bi bi-receipt"></i> Lịch sử giao dịch
+            </a>
 
-            <p class="nav-section-label" style="margin-top:1rem;">Thêm nữa</p>
+            <p class="nav-section-label" style="margin-top:1rem;">Hệ thống</p>
             <a asp-controller="Member" asp-action="Profile" class="sidebar-link">
                 <i class="bi bi-person-circle"></i> Trang cá nhân
             </a>

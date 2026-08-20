@@ -1,0 +1,144 @@
+<!-- Đường dẫn file: Views/OwnerMember/Details.cshtml -->
+@model GymManagement.ViewModels.OwnerMemberDetailsViewModel
+
+@{
+    ViewData["Title"] = "Hồ sơ hội viên — " + Model.FullName;
+    Layout = "_OwnerAdminLayout";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" asp-route-gymId="@Model.GymId" class="btn-owner-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách hội viên
+    </a>
+    <h2 style="font-family:'Montserrat',sans-serif; font-size:1.3rem; font-weight:800; color:#111; margin:0 0 4px;">
+        @Model.FullName
+    </h2>
+    <p style="margin:0; font-size:0.85rem; color:#888;">
+        Lịch sử đăng ký và sử dụng dịch vụ tại cơ sở: <strong>@Model.GymName</strong>
+    </p>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cột trái: Thông tin cá nhân -->
+    <div class="col-12 col-md-4">
+        <div class="content-card h-100">
+            <div class="content-card-header">
+                <h5 class="content-card-title"><i class="bi bi-person me-2"></i>Thông tin cá nhân</h5>
+            </div>
+            <div class="content-card-body">
+                <div style="margin-bottom:1rem;">
+                    <span style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:600; display:block;">Họ và tên</span>
+                    <span style="font-weight:700; color:#111; font-size:0.95rem;">@Model.FullName</span>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <span style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:600; display:block;">Email liên hệ</span>
+                    <span style="font-size:0.88rem; color:#374151;">@Model.Email</span>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <span style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:600; display:block;">Số điện thoại</span>
+                    <span style="font-size:0.88rem; color:#374151;">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</span>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <span style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:600; display:block;">Địa chỉ phòng tập</span>
+                    <span style="font-size:0.82rem; color:#666;">@Model.GymAddress</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột phải: Tổng quan chi tiêu -->
+    <div class="col-12 col-md-8">
+        <div class="row g-3 h-100">
+            <div class="col-12 col-sm-6">
+                <div class="content-card h-100 d-flex flex-column justify-content-center" style="padding:1.8rem; border-left:4px solid #10b981;">
+                    <span style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng tiền đã chi tiêu</span>
+                    <div style="font-family:'Montserrat',sans-serif; font-size:2rem; font-weight:900; color:#10b981; margin-top:6px;">
+                        @Model.TotalSpent.ToString("N0") đ
+                    </div>
+                    <span style="font-size:0.78rem; color:#999; margin-top:4px;">Doanh thu từ hội viên này tại @Model.GymName</span>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6">
+                <div class="content-card h-100 d-flex flex-column justify-content-center" style="padding:1.8rem; border-left:4px solid var(--accent);">
+                    <span style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng số lần đăng ký / gia hạn</span>
+                    <div style="font-family:'Montserrat',sans-serif; font-size:2rem; font-weight:900; color:#111; margin-top:6px;">
+                        @Model.TotalPurchases lượt
+                    </div>
+                    <span style="font-size:0.78rem; color:#999; margin-top:4px;">Bao gồm cả vé ngày và gói tháng</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lịch sử các lần mua vé -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="content-card-title"><i class="bi bi-clock-history me-2"></i>Lịch sử mua gói & gia hạn tại phòng tập</h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Gói dịch vụ</th>
+                    <th>Loại gói</th>
+                    <th>Thời hạn sử dụng</th>
+                    <th>Giá thanh toán</th>
+                    <th>Ngày mua</th>
+                    <th>Hóa đơn</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.PurchaseHistory)
+                {
+                    <tr>
+                        <td>
+                            <strong style="color:#111;">@item.PackageName</strong>
+                        </td>
+                        <td>
+                            <span style="font-size:0.8rem; color:#666;">@item.PackageTypeLabel</span>
+                        </td>
+                        <td>
+                            <span style="font-size:0.85rem;">@item.StartDate.ToString("dd/MM/yyyy")</span> &rarr;
+                            <strong style="color:#111; font-size:0.85rem;">@item.EndDate.ToString("dd/MM/yyyy")</strong>
+                        </td>
+                        <td>
+                            <span style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111;">
+                                @item.PriceAtPurchase.ToString("N0") đ
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-size:0.82rem; color:#888;">
+                                @item.PurchaseDate.ToString("HH:mm — dd/MM/yyyy")
+                            </span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.InvoiceCode))
+                            {
+                                <span style="font-family:'Montserrat',sans-serif; font-size:0.78rem; font-weight:600; color:#555;">
+                                    @item.InvoiceCode
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:#ccc;">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsCurrentlyActive)
+                            {
+                                <span class="badge-approved">Đang hiệu lực</span>
+                            }
+                            else
+                            {
+                                <span class="badge-rejected">Đã hết hạn</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
