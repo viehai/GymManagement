@@ -1,0 +1,330 @@
+<!-- Đường dẫn file: Views/Member/MyMemberships.cshtml -->
+@model IEnumerable<GymManagement.ViewModels.MyMembershipViewModel>
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Gói tập của tôi";
+    var expiringSoonCount = Model.Count(m => m.Status == "ExpiringSoon");
+    var activeCount = Model.Count(m => m.Status == "Active" || m.Status == "ExpiringSoon");
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       MY MEMBERSHIPS — INK WASH PALETTE
+    ═══════════════════════════════════════════════ */
+    .mem-hero {
+        background: #252525;
+        padding: 2.8rem 0 2.2rem;
+        color: #fff;
+    }
+    .mem-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 0.4rem;
+    }
+    .mem-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        color: #fff;
+        margin: 0;
+    }
+
+    .mem-body {
+        padding: 3rem 0 5rem;
+        background: #fafafa;
+    }
+
+    /* Warning Banner — MEM-16 */
+    .expiring-alert-banner {
+        background: #252525;
+        color: #fff;
+        border-left: 4px solid #fff;
+        padding: 1.2rem 1.6rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .expiring-alert-text {
+        font-size: 0.88rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .expiring-alert-text i {
+        font-size: 1.3rem;
+        color: #fff;
+    }
+
+    /* Cards Grid */
+    .mem-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .mem-card {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.6rem;
+        transition: border-color 0.2s;
+    }
+    .mem-card:hover {
+        border-color: #252525;
+    }
+    .mem-card.card-expiring {
+        border: 2px solid #252525;
+    }
+
+    .mem-card-top {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 1.2rem;
+        padding-bottom: 1.2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .mem-card-img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid #CFCFCF;
+        background: #f0f0f0;
+    }
+    .mem-card-gym-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1rem;
+        color: #252525;
+        margin: 0 0 0.25rem;
+    }
+    .mem-card-gym-addr {
+        font-size: 0.78rem;
+        color: #7D7D7D;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    /* Package & Date Details */
+    .mem-info-table {
+        width: 100%;
+        margin-bottom: 1.2rem;
+    }
+    .mem-info-table td {
+        padding: 0.4rem 0;
+        font-size: 0.85rem;
+    }
+    .mem-info-table td:first-child {
+        color: #7D7D7D;
+        width: 40%;
+    }
+    .mem-info-table td:last-child {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        color: #252525;
+        text-align: right;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 0;
+    }
+    .status-active {
+        background: #252525;
+        color: #fff;
+        border: 1px solid #252525;
+    }
+    .status-expiring-soon {
+        background: #fff;
+        color: #252525;
+        border: 2px solid #252525;
+    }
+    .status-expired {
+        background: #fff;
+        color: #7D7D7D;
+        border: 1px solid #CFCFCF;
+    }
+
+    /* Action Buttons */
+    .btn-mem-action-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #252525;
+        color: #fff !important;
+        border: 1px solid #252525;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.68rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.65rem 1rem;
+        text-decoration: none;
+        transition: background 0.2s;
+        flex: 1;
+    }
+    .btn-mem-action-primary:hover {
+        background: #545454;
+    }
+
+    .btn-mem-action-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: transparent;
+        color: #252525 !important;
+        border: 1px solid #CFCFCF;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.68rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.65rem 1rem;
+        text-decoration: none;
+        transition: border-color 0.2s;
+        flex: 1;
+    }
+    .btn-mem-action-outline:hover {
+        border-color: #252525;
+    }
+
+    /* Empty state */
+    .empty-state-box {
+        text-align: center;
+        padding: 4rem 1rem;
+        background: #fff;
+        border: 1px dashed #CFCFCF;
+    }
+    .empty-state-box i {
+        font-size: 3rem;
+        color: #CFCFCF;
+        margin-bottom: 1rem;
+        display: block;
+    }
+</style>
+
+<!-- Hero -->
+<div class="mem-hero">
+    <div class="container">
+        <p class="mem-hero-label">Hội viên</p>
+        <h1>Gói tập của tôi (@activeCount đang hoạt động)</h1>
+    </div>
+</div>
+
+<div class="mem-body">
+    <div class="container">
+
+        <!-- Banner cảnh báo sắp hết hạn (MEM-16) -->
+        @if (expiringSoonCount > 0)
+        {
+            <div class="expiring-alert-banner" id="banner-expiring-soon">
+                <p class="expiring-alert-text">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                    <span>
+                        <strong>Lưu ý:</strong> Bạn đang có <strong>@expiringSoonCount gói tập sắp hết hạn</strong> trong vòng 3 ngày tới. Hãy gia hạn sớm để giữ liên tục lịch tập!
+                    </span>
+                </p>
+            </div>
+        }
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state-box">
+                <i class="bi bi-card-checklist"></i>
+                <p style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.1rem; color:#252525;">Bạn chưa đăng ký gói tập nào</p>
+                <p style="color:#7D7D7D; font-size:0.85rem; max-width:420px; margin:0 auto 1.5rem;">
+                    Hãy khám phá danh sách các phòng Gym đối tác trên hệ thống GymPro để tìm gói tập phù hợp nhất.
+                </p>
+                <a asp-controller="Gym" asp-action="Search" class="btn-mem-action-primary" style="display:inline-flex; flex:none; padding:0.8rem 2rem;">
+                    <i class="bi bi-search me-1"></i> Tìm phòng Gym ngay
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="mem-grid">
+                @foreach (var item in Model)
+                {
+                    <div class="mem-card @(item.Status == "ExpiringSoon" ? "card-expiring" : "")" id="membership-card-@item.MembershipId">
+                        <div>
+                            <div class="mem-card-top">
+                                <img src="@(string.IsNullOrEmpty(item.GymImage) ? "https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_150,h_150,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg" : item.GymImage)"
+                                     class="mem-card-img"
+                                     alt="@item.GymName" />
+                                <div class="flex-grow-1">
+                                    <p class="mem-card-gym-name">@item.GymName</p>
+                                    <p class="mem-card-gym-addr"><i class="bi bi-geo-alt me-1"></i>@item.GymAddress</p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.95rem; color:#252525;">
+                                    @item.PackageName
+                                </span>
+                                <span class="status-badge @item.StatusBadgeClass">
+                                    @item.StatusLabel
+                                </span>
+                            </div>
+
+                            <table class="mem-info-table">
+                                <tr>
+                                    <td>Loại vé</td>
+                                    <td>@item.PackageTypeLabel</td>
+                                </tr>
+                                <tr>
+                                    <td>Ngày bắt đầu</td>
+                                    <td>@item.StartDate.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                                <tr>
+                                    <td>Ngày hết hạn</td>
+                                    <td style="font-weight:800;">@item.EndDate.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="d-flex gap-2 pt-2 border-top">
+                            <a id="btn-details-@item.MembershipId"
+                               asp-controller="Member"
+                               asp-action="MembershipDetails"
+                               asp-route-id="@item.MembershipId"
+                               class="btn-mem-action-outline">
+                                <i class="bi bi-info-circle me-1"></i> Chi tiết
+                            </a>
+                            <a id="btn-renew-@item.MembershipId"
+                               asp-controller="Purchase"
+                               asp-action="Renew"
+                               asp-route-membershipId="@item.MembershipId"
+                               class="btn-mem-action-primary">
+                                <i class="bi bi-arrow-repeat me-1"></i> Gia hạn
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+</div>

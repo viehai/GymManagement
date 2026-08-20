@@ -451,30 +451,34 @@
                         <!-- 2 ô thống kê số liệu ngang nhau -->
                         <div class="row g-3 mb-3">
                             <div class="col-6">
-                                <div class="stat-metric-box">
-                                    <div class="stat-metric-num">@activeMembershipsCount</div>
-                                    <div class="stat-metric-label">Vé đang hiệu lực</div>
-                                </div>
+                                <a asp-controller="Member" asp-action="MyMemberships" style="text-decoration:none; display:block;">
+                                    <div class="stat-metric-box" style="cursor:pointer; transition:border-color 0.2s;">
+                                        <div class="stat-metric-num">@activeMembershipsCount</div>
+                                        <div class="stat-metric-label">Vé đang hiệu lực <i class="bi bi-chevron-right ms-1"></i></div>
+                                    </div>
+                                </a>
                             </div>
                             <div class="col-6">
-                                <div class="stat-metric-box">
-                                    <div class="stat-metric-num">@transactionCount</div>
-                                    <div class="stat-metric-label">Lịch sử giao dịch</div>
-                                </div>
+                                <a asp-controller="Member" asp-action="TransactionHistory" style="text-decoration:none; display:block;">
+                                    <div class="stat-metric-box" style="cursor:pointer; transition:border-color 0.2s;">
+                                        <div class="stat-metric-num">@transactionCount</div>
+                                        <div class="stat-metric-label">Lịch sử giao dịch <i class="bi bi-chevron-right ms-1"></i></div>
+                                    </div>
+                                </a>
                             </div>
                         </div>
 
                         <p style="font-size:0.8rem; color:#7D7D7D; margin-bottom:1rem; line-height:1.4;">
-                            Quản lý các gói tập đã mua, xem lại hóa đơn điện tử và kiểm tra thời hạn vé của bạn bất cứ lúc nào.
+                            Quản lý các gói tập đã mua, theo dõi hạn sử dụng, gia hạn trực tuyến và xem lại hóa đơn điện tử.
                         </p>
                     </div>
 
                     <div class="d-flex flex-column gap-2 mt-auto">
-                        <a id="btn-view-transactions-profile" asp-controller="Member" asp-action="TransactionHistory" class="btn-ink-solid">
-                            <i class="bi bi-clock-history me-1"></i> Xem lịch sử giao dịch & Hóa đơn
+                        <a id="btn-view-memberships-profile" asp-controller="Member" asp-action="MyMemberships" class="btn-ink-solid">
+                            <i class="bi bi-card-checklist me-1"></i> Quản lý gói tập của tôi
                         </a>
-                        <a id="btn-search-gyms-profile" asp-controller="Gym" asp-action="Search" class="btn-ink-outline">
-                            <i class="bi bi-search me-1"></i> Khám phá phòng Gym mới
+                        <a id="btn-view-transactions-profile" asp-controller="Member" asp-action="TransactionHistory" class="btn-ink-outline">
+                            <i class="bi bi-clock-history me-1"></i> Xem lịch sử giao dịch & Hóa đơn
                         </a>
                     </div>
                 </div>

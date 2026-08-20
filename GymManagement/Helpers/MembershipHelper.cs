@@ -25,6 +25,24 @@ namespace GymManagement.Helpers
         }
 
         /// <summary>
+        /// Tính ngày hết hạn khi gia hạn vé (Renew):
+        /// - Nếu vé hiện tại còn hạn (currentEndDate > Hôm nay) -> cộng dồn tiếp từ currentEndDate.
+        /// - Nếu vé hiện tại đã hết hạn (currentEndDate <= Hôm nay) -> tính bắt đầu từ hôm nay.
+        /// </summary>
+        public static DateTime CalculateRenewEndDate(DateTime currentEndDate, string packageType, int? durationInMonths)
+        {
+            var baseDate = currentEndDate > DateTime.Today ? currentEndDate : DateTime.Today;
+
+            if (packageType == "Daily")
+                return baseDate.AddDays(1);
+
+            if (packageType == "Monthly" && durationInMonths.HasValue)
+                return baseDate.AddMonths(durationInMonths.Value);
+
+            return baseDate.AddDays(1);
+        }
+
+        /// <summary>
         /// Sinh mã hóa đơn duy nhất dạng INV-YYYYMMDD-XXXXXX.
         /// Ví dụ: INV-20260819-A3F9K2
         /// </summary>

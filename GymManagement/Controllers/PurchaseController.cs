@@ -258,5 +258,124 @@ namespace GymManagement.Controllers
 
             return View(transaction);
         }
+
+        // ═══════════════════════════════════════════════
+        // MEM-15: GIA HẠN VÉ
+        // GET  /Purchase/Renew/{membershipId}
+        // POST /Purchase/Renew/{membershipId}
+        // ═══════════════════════════════════════════════
+
+        [HttpGet]
+        public async Task<IActionResult> Renew(int membershipId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var membership = await _context.MemberMemberships
+                .Include(m => m.Gym)
+                .Include(m => m.Package)
+                .FirstOrDefaultAsync(m => m.Id == membershipId && m.MemberId == user.Id);
+
+            if (membership == null) return NotFound();
+
+            var activePackages = await _context.MembershipPackages
+                .Where(p => p.GymId == membership.GymId && p.IsActive)
+                .OrderBy(p => p.PackageType == "Daily" ? 0 : 1)
+                .ThenBy(p => p.Price)
+                .ToListAsync();
+
+            if (!activePackages.Any())
+            {
+                TempData["Error"] = "Phòng Gym này hiện không có gói tập nào khả dụng để gia hạn.";
+                return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
+            }
+
+            var vm = new RenewMembershipViewModel
+            {
+                MembershipId       = membership.Id,
+                GymId              = membership.GymId,
+                GymName            = membership.Gym?.Name ?? "—",
+                GymAddress         = membership.Gym?.Address ?? "—",
+                GymImage           = membership.Gym?.ImageUrl ?? string.Empty,
+                CurrentPackageName = membership.Package?.Name ?? "—",
+                CurrentEndDate     = membership.EndDate,
+                SelectedPackageId  = activePackages.Any(p => p.Id == membership.PackageId)
+                                        ? membership.PackageId
+                                        : activePackages.First().Id,
+                AvailablePackages  = activePackages.Select(p => new PackageOptionViewModel
+                {
+                    Id                    = p.Id,
+                    Name                  = p.Name,
+                    PackageType           = p.PackageType,
+                    DurationInMonths      = p.DurationInMonths,
+                    Price                 = p.Price,
+                    CalculatedNewEndDate  = MembershipHelper.CalculateRenewEndDate(
+                                                membership.EndDate, p.PackageType, p.DurationInMonths)
+                }).ToList()
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Renew(int membershipId, int selectedPackageId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var membership = await _context.MemberMemberships
+                .Include(m => m.Gym)
+                .FirstOrDefaultAsync(m => m.Id == membershipId && m.MemberId == user.Id);
+
+            if (membership == null) return NotFound();
+
+            var pkg = await _context.MembershipPackages
+                .FirstOrDefaultAsync(p => p.Id == selectedPackageId && p.GymId == membership.GymId && p.IsActive);
+
+            if (pkg == null)
+            {
+                TempData["Error"] = "Gói tập được chọn không hợp lệ.";
+                return RedirectToAction("Renew", new { membershipId });
+            }
+
+            // ── Tính ngày hết hạn mới (cộng dồn nếu còn hạn) ──
+            var newEndDate = MembershipHelper.CalculateRenewEndDate(
+                membership.EndDate, pkg.PackageType, pkg.DurationInMonths);
+
+            // ── Tạo Transaction gia hạn ──
+            var transaction = new Transaction
+            {
+                MemberId      = user.Id,
+                MembershipId  = membership.Id,
+                Amount        = pkg.Price,
+                Status        = "Success",
+                VnpTxnRef     = $"RENEW-{Guid.NewGuid():N}"[..20],
+                PaymentMethod = "VNPay",
+                CreatedAt     = DateTime.Now
+            };
+            _context.Transactions.Add(transaction);
+
+            // ── Cập nhật ngày hết hạn của Membership ──
+            membership.EndDate          = newEndDate;
+            membership.PackageId        = pkg.Id;
+            membership.PriceAtPurchase  = pkg.Price;
+
+            await _context.SaveChangesAsync();
+
+            // ── Tạo Invoice gia hạn ──
+            var invoice = new Invoice
+            {
+                TransactionId = transaction.Id,
+                InvoiceCode   = MembershipHelper.GenerateInvoiceCode(),
+                IssuedDate    = DateTime.Now,
+                PdfUrl        = string.Empty
+            };
+            _context.Invoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Gia hạn thành công! Hạn sử dụng mới của bạn là ngày {newEndDate:dd/MM/yyyy}.";
+            return RedirectToAction("Result", new { transactionId = transaction.Id });
+        }
     }
 }

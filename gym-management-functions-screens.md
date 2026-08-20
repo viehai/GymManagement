@@ -57,10 +57,10 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| MEM-13 | Xem vé đang active | `Member/MyMemberships` | Danh sách gym đang có vé còn hạn, ngày hết hạn | ⏳ Chưa làm |
-| MEM-14 | Xem chi tiết 1 vé | `Member/MembershipDetails/{id}` | Gym, package, StartDate, EndDate | ⏳ Chưa làm |
-| MEM-15 | Gia hạn vé | `Purchase/Renew/{membershipId}` | Chọn gói mới, áp rule cộng dồn ngày | ⏳ Chưa làm |
-| MEM-16 | Thông báo sắp hết hạn | Banner / Badge Cảnh báo | Cảnh báo khi vé còn ≤ 3 ngày | ⏳ Chưa làm |
+| MEM-13 | Xem vé đang active | `Member/MyMemberships` | Danh sách gym đang có vé còn hạn, ngày hết hạn | ✅ Đã làm |
+| MEM-14 | Xem chi tiết 1 vé | `Member/MembershipDetails/{id}` | Gym, package, StartDate, EndDate | ✅ Đã làm |
+| MEM-15 | Gia hạn vé | `Purchase/Renew/{membershipId}` | Chọn gói mới, áp rule cộng dồn ngày | ✅ Đã làm |
+| MEM-16 | Thông báo sắp hết hạn | Banner / Badge Cảnh báo | Cảnh báo khi vé còn ≤ 3 ngày | ✅ Đã làm |
 
 ---
 
@@ -158,9 +158,9 @@
 | Role | Tổng số Function | Đã hoàn thành | Chưa thực hiện | Tỷ lệ hoàn thành |
 |---|---|---|---|---|
 | **Guest** | 9 | 9 | 0 | **100.0%** |
-| **Member** | 16 | 11 | 5 | **68.8%** |
+| **Member** | 16 | 15 | 1 | **93.8%** |
 | **Owner** | 20 | 10 | 10 | **50.0%** |
 | **Admin** | 16 | 3 | 13 | **18.8%** |
-| **TỔNG CỘNG** | **61** | **33** | **28** | **54.1%** |
+| **TỔNG CỘNG** | **61** | **37** | **24** | **60.7%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.

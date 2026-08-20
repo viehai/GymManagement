@@ -1,0 +1,322 @@
+<!-- Đường dẫn file: Views/Member/MembershipDetails.cshtml -->
+@model GymManagement.ViewModels.MembershipDetailsViewModel
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Chi tiết gói tập — " + Model.PackageName;
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       MEMBERSHIP DETAILS — INK WASH PALETTE
+    ═══════════════════════════════════════════════ */
+    .mem-details-hero {
+        background: #252525;
+        padding: 2.8rem 0 2.2rem;
+        color: #fff;
+    }
+    .mem-details-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 0.4rem;
+    }
+    .mem-details-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        color: #fff;
+        margin: 0;
+    }
+    .mem-details-breadcrumb {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.45);
+        margin-top: 0.75rem;
+    }
+    .mem-details-breadcrumb a { color: rgba(255,255,255,0.45); text-decoration: none; }
+    .mem-details-breadcrumb a:hover { color: #fff; }
+
+    .mem-details-body {
+        padding: 3rem 0 5rem;
+        background: #fafafa;
+    }
+
+    .ink-panel {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        padding: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+    .ink-panel-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #252525;
+        padding-bottom: 0.8rem;
+        margin-bottom: 1.2rem;
+        border-bottom: 1px solid #CFCFCF;
+    }
+
+    /* Gym Box */
+    .gym-detail-card {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    .gym-detail-img {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid #CFCFCF;
+        background: #f0f0f0;
+    }
+    .gym-detail-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #252525;
+        margin: 0 0 0.3rem;
+    }
+    .gym-detail-addr {
+        font-size: 0.82rem;
+        color: #7D7D7D;
+        margin: 0 0 0.5rem;
+    }
+
+    /* Table Details */
+    .detail-table {
+        width: 100%;
+    }
+    .detail-table td {
+        padding: 0.65rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.88rem;
+    }
+    .detail-table tr:last-child td {
+        border-bottom: none;
+    }
+    .detail-table td:first-child {
+        color: #7D7D7D;
+        width: 40%;
+    }
+    .detail-table td:last-child {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        color: #252525;
+    }
+
+    /* Status Badges */
+    .status-badge-lg {
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 6px 14px;
+    }
+    .status-active {
+        background: #252525;
+        color: #fff;
+        border: 1px solid #252525;
+    }
+    .status-expiring-soon {
+        background: #fff;
+        color: #252525;
+        border: 2px solid #252525;
+    }
+    .status-expired {
+        background: #fff;
+        color: #7D7D7D;
+        border: 1px solid #CFCFCF;
+    }
+
+    /* Buttons */
+    .btn-action-block {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .btn-details-primary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #252525;
+        color: #fff !important;
+        border: 1px solid #252525;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.85rem 1.4rem;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .btn-details-primary:hover {
+        background: #545454;
+    }
+
+    .btn-details-outline {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: transparent;
+        color: #252525 !important;
+        border: 1px solid #CFCFCF;
+        border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.85rem 1.4rem;
+        text-decoration: none;
+        transition: border-color 0.2s;
+    }
+    .btn-details-outline:hover {
+        border-color: #252525;
+    }
+</style>
+
+<!-- Hero -->
+<div class="mem-details-hero">
+    <div class="container">
+        <p class="mem-details-hero-label">Hội viên / Chi tiết vé</p>
+        <h1>@Model.PackageName</h1>
+        <nav class="mem-details-breadcrumb" aria-label="breadcrumb">
+            <a asp-controller="Home" asp-action="Index">Trang Chủ</a> /
+            <a asp-controller="Member" asp-action="MyMemberships">Gói tập của tôi</a> /
+            <span style="color:rgba(255,255,255,0.75);">Chi tiết</span>
+        </nav>
+    </div>
+</div>
+
+<div class="mem-details-body">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- Cột trái: Thông tin phòng & Gói -->
+            <div class="col-12 col-lg-8">
+                <!-- Thông tin phòng Gym -->
+                <div class="ink-panel">
+                    <h2 class="ink-panel-title"><i class="bi bi-building me-2"></i>Cơ sở phòng Gym</h2>
+                    <div class="gym-detail-card">
+                        <img src="@(string.IsNullOrEmpty(Model.GymImage) ? "https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_200,h_200,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg" : Model.GymImage)"
+                             class="gym-detail-img"
+                             alt="@Model.GymName" />
+                        <div>
+                            <p class="gym-detail-name">@Model.GymName</p>
+                            <p class="gym-detail-addr"><i class="bi bi-geo-alt me-1"></i>@Model.GymAddress</p>
+                            @if (!string.IsNullOrEmpty(Model.GymDescription))
+                            {
+                                <p style="font-size:0.82rem; color:#545454; margin:0; line-height:1.4;">
+                                    @Model.GymDescription
+                                </p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi tiết gói tập -->
+                <div class="ink-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h2 class="ink-panel-title mb-0 border-bottom-0 pb-0"><i class="bi bi-card-checklist me-2"></i>Thời hạn & Giá trị gói</h2>
+                        <span class="status-badge-lg @Model.StatusBadgeClass">
+                            @Model.StatusLabel
+                        </span>
+                    </div>
+
+                    <table class="detail-table">
+                        <tr>
+                            <td>Gói dịch vụ</td>
+                            <td>@Model.PackageName</td>
+                        </tr>
+                        <tr>
+                            <td>Loại gói</td>
+                            <td>@Model.PackageTypeLabel</td>
+                        </tr>
+                        <tr>
+                            <td>Ngày kích hoạt (Bắt đầu)</td>
+                            <td>@Model.StartDate.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                        <tr>
+                            <td>Ngày hết hạn</td>
+                            <td style="font-weight:900; font-size:1.05rem;">@Model.EndDate.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                        <tr>
+                            <td>Ngày thanh toán</td>
+                            <td>@Model.PurchaseDate.ToString("HH:mm — dd/MM/yyyy")</td>
+                        </tr>
+                        <tr>
+                            <td>Số tiền thanh toán</td>
+                            <td style="font-weight:900;">@Model.PriceAtPurchase.ToString("N0") đ</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.VnpTxnRef))
+                        {
+                            <tr>
+                                <td>Mã tham chiếu giao dịch</td>
+                                <td>@Model.VnpTxnRef</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cột phải: Thao tác & Hành động -->
+            <div class="col-12 col-lg-4">
+                <div class="ink-panel">
+                    <h2 class="ink-panel-title"><i class="bi bi-lightning-charge me-2"></i>Thao tác</h2>
+
+                    <div class="btn-action-block">
+                        <a id="btn-renew-details-page"
+                           asp-controller="Purchase"
+                           asp-action="Renew"
+                           asp-route-membershipId="@Model.MembershipId"
+                           class="btn-details-primary">
+                            <i class="bi bi-arrow-repeat me-1"></i> Gia hạn gói tập này
+                        </a>
+
+                        @if (Model.InvoiceId.HasValue)
+                        {
+                            <a id="btn-view-invoice-details-page"
+                               asp-controller="Member"
+                               asp-action="InvoiceDetails"
+                               asp-route-id="@Model.InvoiceId.Value"
+                               class="btn-details-outline">
+                                <i class="bi bi-receipt me-1"></i> Xem hóa đơn điện tử
+                            </a>
+                        }
+
+                        <a asp-controller="Member" asp-action="MyMemberships" class="btn-details-outline">
+                            <i class="bi bi-arrow-left me-1"></i> Danh sách gói tập
+                        </a>
+                    </div>
+                </div>
+
+                <div class="ink-panel" style="background:#f5f5f5;">
+                    <p style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; color:#252525; margin-bottom:0.5rem;">
+                        <i class="bi bi-shield-check me-1"></i> Quy định gia hạn
+                    </p>
+                    <p style="font-size:0.78rem; color:#7D7D7D; margin:0; line-height:1.5;">
+                        Khi gia hạn trong lúc vé vẫn còn hiệu lực, thời hạn mới sẽ được <strong>tự động cộng dồn tiếp</strong> từ ngày hết hạn hiện tại.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

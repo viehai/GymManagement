@@ -192,6 +192,81 @@ namespace GymManagement.Controllers
 
             return View(vm);
         }
+
+        // ==================== MEM-13: DANH SÁCH VÉ TẬP / HỘI VIÊN ====================
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> MyMemberships()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var memberships = await _context.MemberMemberships
+                .Where(m => m.MemberId == user.Id)
+                .Include(m => m.Gym)
+                .Include(m => m.Package)
+                .OrderByDescending(m => m.EndDate)
+                .ToListAsync();
+
+            var vmList = memberships.Select(m => new MyMembershipViewModel
+            {
+                MembershipId     = m.Id,
+                GymId            = m.GymId,
+                GymName          = m.Gym?.Name ?? "—",
+                GymAddress       = m.Gym?.Address ?? "—",
+                GymImage         = m.Gym?.ImageUrl ?? string.Empty,
+                PackageId        = m.PackageId,
+                PackageName      = m.Package?.Name ?? "—",
+                PackageType      = m.Package?.PackageType ?? "Daily",
+                DurationInMonths = m.Package?.DurationInMonths,
+                StartDate        = m.StartDate,
+                EndDate          = m.EndDate,
+                PurchaseDate     = m.PurchaseDate,
+                PriceAtPurchase  = m.PriceAtPurchase
+            }).ToList();
+
+            return View(vmList);
+        }
+
+        // ==================== MEM-14: CHI TIẾT 1 VÉ HỘI VIÊN ====================
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> MembershipDetails(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var membership = await _context.MemberMemberships
+                .Include(m => m.Gym)
+                .Include(m => m.Package)
+                .Include(m => m.Transaction)
+                    .ThenInclude(t => t.Invoice)
+                .FirstOrDefaultAsync(m => m.Id == id && m.MemberId == user.Id);
+
+            if (membership == null) return NotFound();
+
+            var vm = new MembershipDetailsViewModel
+            {
+                MembershipId     = membership.Id,
+                GymId            = membership.GymId,
+                GymName          = membership.Gym?.Name ?? "—",
+                GymAddress       = membership.Gym?.Address ?? "—",
+                GymDescription   = membership.Gym?.Description ?? string.Empty,
+                GymImage         = membership.Gym?.ImageUrl ?? string.Empty,
+                PackageId        = membership.PackageId,
+                PackageName      = membership.Package?.Name ?? "—",
+                PackageType      = membership.Package?.PackageType ?? "Daily",
+                DurationInMonths = membership.Package?.DurationInMonths,
+                StartDate        = membership.StartDate,
+                EndDate          = membership.EndDate,
+                PurchaseDate     = membership.PurchaseDate,
+                PriceAtPurchase  = membership.PriceAtPurchase,
+                TransactionId    = membership.Transaction?.Id,
+                VnpTxnRef        = membership.Transaction?.VnpTxnRef,
+                InvoiceId        = membership.Transaction?.Invoice?.Id,
+                InvoiceCode      = membership.Transaction?.Invoice?.InvoiceCode
+            };
+
+            return View(vm);
+        }
     }
 }
 
