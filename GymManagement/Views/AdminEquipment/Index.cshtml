@@ -1,0 +1,230 @@
+<!-- Đường dẫn file: Views/AdminEquipment/Index.cshtml -->
+@model IEnumerable<GymManagement.Models.Equipment>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Catalog Thiết Bị Gốc";
+    var totalCount = Model?.Count() ?? 0;
+}
+
+<style>
+    /* ══════════════════════════════════════════════════════════════
+       ADMIN EQUIPMENT CATALOG — NIKE BRUTAL MINIMALISM (INK WASH)
+       #252525 | #7D7D7D | #FFFFFF | rounded-0 | box-shadow: none
+    ══════════════════════════════════════════════════════════════ */
+    .admin-catalog-wrapper {
+        background-color: #FFFFFF;
+        padding: 2.5rem 2rem;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+    }
+
+    .catalog-title {
+        font-family: 'Montserrat', sans-serif;
+        letter-spacing: -1px;
+        color: #252525;
+        margin-bottom: 0.35rem;
+    }
+
+    .btn-nike-dark {
+        background-color: #252525;
+        color: #FFFFFF !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.8rem 1.6rem;
+        text-decoration: none;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+    }
+    .btn-nike-dark:hover {
+        background-color: #545454;
+        border-color: #545454;
+        color: #FFFFFF !important;
+    }
+
+    .btn-nike-sm-edit {
+        background-color: transparent;
+        color: #252525 !important;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.4rem 0.8rem;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .btn-nike-sm-edit:hover {
+        border-color: #252525;
+        background-color: #252525;
+        color: #FFFFFF !important;
+    }
+
+    .btn-nike-sm-del {
+        background-color: transparent;
+        color: #7D7D7D;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-nike-sm-del:hover {
+        border-color: #252525;
+        color: #252525;
+        background-color: #f0f0f0;
+    }
+
+    /* Bảng tối giản phẳng */
+    .table-nike {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table-nike th {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        padding: 1rem 0.8rem;
+        border-bottom: 2px solid #252525;
+        background: transparent;
+    }
+    .table-nike td {
+        padding: 1.2rem 0.8rem;
+        border-bottom: 1px solid #EAEAEA;
+        vertical-align: middle;
+    }
+    .table-nike tr:hover td {
+        background-color: #FAFAFA;
+    }
+
+    .badge-category-nike {
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border: 1px solid #252525;
+        color: #252525;
+        background: #FFFFFF;
+        padding: 4px 8px;
+        border-radius: 0 !important;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <div class="admin-catalog-wrapper">
+
+        <!-- Top Header -->
+        <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4 pb-3 border-bottom border-dark border-2">
+            <div>
+                <p class="text-uppercase fw-bold text-muted mb-1" style="font-size:0.7rem; letter-spacing:2px; font-family:'Montserrat',sans-serif;">
+                    HỆ THỐNG GYMPRO &bull; QUẢN TRỊ CATALOG
+                </p>
+                <h1 class="display-5 fw-bolder text-uppercase catalog-title mb-0">CATALOG THIẾT BỊ GỐC</h1>
+                <p class="text-muted small mb-0 mt-1">
+                    Tổng cộng: <strong class="text-dark">@totalCount</strong> thiết bị chuẩn hoá cho các cơ sở phòng Gym lựa chọn.
+                </p>
+            </div>
+            <div>
+                <a asp-action="Create" class="btn-nike-dark">
+                    <i class="bi bi-plus-lg me-1"></i> THÊM THIẾT BỊ MỚI
+                </a>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5" style="border:1px dashed #CFCFCF; padding:4rem 1rem;">
+                <i class="bi bi-box-seam display-4 text-muted d-block mb-3"></i>
+                <h4 class="fw-bold text-uppercase" style="font-family:'Montserrat',sans-serif; color:#252525;">Chưa có thiết bị nào</h4>
+                <p class="text-muted small mb-4">Bắt đầu xây dựng danh mục máy tập chuẩn cho hệ thống GymPro.</p>
+                <a asp-action="Create" class="btn-nike-dark">
+                    <i class="bi bi-plus-lg me-1"></i> THÊM THIẾT BỊ ĐẦU TIÊN
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table-nike align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width:100px;">Hình ảnh</th>
+                            <th>Tên thiết bị</th>
+                            <th>Phân loại (Category)</th>
+                            <th>Mô tả chức năng</th>
+                            <th style="width:120px;" class="text-center">Sử dụng</th>
+                            <th style="width:170px;" class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var gymCount = item.GymEquipments?.Count ?? 0;
+                            <tr>
+                                <td>
+                                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_160,h_160,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg" : item.ImageUrl)"
+                                         alt="@item.Name"
+                                         onerror="this.onerror=null; this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_160,h_160,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';"
+                                         style="width: 80px; aspect-ratio: 1/1; object-fit: contain; background-color: #f8f9fa;" />
+                                </td>
+                                <td>
+                                    <div class="fw-bolder text-uppercase" style="font-family:'Montserrat',sans-serif; font-size:0.95rem; color:#252525;">
+                                        @item.Name
+                                    </div>
+                                    <small class="text-muted" style="font-size:0.75rem;">Mã thiết bị: #@item.Id</small>
+                                </td>
+                                <td>
+                                    <span class="badge-category-nike">
+                                        @(string.IsNullOrEmpty(item.Category) ? "CHƯA PHÂN LOẠI" : item.Category)
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-muted small" style="max-width:320px; line-height:1.4;">
+                                        @(string.IsNullOrEmpty(item.Description) ? "—" : item.Description)
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold" style="font-family:'Montserrat',sans-serif; font-size:0.85rem; color:#252525;">
+                                        @gymCount
+                                    </span>
+                                    <div style="font-size:0.68rem; color:#7D7D7D; text-transform:uppercase;">Phòng tập</div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-2">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-nike-sm-edit">
+                                            Sửa
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thiết bị \'@item.Name\' khỏi danh mục Catalog?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-nike-sm-del">
+                                                Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>

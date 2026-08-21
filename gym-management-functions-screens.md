@@ -129,10 +129,10 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| ADM-06 | Danh sách equipment catalog | `AdminEquipment/Index` | Toàn bộ máy tập gốc | ⏳ Chưa làm |
-| ADM-07 | Thêm equipment catalog | `AdminEquipment/Create` | Name, Description, ImageUrl, Category | ⏳ Chưa làm |
-| ADM-08 | Sửa equipment catalog | `AdminEquipment/Edit/{id}` | Cập nhật thông tin máy tập | ⏳ Chưa làm |
-| ADM-09 | Xóa equipment catalog | `AdminEquipment/Delete/{id}` | Kiểm tra ràng buộc trước khi xóa | ⏳ Chưa làm |
+| ADM-06 | Danh sách equipment catalog | `AdminEquipment/Index` | Toàn bộ máy tập gốc | ✅ Đã làm |
+| ADM-07 | Thêm equipment catalog | `AdminEquipment/Create` | Name, Description, ImageUrl, Category | ✅ Đã làm |
+| ADM-08 | Sửa equipment catalog | `AdminEquipment/Edit/{id}` | Cập nhật thông tin máy tập | ✅ Đã làm |
+| ADM-09 | Xóa equipment catalog | `AdminEquipment/Delete/{id}` | Kiểm tra ràng buộc trước khi xóa | ✅ Đã làm |
 
 ### Nhóm 3: Quản lý người dùng chung
 
@@ -160,7 +160,7 @@
 | **Guest** | 9 | 9 | 0 | **100.0%** |
 | **Member** | 16 | 16 | 0 | **100.0%** 🚀 |
 | **Owner** | 20 | 15 | 5 | **75.0%** |
-| **Admin** | 16 | 3 | 13 | **18.8%** |
-| **TỔNG CỘNG** | **61** | **43** | **18** | **70.5%** |
+| **Admin** | 16 | 7 | 9 | **43.8%** |
+| **TỔNG CỘNG** | **61** | **47** | **14** | **77.0%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.

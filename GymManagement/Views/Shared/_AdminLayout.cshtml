@@ -364,6 +364,12 @@
                 <i class="bi bi-building"></i> Tất cả Gym
             </a>
 
+            <p class="nav-section-label" style="margin-top:1rem;">Danh mục gốc</p>
+            <a asp-controller="AdminEquipment" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminEquipment" ? "active" : "")">
+                <i class="bi bi-cpu"></i> Catalog Thiết bị
+            </a>
+
             <p class="nav-section-label" style="margin-top:1rem;">Hệ thống</p>
             <a asp-controller="Home" asp-action="Index" class="sidebar-link">
                 <i class="bi bi-house"></i> Trang chủ

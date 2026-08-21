@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace GymManagement.Models
 {
@@ -6,19 +7,22 @@ namespace GymManagement.Models
     {
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập tên thiết bị / máy tập.")]
         [StringLength(150)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [StringLength(500)]
-        public string ImageUrl { get; set; }
+        [ValidateNever]
+        public string? ImageUrl { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng chọn phân loại nhóm cơ.")]
         [StringLength(100)]
-        public string Category { get; set; }
+        public string Category { get; set; } = string.Empty;
 
         // Navigation property
-        public ICollection<GymEquipment> GymEquipments { get; set; }
+        [ValidateNever]
+        public ICollection<GymEquipment>? GymEquipments { get; set; }
     }
 }
