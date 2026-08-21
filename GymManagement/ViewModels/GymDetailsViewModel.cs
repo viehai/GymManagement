@@ -9,6 +9,9 @@ namespace GymManagement.ViewModels
         /// <summary>Ảnh hiển thị: CustomImage (custom) hoặc Equipment.ImageUrl (catalog).</summary>
         public string DisplayImage { get; set; } = string.Empty;
 
+        /// <summary>Phân loại nhóm cơ (Cardio, Strength - Ngực, v.v.).</summary>
+        public string Category { get; set; } = string.Empty;
+
         /// <summary>Có phải máy do Owner tự thêm không.</summary>
         public bool IsCustom { get; set; }
     }

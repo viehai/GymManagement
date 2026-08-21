@@ -141,6 +141,7 @@
         padding: 0.6rem 0.5rem;
         line-height: 1.3;
     }
+    /* ── Equipment Badges & Filters ── */
     .equipment-badge-custom {
         font-size: 0.58rem;
         font-weight: 700;
@@ -151,6 +152,28 @@
         padding: 2px 6px;
         display: inline-block;
         margin-bottom: 0.5rem;
+    }
+
+    .eq-filter-pill {
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.4rem 0.85rem;
+        border: 1px solid #CFCFCF;
+        background: #FFFFFF;
+        color: #7D7D7D;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border-radius: 0 !important;
+    }
+    .eq-filter-pill:hover,
+    .eq-filter-pill.active {
+        border-color: #252525;
+        background: #252525;
+        color: #FFFFFF !important;
     }
 
     /* ── Empty equipment state ── */
@@ -345,14 +368,40 @@
 
             <!-- 2. Thiết bị -->
             <section aria-label="Danh sách thiết bị">
-                <p class="section-heading">Thiết bị & Máy tập</p>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <p class="section-heading mb-0" style="padding-bottom:0; border-bottom:none;">Thiết bị & Máy tập</p>
+                    <span class="text-muted small" style="font-size:0.75rem;">(@Model.Equipments.Count thiết bị)</span>
+                </div>
 
                 @if (Model.HasEquipments)
                 {
-                    <div class="equipment-grid">
+                    var eqCategories = Model.Equipments
+                        .Select(e => e.Category)
+                        .Where(c => !string.IsNullOrEmpty(c))
+                        .Distinct()
+                        .OrderBy(c => c)
+                        .ToList();
+
+                    if (eqCategories.Count > 1)
+                    {
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-3 pb-1" id="eqFilterPills">
+                            <button type="button" class="eq-filter-pill active" onclick="filterGymEquipments('all', this)">
+                                Tất cả (@Model.Equipments.Count)
+                            </button>
+                            @foreach (var cat in eqCategories)
+                            {
+                                var catCount = Model.Equipments.Count(e => e.Category == cat);
+                                <button type="button" class="eq-filter-pill" onclick="filterGymEquipments('@cat', this)">
+                                    @cat (@catCount)
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    <div class="equipment-grid" id="gymEquipmentGrid">
                         @foreach (var eq in Model.Equipments)
                         {
-                            <div class="equipment-card">
+                            <div class="equipment-card" data-category="@eq.Category">
                                 <div class="equipment-img-wrap">
                                     @if (!string.IsNullOrWhiteSpace(eq.DisplayImage))
                                     {
@@ -369,11 +418,14 @@
                                     }
                                 </div>
                                 <div class="equipment-name">
+                                    <div style="font-size:0.6rem; color:#7D7D7D; text-transform:uppercase; margin-bottom:2px; font-weight:700;">
+                                        @eq.Category
+                                    </div>
                                     @eq.DisplayName
                                     @if (eq.IsCustom)
                                     {
                                         <br />
-                                        <span class="equipment-badge-custom">Độc quyền</span>
+                                        <span class="equipment-badge-custom">Tự thêm</span>
                                     }
                                 </div>
                             </div>
@@ -486,3 +538,25 @@
 
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function filterGymEquipments(cat, btn) {
+            // Đổi class active trên các nút pill
+            document.querySelectorAll('#eqFilterPills .eq-filter-pill').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            if (btn) btn.classList.add('active');
+
+            // Ẩn / hiện các thẻ thiết bị
+            document.querySelectorAll('#gymEquipmentGrid .equipment-card').forEach(function(card) {
+                var cardCat = card.getAttribute('data-category');
+                if (cat === 'all' || cardCat === cat) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

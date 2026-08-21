@@ -194,7 +194,7 @@ else
             {
                 var isCustom = item.IsCustom;
                 var equipName = isCustom ? item.CustomName : item.Equipment?.Name;
-                var equipCategory = isCustom ? "TỰ CHỌN" : item.Equipment?.Category;
+                var equipCategory = isCustom ? (!string.IsNullOrEmpty(item.CustomCategory) ? item.CustomCategory : "TỰ CHỌN") : item.Equipment?.Category;
                 var equipImg = isCustom
                     ? (!string.IsNullOrEmpty(item.CustomImage) ? item.CustomImage : "/images/equipments/strength-multi/dumbbells.png")
                     : (!string.IsNullOrEmpty(item.Equipment?.ImageUrl) ? item.Equipment.ImageUrl : "/images/equipments/strength-multi/dumbbells.png");

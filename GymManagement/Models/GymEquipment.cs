@@ -23,6 +23,8 @@ namespace GymManagement.Models
 
         [StringLength(500)]
         public string CustomImage { get; set; } = string.Empty;
+        [StringLength(100)]
+public string CustomCategory { get; set; } = string.Empty;
 
         // Navigation properties
         [ForeignKey("GymId")]

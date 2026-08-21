@@ -76,11 +76,14 @@ namespace GymManagement.Controllers
                 {
                     IsCustom    = ge.IsCustom,
                     DisplayName = ge.IsCustom
-                        ? (ge.CustomName ?? "Máy tập")
+                        ? (string.IsNullOrWhiteSpace(ge.CustomName) ? "Máy tập" : ge.CustomName)
                         : (ge.Equipment?.Name ?? "Máy tập"),
                     DisplayImage = ge.IsCustom
                         ? (ge.CustomImage ?? string.Empty)
-                        : (ge.Equipment?.ImageUrl ?? string.Empty)
+                        : (ge.Equipment?.ImageUrl ?? string.Empty),
+                    Category = ge.IsCustom
+                        ? (!string.IsNullOrWhiteSpace(ge.CustomCategory) ? ge.CustomCategory : "Strength - Đa Dụng (Multi-purpose)")
+                        : (!string.IsNullOrWhiteSpace(ge.Equipment?.Category) ? ge.Equipment.Category : "Khác")
                 })
                 .ToList();
 

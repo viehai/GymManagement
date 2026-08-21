@@ -152,6 +152,17 @@ namespace GymManagement.Controllers
             return RedirectToAction(nameof(Index), new { gymId });
         }
 
+        private static readonly List<string> StandardCategories = new()
+        {
+            "Cardio",
+            "Strength - Ngực (Chest)",
+            "Strength - Lưng Xô (Back)",
+            "Strength - Chân Mông (Legs & Glutes)",
+            "Strength - Tay Vai (Arms & Shoulders)",
+            "Strength - Bụng (Core)",
+            "Strength - Đa Dụng (Multi-purpose)"
+        };
+
         // ==================== OWN-08: THÊM THIẾT BỊ CUSTOM ====================
         // GET /OwnerEquipment/CreateCustom?gymId=...
         [HttpGet]
@@ -166,7 +177,8 @@ namespace GymManagement.Controllers
             var vm = new OwnerEquipmentCustomViewModel
             {
                 GymId = gym.Id,
-                GymName = gym.Name
+                GymName = gym.Name,
+                Categories = StandardCategories
             };
 
             return View(vm);
@@ -188,9 +200,15 @@ namespace GymManagement.Controllers
                 ModelState.AddModelError("CustomName", "Vui lòng nhập tên thiết bị.");
             }
 
+            if (string.IsNullOrWhiteSpace(model.CustomCategory))
+            {
+                ModelState.AddModelError("CustomCategory", "Vui lòng chọn phân loại nhóm cơ.");
+            }
+
             if (!ModelState.IsValid)
             {
                 model.GymName = gym.Name;
+                model.Categories = StandardCategories;
                 return View(model);
             }
 
@@ -206,6 +224,7 @@ namespace GymManagement.Controllers
                 {
                     ModelState.AddModelError("CustomName", "Chỉ chấp nhận file ảnh định dạng .jpg, .jpeg, .png, .webp, .svg.");
                     model.GymName = gym.Name;
+                    model.Categories = StandardCategories;
                     return View(model);
                 }
 
@@ -238,6 +257,7 @@ namespace GymManagement.Controllers
                 EquipmentId = null,
                 IsCustom = true,
                 CustomName = model.CustomName.Trim(),
+                CustomCategory = model.CustomCategory.Trim(),
                 CustomImage = customImagePath,
                 IsVisible = true
             };
@@ -245,7 +265,7 @@ namespace GymManagement.Controllers
             _context.GymEquipments.Add(ge);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Đã thêm thiết bị tự chọn \"{model.CustomName}\" thành công!";
+            TempData["Success"] = $"Đã thêm thiết bị tự chọn \"{model.CustomName}\" ({model.CustomCategory}) thành công!";
             return RedirectToAction(nameof(Index), new { gymId = model.GymId });
         }
 

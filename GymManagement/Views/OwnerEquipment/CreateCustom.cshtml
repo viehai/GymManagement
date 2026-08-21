@@ -133,6 +133,19 @@
                         <span asp-validation-for="CustomName" class="text-danger small"></span>
                     </div>
 
+                    <!-- Phân loại nhóm cơ Category -->
+                    <div class="form-group-brutal">
+                        <label asp-for="CustomCategory" class="form-label-brutal">PHÂN LOẠI NHÓM CƠ (CATEGORY) *</label>
+                        <select asp-for="CustomCategory" class="input-bottom-line" style="cursor:pointer;" required>
+                            <option value="">-- Chọn phân nhóm cơ chuẩn --</option>
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <option value="@cat">@cat</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CustomCategory" class="text-danger small"></span>
+                    </div>
+
                     <!-- Upload ảnh & Preview -->
                     <div class="form-group-brutal">
                         <label class="form-label-brutal">HÌNH ẢNH THIẾT BỊ (ASPECT RATIO 1:1)</label>
