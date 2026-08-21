@@ -1,21 +1,29 @@
 using GymManagement.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace GymManagement.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly GymDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(GymDbContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var featuredGyms = await _context.Gyms
+                .Include(g => g.MembershipPackages)
+                .Where(g => g.Status == "Approved")
+                .OrderByDescending(g => g.CreatedAt)
+                .Take(3)
+                .ToListAsync();
+
+            return View(featuredGyms);
         }
 
         public IActionResult Privacy()
