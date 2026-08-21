@@ -1,0 +1,271 @@
+<!-- Đường dẫn file: Views/OwnerEquipment/Index.cshtml -->
+@model GymManagement.ViewModels.OwnerEquipmentListViewModel
+
+@{
+    Layout = "_OwnerAdminLayout";
+    ViewData["Title"] = "Thiết Bị Phòng Gym";
+}
+
+<style>
+    /* ══════════════════════════════════════════════════════════════
+       OWNER EQUIPMENT MANAGEMENT — NIKE BRUTAL MINIMALISM
+       #252525 | #7D7D7D | #FFFFFF | #F8F9FA | rounded-0 | no shadow
+    ══════════════════════════════════════════════════════════════ */
+    .equipment-grid-card {
+        background-color: #FFFFFF;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: border-color 0.2s ease;
+    }
+    .equipment-grid-card:hover {
+        border-color: #252525;
+    }
+
+    .equipment-img-box {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        background-color: #F8F9FA;
+        display: block;
+        padding: 0.8rem;
+    }
+
+    .btn-brutal-dark {
+        background-color: #252525;
+        color: #FFFFFF !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 1.4rem;
+        text-decoration: none;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+    }
+    .btn-brutal-dark:hover {
+        background-color: #545454;
+        border-color: #545454;
+    }
+
+    .btn-brutal-outline {
+        background-color: transparent;
+        color: #252525 !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 1.4rem;
+        text-decoration: none;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+    }
+    .btn-brutal-outline:hover {
+        background-color: #252525;
+        color: #FFFFFF !important;
+    }
+
+    .badge-brutal-catalog {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background-color: #252525;
+        color: #FFFFFF;
+        padding: 3px 6px;
+        border-radius: 0 !important;
+    }
+
+    .badge-brutal-custom {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background-color: #7D7D7D;
+        color: #FFFFFF;
+        padding: 3px 6px;
+        border-radius: 0 !important;
+    }
+</style>
+
+<!-- Header & Quick Actions -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 pb-3 border-bottom border-dark border-2">
+    <div>
+        <h1 class="display-6 fw-bolder text-uppercase mb-1" style="font-family:'Montserrat',sans-serif; color:#252525; letter-spacing:-0.5px;">
+            THIẾT BỊ PHÒNG GYM
+        </h1>
+        <p class="text-muted small mb-0">
+            Quản lý máy tập & thiết bị hiển thị cho hội viên tại cơ sở: <strong class="text-dark">@(Model.CurrentGym?.Name ?? "Chưa chọn")</strong>
+        </p>
+    </div>
+
+    @if (Model.MyGyms.Any() && Model.CurrentGym != null)
+    {
+        <!-- Action Buttons Top -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a asp-action="Catalog" asp-route-gymId="@Model.SelectedGymId" class="btn-brutal-outline">
+                <i class="bi bi-collection me-1"></i> + TỪ CATALOG GỐC
+            </a>
+            <a asp-action="CreateCustom" asp-route-gymId="@Model.SelectedGymId" class="btn-brutal-dark">
+                <i class="bi bi-plus-lg me-1"></i> + TỰ THÊM CUSTOM
+            </a>
+        </div>
+    }
+</div>
+
+@if (!Model.MyGyms.Any())
+{
+    <div class="content-card text-center py-5">
+        <i class="bi bi-building-exclamation display-4 text-muted d-block mb-3"></i>
+        <h4 class="fw-bold text-uppercase" style="font-family:'Montserrat',sans-serif; color:#252525;">Bạn chưa đăng ký phòng Gym nào</h4>
+        <p class="text-muted small mb-4">Vui lòng tạo phòng Gym trước khi cấu hình danh mục máy tập.</p>
+        <a asp-controller="OwnerGym" asp-action="Create" class="btn-brutal-dark">
+            <i class="bi bi-plus-lg me-1"></i> ĐĂNG KÝ PHÒNG GYM MỚI
+        </a>
+    </div>
+}
+else
+{
+    <!-- Gym Selector Dropdown & Stats -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        @if (Model.MyGyms.Count > 1)
+        {
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label style="font-size:0.75rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:1px; font-family:'Montserrat',sans-serif;">
+                    Chọn Cơ Sở:
+                </label>
+                <select name="gymId" class="form-select form-select-sm" style="border-radius:0; border:1px solid #252525; min-width:220px;" onchange="this.form.submit()">
+                    @foreach (var g in Model.MyGyms)
+                    {
+                        <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
+                    }
+                </select>
+            </form>
+        }
+        else
+        {
+            <div class="text-muted small">
+                <i class="bi bi-geo-alt me-1"></i>@Model.CurrentGym?.Address
+            </div>
+        }
+
+        <!-- Quick Counters -->
+        <div class="d-flex align-items-center gap-3" style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; font-family:'Montserrat',sans-serif;">
+            <span class="text-dark">Tổng: <strong>@Model.TotalCount</strong></span>
+            <span class="text-muted">|</span>
+            <span class="text-success">Hiển thị: <strong>@Model.VisibleCount</strong></span>
+            <span class="text-muted">|</span>
+            <span class="text-secondary">Đã ẩn: <strong>@Model.HiddenCount</strong></span>
+        </div>
+    </div>
+
+    <!-- Grid Thiết Bị 3 hoặc 4 cột -->
+    @if (!Model.Equipments.Any())
+    {
+        <div class="content-card text-center py-5">
+            <i class="bi bi-cpu display-4 text-muted d-block mb-3"></i>
+            <h4 class="fw-bold text-uppercase" style="font-family:'Montserrat',sans-serif; color:#252525;">Chưa có thiết bị nào trong phòng Gym</h4>
+            <p class="text-muted small mb-4">Chọn các thiết bị có sẵn từ Catalog gốc hoặc tự thêm các thiết bị đặc thù của phòng bạn.</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a asp-action="Catalog" asp-route-gymId="@Model.SelectedGymId" class="btn-brutal-outline">
+                    <i class="bi bi-collection me-1"></i> CHỌN TỪ CATALOG GỐC
+                </a>
+                <a asp-action="CreateCustom" asp-route-gymId="@Model.SelectedGymId" class="btn-brutal-dark">
+                    <i class="bi bi-plus-lg me-1"></i> TỰ THÊM THIẾT BỊ MỚI
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model.Equipments)
+            {
+                var isCustom = item.IsCustom;
+                var equipName = isCustom ? item.CustomName : item.Equipment?.Name;
+                var equipCategory = isCustom ? "TỰ CHỌN" : item.Equipment?.Category;
+                var equipImg = isCustom
+                    ? (!string.IsNullOrEmpty(item.CustomImage) ? item.CustomImage : "/images/equipments/strength-multi/dumbbells.png")
+                    : (!string.IsNullOrEmpty(item.Equipment?.ImageUrl) ? item.Equipment.ImageUrl : "/images/equipments/strength-multi/dumbbells.png");
+
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="equipment-grid-card">
+                        <!-- Card Header / Image -->
+                        <div class="position-relative">
+                            <img src="@equipImg"
+                                 alt="@equipName"
+                                 class="equipment-img-box"
+                                 onerror="this.onerror=null; this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_160,h_160,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';" />
+
+                            <div class="position-absolute top-0 start-0 m-2">
+                                @if (isCustom)
+                                {
+                                    <span class="badge-brutal-custom">Tự thêm</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-brutal-catalog">Catalog</span>
+                                }
+                            </div>
+
+                            <div class="position-absolute top-0 end-0 m-2">
+                                @if (item.IsVisible)
+                                {
+                                    <span class="badge bg-success rounded-0" style="font-size:0.55rem; letter-spacing:1px; text-transform:uppercase;">Hiển thị</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary rounded-0" style="font-size:0.55rem; letter-spacing:1px; text-transform:uppercase;">Đã ẩn</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-3 d-flex flex-column flex-grow-1">
+                            <div class="text-muted" style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; font-family:'Montserrat',sans-serif; margin-bottom:0.25rem;">
+                                @equipCategory
+                            </div>
+                            <h3 class="fw-bolder text-uppercase mb-3" style="font-family:'Montserrat',sans-serif; font-size:0.95rem; color:#252525; line-height:1.3; min-height:2.6rem;">
+                                @equipName
+                            </h3>
+
+                            <!-- Card Footer Action Buttons -->
+                            <div class="mt-auto pt-2 border-top d-flex gap-2">
+                                <!-- Nút Ẩn/Hiện -->
+                                <form asp-action="ToggleVisibility" asp-route-id="@item.Id" method="post" class="flex-grow-1">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="btn btn-sm w-100 rounded-0 fw-bold text-uppercase @(item.IsVisible ? "btn-outline-secondary" : "btn-outline-success")"
+                                            style="font-size:0.65rem; letter-spacing:1px; padding:0.45rem 0.2rem;">
+                                        @(item.IsVisible ? "Ẩn" : "Hiện")
+                                    </button>
+                                </form>
+
+                                <!-- Nút Xóa -->
+                                <form asp-action="Remove" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa thiết bị \'@equipName\' khỏi phòng Gym?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger rounded-0 fw-bold text-uppercase"
+                                            style="font-size:0.65rem; letter-spacing:1px; padding:0.45rem 0.6rem;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}

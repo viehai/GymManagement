@@ -348,6 +348,10 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerGym" ? "active" : "")">
                 <i class="bi bi-building"></i> Phòng Gym của tôi
             </a>
+            <a asp-controller="OwnerEquipment" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerEquipment" ? "active" : "")">
+                <i class="bi bi-cpu"></i> Thiết bị phòng Gym
+            </a>
             <a asp-controller="OwnerPackage" asp-action="Index"
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerPackage" ? "active" : "")">
                 <i class="bi bi-card-list"></i> Gói dịch vụ

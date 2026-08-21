@@ -1,0 +1,221 @@
+<!-- Đường dẫn file: Views/OwnerEquipment/CreateCustom.cshtml -->
+@model GymManagement.ViewModels.OwnerEquipmentCustomViewModel
+
+@{
+    Layout = "_OwnerAdminLayout";
+    ViewData["Title"] = "Thêm Thiết Bị Tự Chọn";
+}
+
+<style>
+    /* ══════════════════════════════════════════════════════════════
+       OWNER CREATE CUSTOM EQUIPMENT — NIKE BRUTAL MINIMALISM
+    ══════════════════════════════════════════════════════════════ */
+    .owner-form-container {
+        background-color: #FFFFFF;
+        padding: 3rem 2.5rem;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+    }
+
+    .form-group-brutal {
+        margin-bottom: 2rem;
+    }
+
+    .form-label-brutal {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #252525;
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+
+    /* Input phẳng chỉ có viền dưới */
+    .input-bottom-line {
+        width: 100%;
+        border: none !important;
+        border-bottom: 2px solid #252525 !important;
+        border-radius: 0 !important;
+        padding: 10px 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.95rem;
+        color: #252525;
+        transition: border-bottom-color 0.2s ease;
+    }
+    .input-bottom-line:focus {
+        border-bottom-color: #000000 !important;
+        background-color: #FAFAFA !important;
+    }
+
+    .file-input-brutal {
+        width: 100%;
+        border: 1px dashed #252525;
+        border-radius: 0 !important;
+        padding: 1rem;
+        background-color: #FAFAFA;
+        font-size: 0.85rem;
+        color: #252525;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .preview-wrapper {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #FAFAFA;
+        border: 1px solid #CFCFCF;
+    }
+    .preview-img-box {
+        width: 120px;
+        height: 120px;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        background-color: #FFFFFF;
+        border: 1px solid #252525;
+        display: block;
+    }
+
+    .btn-submit-brutal {
+        background-color: #252525;
+        color: #FFFFFF !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        width: 100%;
+        padding: 1rem !important;
+        box-shadow: none !important;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .btn-submit-brutal:hover {
+        background-color: #545454;
+        border-color: #545454;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="owner-form-container">
+
+                <div class="mb-4 pb-2 border-bottom border-dark border-2">
+                    <p class="text-uppercase fw-bold text-muted mb-1" style="font-size:0.68rem; letter-spacing:2px; font-family:'Montserrat',sans-serif;">
+                        CƠ SỞ: @Model.GymName
+                    </p>
+                    <h1 class="display-6 fw-bolder text-uppercase mb-0" style="font-family:'Montserrat',sans-serif; color:#252525; letter-spacing:-0.5px;">
+                        TỰ THÊM THIẾT BỊ MỚI
+                    </h1>
+                </div>
+
+                <form asp-action="CreateCustom" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="GymId" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small fw-bold"></div>
+
+                    <!-- Tên thiết bị -->
+                    <div class="form-group-brutal">
+                        <label asp-for="CustomName" class="form-label-brutal">TÊN THIẾT BỊ / MÁY TẬP *</label>
+                        <input asp-for="CustomName"
+                               class="input-bottom-line"
+                               placeholder="Ví dụ: Giàn Tạ Đa Năng 8 Vị Trí (Custom Rig)"
+                               required
+                               autocomplete="off" />
+                        <span asp-validation-for="CustomName" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Upload ảnh & Preview -->
+                    <div class="form-group-brutal">
+                        <label class="form-label-brutal">HÌNH ẢNH THIẾT BỊ (ASPECT RATIO 1:1)</label>
+                        <input type="file"
+                               name="imageFile"
+                               id="imageFile"
+                               class="file-input-brutal"
+                               accept=".jpg,.jpeg,.png,.webp,.svg" />
+                        <small class="text-muted d-block mt-1" style="font-size:0.75rem;">
+                            Hỗ trợ JPG, PNG, WEBP. Ảnh sẽ được tự động lưu vào <code>/images/equipments/custom/</code>.
+                        </small>
+
+                        <!-- Khung xem trước ảnh (Preview) -->
+                        <div id="imagePreviewWrapper" class="preview-wrapper">
+                            <div class="d-flex align-items-center gap-3">
+                                <img id="previewImage" src="#" alt="Preview" class="preview-img-box" />
+                                <div>
+                                    <div id="previewFileName" class="fw-bold" style="font-size:0.85rem; color:#252525;"></div>
+                                    <div id="previewFileSize" class="text-muted small"></div>
+                                    <button type="button" id="btnRemoveImage" class="btn btn-sm btn-link text-danger p-0 mt-1 text-decoration-none" style="font-size:0.75rem;">
+                                        <i class="bi bi-x-circle me-1"></i> Xóa / Chọn ảnh khác
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút bấm submit -->
+                    <div class="mt-4 pt-2">
+                        <button type="submit" class="btn-submit-brutal mb-3">
+                            <i class="bi bi-check-lg me-1"></i> THÊM THIẾT BỊ VÀO PHÒNG GYM
+                        </button>
+                        <a asp-action="Index" asp-route-gymId="@Model.GymId" class="btn btn-link text-decoration-none w-100 text-center text-muted fw-bold text-uppercase" style="font-size:0.75rem; letter-spacing:1px;">
+                            <i class="bi bi-arrow-left me-1"></i> QUAY LẠI DANH SÁCH THIẾT BỊ
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const imageFileInput = document.getElementById('imageFile');
+        const previewWrapper = document.getElementById('imagePreviewWrapper');
+        const previewImage = document.getElementById('previewImage');
+        const previewFileName = document.getElementById('previewFileName');
+        const previewFileSize = document.getElementById('previewFileSize');
+        const btnRemoveImage = document.getElementById('btnRemoveImage');
+
+        if (imageFileInput) {
+            imageFileInput.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImage.src = e.target.result;
+                        previewFileName.textContent = file.name;
+                        previewFileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+                        previewWrapper.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    resetPreview();
+                }
+            });
+        }
+
+        if (btnRemoveImage) {
+            btnRemoveImage.addEventListener('click', function () {
+                imageFileInput.value = '';
+                resetPreview();
+            });
+        }
+
+        function resetPreview() {
+            previewImage.src = '#';
+            previewFileName.textContent = '';
+            previewFileSize.textContent = '';
+            previewWrapper.style.display = 'none';
+        }
+    </script>
+}

@@ -80,11 +80,11 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| OWN-06 | Xem danh mục catalog | `OwnerEquipment/Catalog` | Danh sách máy tập gốc do Admin quản lý | ⏳ Chưa làm |
-| OWN-07 | Bật/tắt equipment | Action `OwnerEquipment` | Toggle `IsVisible` cho `GymEquipment` | ⏳ Chưa làm |
-| OWN-08 | Thêm equipment custom | `OwnerEquipment/CreateCustom` | Nhập CustomName, upload CustomImage | ⏳ Chưa làm |
-| OWN-09 | Sửa/xóa equipment custom | `OwnerEquipment/EditCustom/{id}` | Quản lý thiết bị tự thêm | ⏳ Chưa làm |
-| OWN-10 | Danh sách equipment của gym | `OwnerEquipment/Index/{gymId}` | Tổng hợp catalog + custom | ⏳ Chưa làm |
+| OWN-06 | Xem danh mục catalog | `OwnerEquipment/Catalog` | Danh sách máy tập gốc do Admin quản lý | ✅ Đã làm |
+| OWN-07 | Bật/tắt equipment | Action `OwnerEquipment` | Toggle `IsVisible` cho `GymEquipment` | ✅ Đã làm |
+| OWN-08 | Thêm equipment custom | `OwnerEquipment/CreateCustom` | Nhập CustomName, upload CustomImage | ✅ Đã làm |
+| OWN-09 | Sửa/xóa equipment custom | `OwnerEquipment/EditCustom/{id}` | Quản lý thiết bị tự thêm | ✅ Đã làm |
+| OWN-10 | Danh sách equipment của gym | `OwnerEquipment/Index/{gymId}` | Tổng hợp catalog + custom | ✅ Đã làm |
 
 ### Nhóm 3: Quản lý gói vé (Package)
 
@@ -159,8 +159,8 @@
 |---|---|---|---|---|
 | **Guest** | 9 | 9 | 0 | **100.0%** |
 | **Member** | 16 | 16 | 0 | **100.0%** 🚀 |
-| **Owner** | 20 | 15 | 5 | **75.0%** |
+| **Owner** | 20 | 20 | 0 | **100.0%** 🚀 |
 | **Admin** | 16 | 7 | 9 | **43.8%** |
-| **TỔNG CỘNG** | **61** | **47** | **14** | **77.0%** |
+| **TỔNG CỘNG** | **61** | **52** | **9** | **85.2%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.

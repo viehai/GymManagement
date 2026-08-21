@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GymManagement.Models
@@ -18,16 +19,18 @@ namespace GymManagement.Models
         public bool IsCustom { get; set; } = false;
 
         [StringLength(150)]
-        public string CustomName { get; set; }
+        public string CustomName { get; set; } = string.Empty;
 
         [StringLength(500)]
-        public string CustomImage { get; set; }
+        public string CustomImage { get; set; } = string.Empty;
 
         // Navigation properties
         [ForeignKey("GymId")]
-        public Gym Gym { get; set; }
+        [ValidateNever]
+        public Gym? Gym { get; set; }
 
         [ForeignKey("EquipmentId")]
-        public Equipment Equipment { get; set; }
+        [ValidateNever]
+        public Equipment? Equipment { get; set; }
     }
 }

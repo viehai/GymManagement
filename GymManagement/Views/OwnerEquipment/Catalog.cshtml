@@ -1,0 +1,181 @@
+<!-- Đường dẫn file: Views/OwnerEquipment/Catalog.cshtml -->
+@model GymManagement.ViewModels.OwnerEquipmentCatalogViewModel
+
+@{
+    Layout = "_OwnerAdminLayout";
+    ViewData["Title"] = "Catalog Thiết Bị Gốc";
+}
+
+<style>
+    /* ══════════════════════════════════════════════════════════════
+       OWNER EQUIPMENT CATALOG — NIKE BRUTAL MINIMALISM
+    ══════════════════════════════════════════════════════════════ */
+    .catalog-grid-card {
+        background-color: #FFFFFF;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: border-color 0.2s ease;
+    }
+    .catalog-grid-card:hover {
+        border-color: #252525;
+    }
+
+    .catalog-img-box {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        background-color: #F8F9FA;
+        display: block;
+        padding: 0.8rem;
+    }
+
+    .btn-add-gym {
+        background-color: #252525;
+        color: #FFFFFF !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        box-shadow: none !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-add-gym:hover {
+        background-color: #545454;
+        border-color: #545454;
+    }
+
+    .filter-btn-pill {
+        display: inline-block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.4rem 0.9rem;
+        border: 1px solid #CFCFCF;
+        color: #7D7D7D;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .filter-btn-pill:hover,
+    .filter-btn-pill.active {
+        border-color: #252525;
+        background-color: #252525;
+        color: #FFFFFF !important;
+    }
+</style>
+
+<!-- Header & Back Button -->
+<div class="mb-4 pb-3 border-bottom border-dark border-2">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <a asp-action="Index" asp-route-gymId="@Model.GymId" class="text-decoration-none fw-bold text-uppercase small text-muted" style="letter-spacing:1px;">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách thiết bị
+        </a>
+        <span class="badge bg-dark rounded-0 text-uppercase" style="font-size:0.65rem; letter-spacing:1.5px;">
+            Cơ sở: @Model.CurrentGym?.Name
+        </span>
+    </div>
+
+    <h1 class="display-6 fw-bolder text-uppercase mb-1" style="font-family:'Montserrat',sans-serif; color:#252525; letter-spacing:-0.5px;">
+        CATALOG THIẾT BỊ GỐC
+    </h1>
+    <p class="text-muted small mb-0">
+        Chọn các loại máy tập & dụng cụ chuẩn hoá từ Admin để thêm ngay vào phòng Gym của bạn.
+    </p>
+</div>
+
+<!-- Category Filters -->
+@if (Model.Categories.Any())
+{
+    <div class="d-flex align-items-center gap-2 flex-wrap mb-4 pb-2">
+        <a asp-action="Catalog" asp-route-gymId="@Model.GymId"
+           class="filter-btn-pill @(string.IsNullOrEmpty(Model.SelectedCategory) ? "active" : "")">
+            Tất cả (@Model.AvailableEquipments.Count)
+        </a>
+        @foreach (var cat in Model.Categories)
+        {
+            <a asp-action="Catalog" asp-route-gymId="@Model.GymId" asp-route-category="@cat"
+               class="filter-btn-pill @(Model.SelectedCategory == cat ? "active" : "")">
+                @cat
+            </a>
+        }
+    </div>
+}
+
+<!-- Grid Catalog Equipments -->
+@if (!Model.AvailableEquipments.Any())
+{
+    <div class="content-card text-center py-5">
+        <i class="bi bi-check2-all display-4 text-success d-block mb-3"></i>
+        <h4 class="fw-bold text-uppercase" style="font-family:'Montserrat',sans-serif; color:#252525;">Đã thêm tất cả thiết bị</h4>
+        <p class="text-muted small mb-4">
+            @(string.IsNullOrEmpty(Model.SelectedCategory)
+                ? "Tất cả các máy tập từ Catalog gốc đã được thêm vào phòng Gym của bạn."
+                : $"Không còn thiết bị nào thuộc nhóm \"{Model.SelectedCategory}\" chưa thêm.")
+        </p>
+        <a asp-action="Index" asp-route-gymId="@Model.GymId" class="btn btn-dark rounded-0 fw-bold px-4 py-2 text-uppercase" style="font-size:0.75rem; letter-spacing:1.5px;">
+            <i class="bi bi-arrow-left me-1"></i> XEM THIẾT BỊ PHÒNG GYM
+        </a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var item in Model.AvailableEquipments)
+        {
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="catalog-grid-card">
+                    <!-- Image -->
+                    <div class="position-relative">
+                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_160,h_160,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg" : item.ImageUrl)"
+                             alt="@item.Name"
+                             class="catalog-img-box"
+                             onerror="this.onerror=null; this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_160,h_160,al_c,q_85,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';" />
+
+                        <div class="position-absolute top-0 start-0 m-2">
+                            <span class="badge bg-dark rounded-0" style="font-size:0.55rem; letter-spacing:1px; text-transform:uppercase;">
+                                @(string.IsNullOrEmpty(item.Category) ? "CHUNG" : item.Category)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                        <h3 class="fw-bolder text-uppercase mb-2" style="font-family:'Montserrat',sans-serif; font-size:0.95rem; color:#252525; line-height:1.3; min-height:2.6rem;">
+                            @item.Name
+                        </h3>
+
+                        @if (!string.IsNullOrEmpty(item.Description))
+                        {
+                            <p class="text-muted small mb-3" style="font-size:0.75rem; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                                @item.Description
+                            </p>
+                        }
+
+                        <!-- Action Button Full Width -->
+                        <div class="mt-auto pt-2 border-top">
+                            <form asp-action="AddFromCatalog" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="gymId" value="@Model.GymId" />
+                                <input type="hidden" name="equipmentId" value="@item.Id" />
+                                <button type="submit" class="btn-add-gym">
+                                    <i class="bi bi-plus-lg me-1"></i> THÊM VÀO PHÒNG GYM
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
