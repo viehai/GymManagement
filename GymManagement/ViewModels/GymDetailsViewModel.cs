@@ -48,6 +48,8 @@ namespace GymManagement.ViewModels
         public string Address { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string ImageUrl { get; set; } = string.Empty;
+        public string OwnerId { get; set; } = string.Empty;
+        public bool IsOwnerOfThisGym { get; set; }
 
         /// <summary>Ảnh đại diện có fallback.</summary>
         public string DisplayImage =>

@@ -1,0 +1,368 @@
+<!-- Đường dẫn file: Views/AdminUser/Index.cshtml -->
+@model GymManagement.ViewModels.AdminUserListViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Người Dùng";
+}
+
+<style>
+    /* ══════════════════════════════════════════════════════════════
+       ADMIN USER MANAGEMENT — NIKE BRUTAL MINIMALISM
+       #252525 | #7D7D7D | #FFFFFF | #F8F9FA | rounded-0 | no shadow
+    ══════════════════════════════════════════════════════════════ */
+    .admin-user-container {
+        background-color: #FFFFFF;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+    }
+
+    /* Filter Nav Tabs phẳng */
+    .filter-tab-link {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        padding: 0.85rem 1.2rem;
+        text-decoration: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+    .filter-tab-link:hover {
+        color: #252525;
+        border-bottom-color: #7D7D7D;
+    }
+    .filter-tab-link.active {
+        color: #252525;
+        font-weight: 900;
+        border-bottom: 2px solid #252525;
+        background-color: #FAFAFA;
+    }
+
+    .badge-count {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 0 !important;
+        margin-left: 4px;
+    }
+
+    /* Search input phẳng */
+    .search-input-brutal {
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-size: 0.85rem;
+        padding: 0.55rem 1rem;
+        background: #FFFFFF;
+        outline: none;
+        box-shadow: none !important;
+    }
+    .search-input-brutal:focus {
+        border-color: #000000;
+        background: #FAFAFA;
+    }
+
+    .btn-search-brutal {
+        background-color: #252525;
+        color: #FFFFFF !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.55rem 1.2rem;
+        box-shadow: none !important;
+    }
+    .btn-search-brutal:hover {
+        background-color: #545454;
+        border-color: #545454;
+    }
+
+    /* Table */
+    .table-brutal {
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+    .table-brutal thead th {
+        background-color: #F8F9FA;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #252525;
+        padding: 1rem 1.2rem;
+        border-bottom: 2px solid #252525;
+        border-top: none;
+    }
+    .table-brutal tbody td {
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid #E8EAED;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        color: #252525;
+    }
+    .table-brutal tbody tr:hover td {
+        background-color: #FAFAFA;
+    }
+
+    /* Role Badges */
+    .role-badge-admin {
+        background-color: #252525;
+        color: #FFFFFF;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 0 !important;
+    }
+    .role-badge-owner {
+        background-color: #545454;
+        color: #FFFFFF;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 0 !important;
+    }
+    .role-badge-member {
+        background-color: transparent;
+        color: #545454;
+        border: 1px solid #7D7D7D;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 0 !important;
+    }
+
+    /* Action Buttons */
+    .btn-act-brutal {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.35rem 0.65rem;
+        border-radius: 0 !important;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        box-shadow: none !important;
+    }
+</style>
+
+<!-- Header -->
+<div class="mb-4 pb-2 border-bottom border-dark border-2">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <p class="text-uppercase fw-bold text-muted mb-1" style="font-size:0.68rem; letter-spacing:2px; font-family:'Montserrat',sans-serif;">
+                HỆ THỐNG & PHÂN QUYỀN
+            </p>
+            <h1 class="display-6 fw-bolder text-uppercase mb-0" style="font-family:'Montserrat',sans-serif; color:#252525; letter-spacing:-0.5px;">
+                QUẢN LÝ NGƯỜI DÙNG
+            </h1>
+        </div>
+        <div class="text-muted small">
+            Tổng cộng: <strong class="text-dark">@Model.TotalCount</strong> tài khoản
+        </div>
+    </div>
+</div>
+
+<div class="admin-user-container">
+
+    <!-- Filter Nav Tabs & Search Bar -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap border-bottom gap-2 p-2" style="background:#FFFFFF;">
+        <!-- Tabs -->
+        <div class="d-flex align-items-center flex-wrap">
+            <a asp-action="Index" asp-route-filter="all" asp-route-search="@Model.SearchQuery"
+               class="filter-tab-link @(Model.CurrentFilter == "all" ? "active" : "")">
+                TẤT CẢ <span class="badge badge-count bg-dark text-white">@Model.TotalCount</span>
+            </a>
+            <a asp-action="Index" asp-route-filter="member" asp-route-search="@Model.SearchQuery"
+               class="filter-tab-link @(Model.CurrentFilter == "member" ? "active" : "")">
+                HỘI VIÊN <span class="badge badge-count bg-secondary text-white">@Model.MemberCount</span>
+            </a>
+            <a asp-action="Index" asp-route-filter="owner" asp-route-search="@Model.SearchQuery"
+               class="filter-tab-link @(Model.CurrentFilter == "owner" ? "active" : "")">
+                CHỦ PHÒNG GYM <span class="badge badge-count bg-dark text-white">@Model.OwnerCount</span>
+            </a>
+            <a asp-action="Index" asp-route-filter="pending" asp-route-search="@Model.SearchQuery"
+               class="filter-tab-link @(Model.CurrentFilter == "pending" ? "active" : "")">
+                CHỜ DUYỆT <span class="badge badge-count @(Model.PendingCount > 0 ? "bg-danger text-white" : "bg-light text-dark")">@Model.PendingCount</span>
+            </a>
+            <a asp-action="Index" asp-route-filter="locked" asp-route-search="@Model.SearchQuery"
+               class="filter-tab-link @(Model.CurrentFilter == "locked" ? "active" : "")">
+                BỊ KHÓA <span class="badge badge-count bg-danger text-white">@Model.LockedCount</span>
+            </a>
+        </div>
+
+        <!-- Search Form -->
+        <form method="get" asp-action="Index" class="d-flex align-items-center gap-1 p-2">
+            <input type="hidden" name="filter" value="@Model.CurrentFilter" />
+            <input type="text"
+                   name="search"
+                   value="@Model.SearchQuery"
+                   placeholder="Tìm theo tên, email, sđt..."
+                   class="search-input-brutal"
+                   autocomplete="off" />
+            <button type="submit" class="btn btn-search-brutal">
+                <i class="bi bi-search"></i>
+            </button>
+            @if (!string.IsNullOrEmpty(Model.SearchQuery))
+            {
+                <a asp-action="Index" asp-route-filter="@Model.CurrentFilter" class="btn btn-outline-secondary rounded-0 btn-sm" title="Xóa tìm kiếm">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            }
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    @if (!Model.Users.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-person-x display-4 text-muted d-block mb-3"></i>
+            <h5 class="fw-bold text-uppercase" style="font-family:'Montserrat',sans-serif; color:#252525;">Không tìm thấy người dùng</h5>
+            <p class="text-muted small">Không có người dùng nào khớp với bộ lọc hoặc từ khóa tìm kiếm.</p>
+            <a asp-action="Index" class="btn btn-outline-dark rounded-0 fw-bold btn-sm text-uppercase" style="letter-spacing:1px;">
+                Xem tất cả
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table-brutal">
+                <thead>
+                    <tr>
+                        <th style="width:25%;">HỌ TÊN & EMAIL</th>
+                        <th style="width:15%;">SỐ ĐIỆN THOẠI</th>
+                        <th style="width:12%;">VAI TRÒ (ROLE)</th>
+                        <th style="width:18%;">TRẠNG THÁI</th>
+                        <th style="width:10%;">SỐ CƠ SỞ</th>
+                        <th style="width:20%;" class="text-end">HÀNH ĐỘNG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <!-- Họ tên & Email -->
+                            <td>
+                                <div class="fw-bold" style="color:#252525;">@user.FullName</div>
+                                <div class="text-muted small font-monospace" style="font-size:0.78rem;">@user.Email</div>
+                            </td>
+
+                            <!-- SĐT -->
+                            <td>
+                                <span class="text-muted" style="font-size:0.82rem;">@user.PhoneNumber</span>
+                            </td>
+
+                            <!-- Vai trò -->
+                            <td>
+                                @if (user.Role == "Admin")
+                                {
+                                    <span class="role-badge-admin">Admin</span>
+                                }
+                                else if (user.Role == "Owner")
+                                {
+                                    <span class="role-badge-owner">Owner</span>
+                                }
+                                else
+                                {
+                                    <span class="role-badge-member">Member</span>
+                                }
+                            </td>
+
+                            <!-- Trạng thái -->
+                            <td>
+                                @if (user.IsLocked)
+                                {
+                                    <span class="badge bg-danger rounded-0 text-uppercase" style="font-size:0.6rem; letter-spacing:1px;">
+                                        <i class="bi bi-lock-fill me-1"></i> Bị khóa
+                                    </span>
+                                }
+                                else if (user.HasPendingGym)
+                                {
+                                    <span class="badge bg-warning text-dark rounded-0 text-uppercase" style="font-size:0.6rem; letter-spacing:1px;" title="Cơ sở: @user.PendingGymName">
+                                        <i class="bi bi-hourglass-split me-1"></i> Chờ duyệt Owner
+                                    </span>
+                                    <div class="text-muted small mt-1" style="font-size:0.7rem;">
+                                        Gym: <em>@user.PendingGymName</em>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success rounded-0 text-uppercase" style="font-size:0.6rem; letter-spacing:1px;">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Hoạt động
+                                    </span>
+                                }
+                            </td>
+
+                            <!-- Số cơ sở -->
+                            <td>
+                                <span class="fw-bold" style="font-size:0.85rem;">@user.GymCount</span>
+                            </td>
+
+                            <!-- Hành động -->
+                            <td class="text-end">
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <!-- Nút Duyệt Owner (Chỉ hiện khi có hồ sơ Gym chờ duyệt) -->
+                                    @if (user.HasPendingGym)
+                                    {
+                                        <form asp-action="ApproveOwner" asp-route-id="@user.Id" asp-route-returnFilter="@Model.CurrentFilter" method="post" class="d-inline" onsubmit="return confirm('Xác nhận duyệt tài khoản @user.FullName thành Owner và kích hoạt phòng Gym @user.PendingGymName?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-act-brutal btn-dark" title="Duyệt phòng Gym & nâng cấp Owner">
+                                                <i class="bi bi-check-lg"></i> DUYỆT
+                                            </button>
+                                        </form>
+                                    }
+
+                                    <!-- Nút Phân quyền -->
+                                    <a asp-action="EditRole" asp-route-id="@user.Id" class="btn-act-brutal btn-outline-dark" title="Chỉnh sửa quyền hạn">
+                                        <i class="bi bi-shield-lock"></i> PHÂN QUYỀN
+                                    </a>
+
+                                    <!-- Nút Khóa / Mở khóa -->
+                                    <form asp-action="ToggleLock" asp-route-id="@user.Id" asp-route-returnFilter="@Model.CurrentFilter" method="post" class="d-inline" onsubmit="return confirm('Xác nhận @(user.IsLocked ? "mở khóa" : "khóa") tài khoản @user.Email?');">
+                                        @Html.AntiForgeryToken()
+                                        @if (user.IsLocked)
+                                        {
+                                            <button type="submit" class="btn-act-brutal btn-outline-success" title="Mở khóa tài khoản">
+                                                <i class="bi bi-unlock"></i> MỞ KHÓA
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn-act-brutal btn-outline-danger" title="Khóa tài khoản">
+                                                <i class="bi bi-lock"></i> KHÓA
+                                            </button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>

@@ -1,0 +1,154 @@
+<!-- Đường dẫn file: Views/AdminUser/EditRole.cshtml -->
+@model GymManagement.ViewModels.AdminEditRoleViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Phân Quyền Người Dùng";
+}
+
+<style>
+    /* ══════════════════════════════════════════════════════════════
+       ADMIN EDIT ROLE — NIKE BRUTAL MINIMALISM
+    ══════════════════════════════════════════════════════════════ */
+    .admin-form-container {
+        background-color: #FFFFFF;
+        padding: 3rem 2.5rem;
+        border: 1px solid #CFCFCF;
+        border-radius: 0 !important;
+    }
+
+    .form-group-brutal {
+        margin-bottom: 2rem;
+    }
+
+    .form-label-brutal {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #252525;
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+
+    /* Input phẳng chỉ có viền dưới */
+    .input-bottom-line {
+        width: 100%;
+        border: none !important;
+        border-bottom: 2px solid #252525 !important;
+        border-radius: 0 !important;
+        padding: 10px 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.95rem;
+        color: #252525;
+        transition: border-bottom-color 0.2s ease;
+    }
+    .input-bottom-line:focus {
+        border-bottom-color: #000000 !important;
+        background-color: #FAFAFA !important;
+    }
+
+    .user-info-card {
+        background-color: #F8F9FA;
+        border: 1px solid #CFCFCF;
+        padding: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .btn-submit-brutal {
+        background-color: #252525;
+        color: #FFFFFF !important;
+        border: 1px solid #252525;
+        border-radius: 0 !important;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        width: 100%;
+        padding: 1rem !important;
+        box-shadow: none !important;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .btn-submit-brutal:hover {
+        background-color: #545454;
+        border-color: #545454;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="admin-form-container">
+
+                <div class="mb-4 pb-2 border-bottom border-dark border-2">
+                    <p class="text-uppercase fw-bold text-muted mb-1" style="font-size:0.68rem; letter-spacing:2px; font-family:'Montserrat',sans-serif;">
+                        QUẢN LÝ PHÂN QUYỀN HỆ THỐNG
+                    </p>
+                    <h1 class="display-6 fw-bolder text-uppercase mb-0" style="font-family:'Montserrat',sans-serif; color:#252525; letter-spacing:-0.5px;">
+                        PHÂN QUYỀN TÀI KHOẢN
+                    </h1>
+                </div>
+
+                <!-- Thông tin User -->
+                <div class="user-info-card">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small text-uppercase fw-bold" style="letter-spacing:1px; font-size:0.65rem;">Người dùng:</span>
+                        <span class="badge bg-dark rounded-0 text-uppercase" style="font-size:0.6rem; letter-spacing:1px;">
+                            Vai trò hiện tại: @Model.CurrentRole
+                        </span>
+                    </div>
+                    <div class="fw-bold fs-5" style="color:#252525;">@Model.FullName</div>
+                    <div class="text-muted small font-monospace">@Model.Email</div>
+                </div>
+
+                <form asp-action="EditRole" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="UserId" />
+                    <input type="hidden" asp-for="FullName" />
+                    <input type="hidden" asp-for="Email" />
+                    <input type="hidden" asp-for="CurrentRole" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small fw-bold"></div>
+
+                    <!-- Chọn vai trò -->
+                    <div class="form-group-brutal">
+                        <label asp-for="SelectedRole" class="form-label-brutal">CHỌN VAI TRÒ MỚI (ROLE) *</label>
+                        <select asp-for="SelectedRole" class="input-bottom-line" style="cursor:pointer;" required>
+                            @foreach (var role in Model.AvailableRoles)
+                            {
+                                <option value="@role" selected="@(Model.SelectedRole == role)">
+                                    @role @(role == "Admin" ? "— Quản trị viên cao cấp" : role == "Owner" ? "— Chủ phòng Gym" : "— Hội viên / Khách hàng")
+                                </option>
+                            }
+                        </select>
+                        <small class="text-muted d-block mt-2" style="font-size:0.75rem; line-height:1.5;">
+                            <i class="bi bi-info-circle me-1"></i> <strong>Quy tắc an toàn hệ thống:</strong><br />
+                            • Khi chuyển từ <strong>Owner ➔ Member</strong>: Các phòng Gym của người này sẽ tự động chuyển sang trạng thái <strong>Đình chỉ (Suspended)</strong> để tạm ngừng bán vé mới. Toàn bộ vé tập của hội viên cũ và lịch sử giao dịch vẫn được bảo lưu 100%.<br />
+                            • Khi nâng lên <strong>Owner</strong>: Các phòng Gym đang đình chỉ sẽ được kích hoạt lại (Approved).
+                        </small>
+                    </div>
+
+                    <!-- Nút bấm Submit -->
+                    <div class="mt-4 pt-2">
+                        <button type="submit" class="btn-submit-brutal mb-3">
+                            <i class="bi bi-shield-check me-1"></i> CẬP NHẬT QUYỀN
+                        </button>
+                        <a asp-action="Index" class="btn btn-link text-decoration-none w-100 text-center text-muted fw-bold text-uppercase" style="font-size:0.75rem; letter-spacing:1px;">
+                            <i class="bi bi-arrow-left me-1"></i> QUAY LẠI DANH SÁCH
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

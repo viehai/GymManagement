@@ -141,6 +141,12 @@ namespace GymManagement.Controllers
                 return View(model);
             }
 
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                ModelState.AddModelError("", "Tài khoản của bạn đã bị khóa bởi Quản trị viên. Vui lòng liên hệ hỗ trợ.");
+                return View(model);
+            }
+
             if (!user.EmailConfirmed)
             {
                 ModelState.AddModelError("", "Tài khoản chưa xác nhận email. Vui lòng kiểm tra hộp thư.");

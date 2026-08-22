@@ -1,5 +1,6 @@
 using GymManagement.Models;
 using GymManagement.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +12,12 @@ namespace GymManagement.Controllers
     public class GymController : Controller
     {
         private readonly GymDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public GymController(GymDbContext context)
+        public GymController(GymDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: /Gym/Search?keyword=...
@@ -101,15 +104,20 @@ namespace GymManagement.Controllers
                 })
                 .ToList();
 
+            var currentUser = await _userManager.GetUserAsync(User);
+            bool isOwnerOfThisGym = currentUser != null && gym.OwnerId == currentUser.Id;
+
             var vm = new GymDetailsViewModel
             {
-                Id          = gym.Id,
-                Name        = gym.Name,
-                Address     = gym.Address,
-                Description = gym.Description ?? string.Empty,
-                ImageUrl    = gym.ImageUrl ?? string.Empty,
-                Equipments  = equipments,
-                Packages    = packages
+                Id               = gym.Id,
+                Name             = gym.Name,
+                Address          = gym.Address,
+                Description      = gym.Description ?? string.Empty,
+                ImageUrl         = gym.ImageUrl ?? string.Empty,
+                OwnerId          = gym.OwnerId,
+                IsOwnerOfThisGym = isOwnerOfThisGym,
+                Equipments       = equipments,
+                Packages         = packages
             };
 
             return View(vm);

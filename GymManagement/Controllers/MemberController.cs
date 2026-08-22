@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Controllers
 {
-    [Authorize(Roles = "Member,Owner")]
+    [Authorize]
     public class MemberController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -158,7 +158,6 @@ namespace GymManagement.Controllers
         }
 
         // ==================== MEM-11: LỊCH SỬ GIAO DỊCH ====================
-        [Authorize(Roles = "Member")]
         public async Task<IActionResult> TransactionHistory()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -192,7 +191,6 @@ namespace GymManagement.Controllers
         }
 
         // ==================== MEM-12: CHI TIẾT HÓA ĐƠN ====================
-        [Authorize(Roles = "Member")]
         public async Task<IActionResult> InvoiceDetails(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -237,7 +235,6 @@ namespace GymManagement.Controllers
         }
 
         // ==================== MEM-13: DANH SÁCH VÉ TẬP / HỘI VIÊN ====================
-        [Authorize(Roles = "Member")]
         public async Task<IActionResult> MyMemberships()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -271,7 +268,6 @@ namespace GymManagement.Controllers
         }
 
         // ==================== MEM-14: CHI TIẾT 1 VÉ HỘI VIÊN ====================
-        [Authorize(Roles = "Member")]
         public async Task<IActionResult> MembershipDetails(int id)
         {
             var user = await _userManager.GetUserAsync(User);

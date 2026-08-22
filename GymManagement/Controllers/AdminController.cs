@@ -81,7 +81,12 @@ namespace GymManagement.Controllers
                 bool isAlreadyOwner = await _userManager.IsInRoleAsync(owner, "Owner");
                 if (!isAlreadyOwner)
                 {
+                    if (await _userManager.IsInRoleAsync(owner, "Member"))
+                    {
+                        await _userManager.RemoveFromRoleAsync(owner, "Member");
+                    }
                     await _userManager.AddToRoleAsync(owner, "Owner");
+                    await _userManager.UpdateSecurityStampAsync(owner);
                 }
 
                 // 3. Gửi email thông báo phê duyệt

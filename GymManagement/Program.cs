@@ -23,13 +23,19 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddDbContext<GymDbContext>(
     opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
 
-// B4: Cấu hình Cookie Authentication
+// B4: Cấu hình Cookie Authentication & Kiểm tra bảo mật tức thì (Instant Lockout / Force Logout)
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
+});
+
+// Bắt buộc Identity kiểm tra lại SecurityStamp & Trạng thái Khóa (Lockout) ngay lập tức trên mỗi Request
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
+    options.ValidationInterval = TimeSpan.Zero;
 });
 
 var app = builder.Build();

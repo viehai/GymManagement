@@ -14,7 +14,7 @@ namespace GymManagement.Controllers
     /// Yêu cầu đăng nhập (Authorize). Guest bấm CTA sẽ bị redirect về Account/Login.
     /// Mock VNPay: không cần key thật — POST Checkout tự chuyển thành công.
     /// </summary>
-    [Authorize(Roles = "Member")]
+    [Authorize]
     public class PurchaseController : Controller
     {
         private readonly GymDbContext _context;
@@ -39,6 +39,14 @@ namespace GymManagement.Controllers
                 .FirstOrDefaultAsync(g => g.Id == gymId && g.Status == "Approved");
 
             if (gym == null) return NotFound();
+
+            // Chặn Chủ phòng Gym tự mua vé của chính mình
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null && gym.OwnerId == user.Id)
+            {
+                TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
+                return RedirectToAction("Details", "Gym", new { id = gymId });
+            }
 
             // Lấy gói Daily đầu tiên còn active
             var dailyPackage = gym.MembershipPackages
@@ -91,6 +99,14 @@ namespace GymManagement.Controllers
 
             if (gym == null) return NotFound();
 
+            // Chặn Chủ phòng Gym tự mua gói của chính mình
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null && gym.OwnerId == user.Id)
+            {
+                TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
+                return RedirectToAction("Details", "Gym", new { id = gymId });
+            }
+
             var packages = gym.MembershipPackages
                 .Where(p => p.IsActive && p.PackageType == "Monthly")
                 .OrderBy(p => p.Price)
@@ -129,6 +145,14 @@ namespace GymManagement.Controllers
                 .FirstOrDefaultAsync(p => p.Id == packageId && p.GymId == gymId && p.IsActive);
 
             if (gym == null || pkg == null) return NotFound();
+
+            // Chặn Chủ phòng Gym tự mua gói của chính mình
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null && gym.OwnerId == user.Id)
+            {
+                TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
+                return RedirectToAction("Details", "Gym", new { id = gymId });
+            }
 
             var vm = new PurchaseCheckoutViewModel
             {
@@ -186,6 +210,13 @@ namespace GymManagement.Controllers
             {
                 TempData["Error"] = "Gói vé không còn hợp lệ. Vui lòng chọn lại.";
                 return RedirectToAction("Search", "Gym");
+            }
+
+            // Chặn Chủ phòng Gym tự mua gói tập tại phòng của chính mình
+            if (gym.OwnerId == user.Id)
+            {
+                TempData["Error"] = "Giao dịch không hợp lệ: Không thể tự mua gói tập tại phòng Gym do chính bạn sở hữu.";
+                return RedirectToAction("Details", "Gym", new { id = vm.GymId });
             }
 
             // ── Mock VNPay: tạo thẳng Transaction Success ──

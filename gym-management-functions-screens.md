@@ -119,11 +119,11 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| ADM-01 | Danh sách Owner đăng ký | `AdminOwner/Index` | Lọc theo trạng thái tài khoản | ⏳ Chưa làm |
-| ADM-02 | Duyệt / khóa tài khoản Owner | `AdminOwner/Details/{id}` | Approve/Reject/Lock | ⏳ Chưa làm |
+| ADM-01 | Danh sách Owner đăng ký | `AdminUser/Index?filter=owner` | Lọc theo trạng thái tài khoản | ✅ Đã làm |
+| ADM-02 | Duyệt / khóa tài khoản Owner | `AdminUser/Index` (Action) | Approve/Reject/Lock | ✅ Đã làm |
 | ADM-03 | Danh sách toàn bộ Gym | `Admin/AllGyms` | Lọc theo trạng thái (Pending, Approved, Rejected...) | ✅ Đã làm |
 | ADM-04 | Duyệt gym mới tạo | `Admin/PendingGyms` | Approve (nâng role Owner + gửi mail) / Reject (kèm lý do) | ✅ Đã làm |
-| ADM-05 | Khóa/gỡ 1 gym vi phạm | `AdminGym/Suspend/{id}` | Đình chỉ Gym vi phạm | ⏳ Chưa làm |
+| ADM-05 | Khóa/gỡ 1 gym vi phạm | `AdminGym/Suspend/{id}` | Đình chỉ / Mở lại Gym vi phạm | ✅ Đã làm |
 
 ### Nhóm 2: Quản lý danh mục Equipment gốc
 
@@ -138,9 +138,9 @@
 
 | Mã | Function | Screen | Mô tả | Trạng thái |
 |---|---|---|---|---|
-| ADM-10 | Danh sách tất cả User | `AdminUser/Index` | Lọc theo Role, trạng thái | ⏳ Chưa làm |
-| ADM-11 | Khóa/mở khóa tài khoản | `AdminUser/Details/{id}` | Bao gồm cả Member nếu vi phạm | ⏳ Chưa làm |
-| ADM-12 | Phân quyền / gán Role | `AdminUser/AssignRole/{id}` | Chỉnh role thủ công | ⏳ Chưa làm |
+| ADM-10 | Danh sách tất cả User | `AdminUser/Index` | Lọc theo Role, trạng thái | ✅ Đã làm |
+| ADM-11 | Khóa/mở khóa tài khoản | `AdminUser/ToggleLock` | Ban/Unban tài khoản bằng LockoutEnd | ✅ Đã làm |
+| ADM-12 | Phân quyền / gán Role | `AdminUser/EditRole/{id}` | Chỉnh role thủ công (Admin/Owner/Member) | ✅ Đã làm |
 
 ### Nhóm 4: Giám sát hệ thống
 
@@ -160,7 +160,7 @@
 | **Guest** | 9 | 9 | 0 | **100.0%** |
 | **Member** | 16 | 16 | 0 | **100.0%** 🚀 |
 | **Owner** | 20 | 20 | 0 | **100.0%** 🚀 |
-| **Admin** | 16 | 7 | 9 | **43.8%** |
-| **TỔNG CỘNG** | **61** | **52** | **9** | **85.2%** |
+| **Admin** | 16 | 13 | 3 | **81.3%** |
+| **TỔNG CỘNG** | **61** | **58** | **3** | **95.1%** |
 
 > Lưu ý: Các function không có screen riêng (như MEM-03 Đăng xuất) vẫn được tính vào danh sách phân tích chức năng nghiệp vụ.

@@ -164,6 +164,11 @@
         padding: 0.85rem 1rem;
         margin-bottom: 1.75rem;
     }
+    .alert-min-error ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
     @@media (max-width: 767px) {
         .auth-panel-left { padding: 3rem 2rem; }
         .auth-panel-right { padding: 3rem 2rem; }
@@ -206,7 +211,7 @@
                 @if (!ViewData.ModelState.IsValid)
                 {
                     <div class="alert-min-error" role="alert">
-                        <asp-validation-summary asp-validation-type="ModelOnly" class="mb-0" />
+                        <div asp-validation-summary="ModelOnly" class="mb-0"></div>
                     </div>
                 }
 

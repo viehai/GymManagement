@@ -253,7 +253,7 @@
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="alert-min-error" role="alert">
-                <asp-validation-summary asp-validation-type="All" class="mb-0" />
+                <div asp-validation-summary="All" class="mb-0"></div>
             </div>
         }
 

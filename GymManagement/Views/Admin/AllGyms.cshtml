@@ -40,6 +40,7 @@
                         <th>Địa chỉ</th>
                         <th>Trạng thái</th>
                         <th>Ngày đăng ký</th>
+                        <th class="text-end">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -51,7 +52,7 @@
                         };
                         string statusText = gym.Status switch {
                             "Approved" => "Đã duyệt", "Rejected" => "Từ chối",
-                            "Pending" => "Chờ duyệt", "Suspended" => "Tạm dừng", _ => gym.Status
+                            "Pending" => "Chờ duyệt", "Suspended" => "Đình chỉ", _ => gym.Status
                         };
                         <tr>
                             <td>
@@ -76,6 +77,26 @@
                             <td style="max-width:200px;font-size:0.82rem;color:#555;">@gym.Address</td>
                             <td><span class="badge-status @badgeCls">@statusText</span></td>
                             <td style="font-size:0.78rem;color:#888;">@gym.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td class="text-end">
+                                @if (gym.Status == "Approved" || gym.Status == "Suspended")
+                                {
+                                    <form asp-controller="AdminGym" asp-action="Suspend" asp-route-id="@gym.Id" method="post" class="d-inline" onsubmit="return confirm('Xác nhận @(gym.Status == "Suspended" ? "mở lại hoạt động" : "đình chỉ hoạt động") cho phòng Gym @gym.Name?');">
+                                        @Html.AntiForgeryToken()
+                                        @if (gym.Status == "Suspended")
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success rounded-0" style="font-size:0.7rem; font-weight:700;">
+                                                <i class="bi bi-play-circle me-1"></i> MỞ LẠI
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-0" style="font-size:0.7rem; font-weight:700;">
+                                                <i class="bi bi-slash-circle me-1"></i> ĐÌNH CHỈ
+                                            </button>
+                                        }
+                                    </form>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>
