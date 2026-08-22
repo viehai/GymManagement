@@ -4,7 +4,8 @@
 
 - Mô hình: **MVC thuần** (Controller → DbContext trực tiếp qua EF Core), **KHÔNG dùng Service/Repository layer**
 - Đúng theo mẫu code môn học: `Controllers/`, `Models/`, `Views/`, `Program.cs` cấu hình theo 3 bước (AddControllersWithViews → MapControllerRoute → AddDbContext)
-- Logic dùng chung (tính EndDate, gửi email, gọi VNPay, sinh OTP, ghi log) được gom vào thư mục **`Helpers/`** — là các class C# thuần hoặc static class, KHÔNG phải Service theo pattern N-layer, chỉ để tránh code trùng giữa 2 người
+- Logic dùng chung (tính EndDate, gửi email, sinh VietQR, sinh OTP, ghi log) được gom vào thư mục **`Helpers/`** — là các class C# thuần hoặc static class, KHÔNG phải Service theo pattern N-layer, chỉ để tránh code trùng giữa 2 người
+- Cổng thanh toán: **VietQR (Napas 24/7)** kết hợp **SePay Webhook** tự động nhận biến động số dư chuyển tiền trực tiếp vào tài khoản ngân hàng
 - DbContext đặt tên: `GymDbContext.cs`
 
 ---
@@ -15,26 +16,30 @@
 GymManagement/
 │
 ├── Controllers/
-│   ├── AccountController.cs          → Auth (Người 1)
-│   ├── HomeController.cs             → Trang chủ, tìm kiếm gym (Người 1)
-│   ├── GymController.cs              → Xem chi tiết gym public (Người 1)
-│   ├── PurchaseController.cs         → Mua vé, checkout, VNPay callback (Người 1)
-│   ├── MemberController.cs           → Hồ sơ, lịch sử, vé đang active, gia hạn (Người 1)
+│   ├── AccountController.cs          → Auth (Đăng ký, Đăng nhập, OTP, Quên MK, Lockout)
+│   ├── HomeController.cs             → Trang chủ, tìm kiếm gym
+│   ├── GymController.cs              → Xem chi tiết gym public
+│   ├── PurchaseController.cs         → Mua vé ngày, chọn gói tháng, Checkout, VietQR, SePay Webhook
+│   ├── MemberController.cs           → Hồ sơ, lịch sử, vé đang active, chi tiết vé, đổi mật khẩu
 │   │
-│   ├── OwnerGymController.cs         → CRUD gym (Người 2)
-│   ├── OwnerEquipmentController.cs   → Equipment catalog/custom (Người 2)
-│   ├── OwnerPackageController.cs     → CRUD package (Người 2)
-│   ├── OwnerMemberController.cs      → Danh sách hội viên, doanh thu (Người 2)
+│   ├── OwnerGymController.cs         → Đăng ký & Quản lý Gym
+│   ├── OwnerEquipmentController.cs   → Quản lý thiết bị (Catalog gốc / Tự thêm)
+│   ├── OwnerPackageController.cs     → Quản lý gói vé (Vé ngày / Gói tháng)
+│   ├── OwnerMemberController.cs      → Danh sách hội viên phòng gym
+│   ├── OwnerTransactionController.cs  → Lịch sử giao dịch & Duyệt tiền thủ công (Owner)
+│   ├── OwnerDashboardController.cs   → Báo cáo doanh thu, KPI cơ sở
 │   │
-│   ├── AdminOwnerController.cs       → Duyệt Owner (Người 2)
-│   ├── AdminGymController.cs         → Duyệt Gym (Người 2)
-│   ├── AdminEquipmentController.cs   → Catalog gốc (Người 2)
-│   ├── AdminUserController.cs        → Quản lý User chung (Người 2)
-│   └── AdminLogController.cs         → Xem SystemLog (Người 2)
+│   ├── AdminOwnerController.cs       → Duyệt hồ sơ Owner
+│   ├── AdminGymController.cs         → Duyệt / Khóa / Mở lại Gym
+│   ├── AdminEquipmentController.cs   → Quản lý Catalog thiết bị dùng chung
+│   ├── AdminUserController.cs        → Quản lý toàn bộ tài khoản người dùng
+│   ├── AdminTransactionController.cs → Quản lý giao dịch toàn sàn & Duyệt tiền (Admin)
+│   ├── AdminLogController.cs         → Nhật ký hệ thống (SystemLogs)
+│   └── AdminDashboardController.cs   → Thống kê tổng quan toàn sàn
 │
 ├── Models/
-│   ├── GymDbContext.cs               → DbContext (2 người cùng thống nhất 1 lần, sau đó KHÔNG sửa riêng lẻ)
-│   ├── ApplicationUser.cs            → Kế thừa IdentityUser (Người 1 sở hữu)
+│   ├── GymDbContext.cs               → DbContext kết nối SQL Server
+│   ├── ApplicationUser.cs            → Kế thừa IdentityUser
 │   ├── Gym.cs
 │   ├── Equipment.cs
 │   ├── GymEquipment.cs
@@ -51,80 +56,143 @@ GymManagement/
 │   ├── ForgotPasswordViewModel.cs
 │   ├── ResetPasswordViewModel.cs
 │   ├── PurchaseCheckoutViewModel.cs
+│   ├── QrPaymentViewModel.cs         → ViewModel cho màn hình quét mã VietQR động & SePay DTO
 │   ├── OwnerPackageFormViewModel.cs
+│   ├── OwnerTransactionListViewModel.cs
+│   ├── AdminTransactionViewModel.cs
 │   └── ...
 │
 ├── Helpers/                           → Class dùng chung, KHÔNG phải Service layer, chỉ để tránh trùng code
-│   ├── MembershipHelper.cs           → static method CalculateNewEndDate()
+│   ├── MembershipHelper.cs           → CalculateEndDate(), CalculateRenewEndDate(), GenerateInvoiceCode()
 │   ├── OtpHelper.cs                  → static method GenerateOtp()
-│   ├── EmailHelper.cs                → SendEmailAsync() dùng SMTP
-│   ├── VnPayHelper.cs                → BuildPaymentUrl(), ValidateSignature()
-│   ├── InvoicePdfHelper.cs           → GenerateInvoicePdf() dùng QuestPDF
-│   └── LogHelper.cs                  → static method WriteLog()
+│   ├── EmailHelper.cs                → SendEmailAsync() dùng Gmail SMTP
+│   └── InvoicePdfHelper.cs           → GenerateInvoicePdf()
 │
 ├── Views/
 │   ├── Shared/
-│   │   ├── _MemberLayout.cshtml       → Layout cho Guest/Member (Người 1)
-│   │   ├── _OwnerAdminLayout.cshtml   → Layout cho Owner/Admin (Người 2)
+│   │   ├── _MemberLayout.cshtml       → Layout phong cách Nike Brutal Minimalism (Member)
+│   │   ├── _OwnerAdminLayout.cshtml   → Layout Dashboard Sidebar (Owner & Admin)
 │   │   ├── _ValidationScriptsPartial.cshtml
-│   │   └── _Notification.cshtml       → PartialView thông báo dùng chung
+│   │   └── _Notification.cshtml       → PartialView thông báo Toast / Alert
 │   │
-│   ├── Account/                       (Người 1)
+│   ├── Account/
 │   │   ├── Register.cshtml
 │   │   ├── Login.cshtml
 │   │   ├── ForgotPassword.cshtml
 │   │   ├── VerifyOtp.cshtml
 │   │   └── ResetPassword.cshtml
 │   │
-│   ├── Home/                          (Người 1)
+│   ├── Home/
 │   │   └── Index.cshtml
 │   │
-│   ├── Gym/                           (Người 1 — public view)
+│   ├── Gym/
 │   │   ├── Search.cshtml
 │   │   └── Details.cshtml
 │   │
-│   ├── Purchase/                      (Người 1)
+│   ├── Purchase/
 │   │   ├── DailyPass.cshtml
-│   │   ├── Package.cshtml
-│   │   ├── Checkout.cshtml
-│   │   ├── Result.cshtml
-│   │   └── Renew.cshtml
+│   │   ├── Package.cshtml             → Chọn gói tháng (MEM-07)
+│   │   ├── Checkout.cshtml            → Tóm tắt & phương thức VietQR (MEM-08)
+│   │   ├── QrPayment.cshtml           → Màn hình quét mã VietQR động 24/7 & Auto-Polling
+│   │   ├── Result.cshtml              → Hóa đơn & kết quả thanh toán thành công
+│   │   └── Renew.cshtml               → Gia hạn gói tập
 │   │
-│   ├── Member/                        (Người 1)
-│   │   ├── Profile.cshtml
-│   │   ├── ChangePassword.cshtml
-│   │   ├── TransactionHistory.cshtml
-│   │   ├── InvoiceDetails.cshtml
-│   │   ├── MyMemberships.cshtml
-│   │   └── MembershipDetails.cshtml
-│   │
-│   ├── OwnerGym/                      (Người 2)
-│   ├── OwnerEquipment/                (Người 2)
-│   ├── OwnerPackage/                  (Người 2)
-│   ├── OwnerMember/                   (Người 2)
-│   ├── OwnerDashboard/                (Người 2)
-│   │
-│   ├── AdminOwner/                    (Người 2)
-│   ├── AdminGym/                      (Người 2)
-│   ├── AdminEquipment/                (Người 2)
-│   ├── AdminUser/                     (Người 2)
-│   ├── AdminLog/                      (Người 2)
-│   └── AdminDashboard/                (Người 2)
+│   ├── Member/
+│   ├── OwnerGym/
+│   ├── OwnerEquipment/
+│   ├── OwnerPackage/
+│   ├── OwnerMember/
+│   ├── OwnerTransaction/
+│   ├── OwnerDashboard/
+│   ├── AdminOwner/
+│   ├── AdminGym/
+│   ├── AdminEquipment/
+│   ├── AdminUser/
+│   ├── AdminTransaction/
+│   ├── AdminLog/
+│   └── AdminDashboard/
 │
 ├── wwwroot/
 │   ├── css/site.css
 │   ├── js/site.js
-│   └── lib/                           → Bootstrap5, jQuery (thư viện)
+│   └── lib/                           → Bootstrap5, Bootstrap Icons, jQuery
 │
-├── appsettings.json                   → ConnectionString, SMTP config, VNPay config
+├── appsettings.json                   → ConnectionString, SMTP config, VietQR & SePay config
 └── Program.cs
 ```
 
 ---
 
-## `Program.cs` — cấu trúc mở rộng từ mẫu gốc
+## Hướng Dẫn Tích Hợp & Sử Dụng VietQR (Napas 24/7 + SePay Webhook)
 
-Giữ nguyên 3 bước gốc, chỉ bổ sung Identity + đăng ký Helper (nếu cần DI) + Session (nếu OTP lưu tạm bằng session thay vì DB):
+### 1. Kiến trúc luồng thanh toán VietQR
+
+```
+[ Hội viên bấm Mua / Gia hạn ] 
+              │
+              ▼
+[ Màn hình QrPayment.cshtml ] ──> Hiển thị Mã VietQR động (img.vietqr.io)
+              │                   (STK, Tên chủ TK, Số tiền chính xác, Nội dung: GP{TransactionId})
+              │
+              ▼
+[ Khách quét QR qua App Ngân hàng ] ──> [ Tiền chuyển thẳng vào TK Ngân hàng cá nhân ]
+                                                           │
+                                                           ▼ (Sau 1-2 giây)
+                                                   [ SePay (sepay.vn) ]
+                                                           │
+                                                           ▼ (Gửi Webhook POST)
+                                             [ POST /Purchase/SepayWebhook ]
+                                                           │
+              ┌────────────────────────────────────────────┴────────────────────────────────────────────┐
+              ▼                                                                                         ▼
+  [ Đổi Transaction.Status = Success ]                                                    [ Kích hoạt MemberMembership ]
+              │                                                                                         │
+              └────────────────────────────────────────────┬────────────────────────────────────────────┘
+                                                           │
+                                                           ▼ (JavaScript Polling mỗi 2s phát hiện)
+                                         [ Màn hình tự động chuyển sang Result.cshtml 🎉 ]
+```
+
+---
+
+### 2. Cấu hình trong `appsettings.json`
+
+```json
+"VietQrSettings": {
+  "BankId": "MB",                       // Mã ngân hàng: MB, VCB, TCB, TPB, ACB, ICB, BIDV, VPB...
+  "BankName": "MBBank (Ngân hàng Quân Đội)",
+  "AccountNumber": "0965120204",        // Số tài khoản ngân hàng của bạn
+  "AccountName": "CHU VIET HAI",        // Tên chủ tài khoản (Viết hoa không dấu)
+  "Template": "compact2"                // Template mã QR: compact2, qr_only, compact
+},
+
+"SePaySettings": {
+  "ApiKey": "API_KEY_CUA_BAN_TREN_SEPAY" // API Key cấu hình từ SePay (để bảo mật Webhook)
+}
+```
+
+---
+
+### 3. Cách sử dụng và vận hành VietQR
+
+#### A. Môi trường Máy tính Cá nhân (Localhost):
+- Khi chạy thử nghiệm tại `localhost:7272`, SePay trên Internet không thể gửi Webhook vào `localhost` nếu không có đường hầm mở cổng.
+- **Cách 1 (Tự động 100% qua Ngrok)**:
+  1. Chạy lệnh: `ngrok http https://localhost:7272`
+  2. Lấy link Ngrok (ví dụ: `https://xxxx.ngrok-free.app`) và cấu hình Webhook trên **sepay.vn**:
+     `https://xxxx.ngrok-free.app/Purchase/SepayWebhook`
+- **Cách 2 (Duyệt chủ động cho Owner/Admin)**:
+  - Khi hội viên quét QR chuyển tiền xong, Chủ phòng Gym (Owner) hoặc Admin vào menu **`Lịch sử giao dịch`** (`/OwnerTransaction` hoặc `/AdminTransaction`), bấm nút màu xanh lá **`Duyệt thành công`** để kích hoạt gói tập cho Hội viên ngay lập tức!
+
+#### B. Môi trường Máy chủ Thật (Production / Deploy):
+- Khi website đã được đưa lên Hosting / VPS có tên miền thật (ví dụ: `https://gympro.vn`):
+- Chỉ cần cài đặt URL Webhook trên SePay:
+  `https://gympro.vn/Purchase/SepayWebhook`
+- Hệ thống sẽ hoạt động **hoàn toàn tự động 100%** mà không cần bất kỳ công cụ trung gian nào khác.
+
+---
+
+## `Program.cs` — cấu trúc MVC & Identity chuẩn
 
 ```csharp
 using Microsoft.AspNetCore.Identity;
@@ -136,20 +204,23 @@ var builder = WebApplication.CreateBuilder(args);
 // B1: Thêm MVC Service
 builder.Services.AddControllersWithViews();
 
-// B2: Thêm Identity (thay cho Role.cs tự viết tay)
+// B2: Thêm Identity với cấu hình Lockout chống Brute-Force
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedEmail = true;
     options.Password.RequiredLength = 6;
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
 })
 .AddEntityFrameworkStores<GymDbContext>()
 .AddDefaultTokenProviders();
 
-// B3: Thêm Service kết nối CSDL
+// B3: Thêm Service kết nối CSDL SQL Server
 builder.Services.AddDbContext<GymDbContext>(
     opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
 
-// B4: Cấu hình Cookie Authentication (Session-based, không dùng JWT)
+// B4: Cấu hình Cookie Authentication
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -172,26 +243,6 @@ app.MapControllerRoute(
 
 app.Run();
 ```
-
----
-
-## Quy tắc phối hợp bắt buộc (tránh conflict code)
-
-1. **`GymDbContext.cs` và toàn bộ file trong `Models/`**: 2 người thống nhất field/bảng theo ERD **trước khi code**, 1 người tạo migration đầu tiên (`Add-Migration InitialCreate`) chứa toàn bộ bảng, người còn lại `git pull` về rồi mới bắt đầu code Controller của mình. **Không ai tự thêm migration mới mà không báo trước.**
-
-2. **`ApplicationUser.cs`**: Người 1 (làm Auth) sở hữu và chỉnh sửa file này. Người 2 chỉ được đọc, nếu cần thêm field phải nhắn trước.
-
-3. **Thư mục `Helpers/`**: đây là điểm chạm chung nhiều nhất.
-   - `MembershipHelper.CalculateNewEndDate()` → Người 1 viết (dùng cho Purchase/Renew), Người 2 **không tự viết lại** hàm này, nếu Owner Dashboard cần tính cũng gọi lại hàm này.
-   - `EmailHelper`, `OtpHelper` → Người 1 viết (dùng cho Auth + gửi hóa đơn).
-   - `VnPayHelper`, `InvoicePdfHelper` → Người 1 viết (thuộc luồng Payment).
-   - `LogHelper.WriteLog()` → viết 1 lần, thống nhất chữ ký hàm trước (VD: `WriteLog(string userId, string action, string entity, string entityId, string description, string level)`), cả 2 người đều gọi hàm này ở Controller của mình, **không sửa logic bên trong** nếu không bàn trước.
-
-4. **`Views/Shared/_Layout.cshtml`**: tách riêng `_MemberLayout.cshtml` (Người 1) và `_OwnerAdminLayout.cshtml` (Người 2) ngay từ đầu, mỗi Controller khai báo `Layout = "_MemberLayout"` hoặc tương ứng trong action hoặc `_ViewStart.cshtml` riêng theo từng thư mục Views con.
-
-5. **`appsettings.json`**: chỉ thêm key mới, không xóa/sửa key người khác đã thêm (ConnectionString, Smtp, VnPay section).
-
-6. **Migration & Database**: dùng chung 1 database (không tách 2 DB riêng), luôn `git pull` trước khi `Update-Database` để tránh xung đột schema.
 
 ---
 

@@ -17,7 +17,7 @@ namespace GymManagement.ViewModels
         public int? DurationInMonths { get; set; }
         public decimal Amount { get; set; }
         public string Status { get; set; } = "Pending";
-        public string PaymentMethod { get; set; } = "VNPay";
+        public string PaymentMethod { get; set; } = "VietQR";
         public string? VnpTxnRef { get; set; }
         public string? InvoiceCode { get; set; }
         public int? InvoiceId { get; set; }

@@ -48,8 +48,8 @@
 | MEM-06 | Mua vé ngày | `Purchase/DailyPass/{gymId}` | Xác nhận gym, giá, bấm thanh toán | ✅ Đã làm |
 | MEM-07 | Chọn gói tháng | `Purchase/Package/{gymId}` | Danh sách package của gym kèm giá | ✅ Đã làm |
 | MEM-08 | Xác nhận đơn hàng | `Purchase/Checkout` | Tóm tắt đơn hàng trước thanh toán | ✅ Đã làm |
-| MEM-09 | Thanh toán qua VNPay | Redirect `VNPay Sandbox` | Chuyển hướng thanh toán | ✅ Đã làm (Mock) |
-| MEM-10 | Kết quả thanh toán | `Purchase/Result` | Hiện thành công/thất bại sau callback | ✅ Đã làm |
+| MEM-09 | Thanh toán qua VietQR | `Purchase/QrPayment` | Quét mã QR Napas 24/7, tự động nhận diện thanh toán qua SePay Webhook | ✅ Đã làm |
+| MEM-10 | Kết quả thanh toán | `Purchase/Result` | Hiện hóa đơn điện tử sau khi thanh toán thành công | ✅ Đã làm |
 | MEM-11 | Lịch sử giao dịch | `Member/TransactionHistory` | Danh sách các lần mua, trạng thái, số tiền | ✅ Đã làm |
 | MEM-12 | Xem & tải hóa đơn | `Member/InvoiceDetails/{id}` | Chi tiết hóa đơn, in qua browser | ✅ Đã làm |
 

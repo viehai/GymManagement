@@ -122,7 +122,7 @@ using (var scope = app.Services.CreateScope())
                 Entity = "Transaction",
                 EntityId = "101",
                 Level = "Info",
-                Description = "Hội viên thanh toán thành công gói tập qua cổng thanh toán trực tuyến VNPay.",
+                Description = "Hội viên thanh toán thành công gói tập qua phương thức chuyển khoản VietQR.",
                 CreatedAt = DateTime.Now.AddMinutes(-45)
             }
         );

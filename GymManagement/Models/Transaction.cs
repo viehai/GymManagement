@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GymManagement.Models
@@ -27,7 +27,7 @@ namespace GymManagement.Models
 
         [Required]
         [StringLength(50)]
-        public string PaymentMethod { get; set; } = "VNPay";
+        public string PaymentMethod { get; set; } = "VietQR";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

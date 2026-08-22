@@ -11,7 +11,7 @@ using System.Text.Json;
 namespace GymManagement.Controllers
 {
     /// <summary>
-    /// Luồng mua vé của Member: DailyPass → Package → Checkout → VNPay Gateway → VnPayReturn → Result.
+    /// Luồng mua vé của Member: DailyPass → Package → Checkout → VietQR Payment (SePay) → Result.
     /// </summary>
     [Authorize]
     public class PurchaseController : Controller
