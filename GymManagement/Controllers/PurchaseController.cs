@@ -261,6 +261,19 @@ namespace GymManagement.Controllers
                 PdfUrl        = string.Empty // HTML view, không tạo file PDF
             };
             _context.Invoices.Add(invoice);
+
+            // ── Ghi Nhật ký Hệ thống (SystemLog) ──
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = user.Id,
+                Action = "PaymentSuccess",
+                Entity = "Transaction",
+                EntityId = transaction.Id.ToString(),
+                Level = "Info",
+                Description = $"Hội viên {user.FullName} ({user.Email}) thanh toán thành công {pkg.Price:N0} VNĐ cho gói \"{pkg.Name}\" tại \"{gym.Name}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Result", new { transactionId = transaction.Id });
@@ -403,6 +416,18 @@ namespace GymManagement.Controllers
                 PdfUrl        = string.Empty
             };
             _context.Invoices.Add(invoice);
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = user.Id,
+                Action = "MembershipRenewed",
+                Entity = "MemberMembership",
+                EntityId = membership.Id.ToString(),
+                Level = "Info",
+                Description = $"Hội viên {user.FullName} ({user.Email}) đã gia hạn gói \"{pkg.Name}\" ({pkg.Price:N0} VNĐ) tại phòng Gym \"{membership.Gym?.Name}\". Hạn mới: {newEndDate:dd/MM/yyyy}.",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = $"Gia hạn thành công! Hạn sử dụng mới của bạn là ngày {newEndDate:dd/MM/yyyy}.";

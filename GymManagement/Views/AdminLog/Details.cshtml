@@ -1,0 +1,231 @@
+@model GymManagement.ViewModels.AdminLogItemViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = $"Chi Tiết Nhật Ký #{Model.Id}";
+}
+
+<style>
+    /* ==================== NIKE BRUTAL MINIMALISM SYSTEM ==================== */
+    :root {
+        --ink-black: #252525;
+        --ink-gray: #7D7D7D;
+        --ink-light: #F8F9FA;
+        --ink-border: #252525;
+    }
+
+    .brutal-header-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        text-transform: uppercase;
+        color: var(--ink-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .brutal-subtitle {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+    }
+
+    .log-card-brutal {
+        border: 1.5px solid var(--ink-border);
+        background: #fff;
+        padding: 2.5rem;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .log-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+        margin-bottom: 0.35rem;
+    }
+
+    .log-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--ink-black);
+        margin-bottom: 1.5rem;
+        word-break: break-word;
+    }
+
+    .log-value-box {
+        background: var(--ink-light);
+        border: 1px solid #E5E5E5;
+        padding: 1.25rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        color: var(--ink-black);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* Badges */
+    .badge-level-info {
+        background: #E8F0FE;
+        color: #1A73E8;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 0;
+    }
+
+    .badge-level-warning {
+        background: #FEF7E0;
+        color: #B06000;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 0;
+    }
+
+    .badge-level-error {
+        background: #FCE8E6;
+        color: #C5221F;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 0;
+    }
+
+    .btn-back-brutal {
+        border: 1.5px solid var(--ink-black);
+        background: transparent;
+        color: var(--ink-black);
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.75rem 2rem;
+        border-radius: 0 !important;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.15s;
+    }
+
+    .btn-back-brutal:hover {
+        background: var(--ink-black);
+        color: #fff;
+    }
+</style>
+
+<div class="container-fluid px-0" style="font-family:'Inter', sans-serif;">
+
+    <!-- Page Header -->
+    <div class="mb-4">
+        <span class="brutal-subtitle">CHI TIẾT BẢN GHI SỰ KIỆN</span>
+        <h1 class="brutal-header-title">LOG ENTRY #@Model.Id</h1>
+    </div>
+
+    <!-- Main Detail Card -->
+    <div class="row">
+        <div class="col-lg-10 col-xl-8">
+            <div class="log-card-brutal">
+
+                <div class="row">
+                    <!-- ID & Level -->
+                    <div class="col-md-6">
+                        <div class="log-label">MÃ ĐỊNH DANH (LOG ID)</div>
+                        <div class="log-value" style="font-family: monospace;">#@Model.Id</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="log-label">MỨC ĐỘ NGUY HIỂM (LEVEL)</div>
+                        <div class="log-value">
+                            @if (Model.Level == "Error")
+                            {
+                                <span class="badge-level-error">ERROR — LỖI HỆ THỐNG</span>
+                            }
+                            else if (Model.Level == "Warning")
+                            {
+                                <span class="badge-level-warning">WARNING — CẢNH BÁO</span>
+                            }
+                            else
+                            {
+                                <span class="badge-level-info">INFO — THÔNG TIN</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Timestamp & Action -->
+                    <div class="col-md-6">
+                        <div class="log-label">MỐC THỜI GIAN GHI NHẬN</div>
+                        <div class="log-value">
+                            @Model.CreatedAt.ToString("HH:mm:ss — dd/MM/yyyy")
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="log-label">HÀNH ĐỘNG HỆ THỐNG (ACTION)</div>
+                        <div class="log-value" style="font-family:'Montserrat',sans-serif; letter-spacing:0.5px;">
+                            @Model.Action
+                        </div>
+                    </div>
+
+                    <!-- Entity & EntityId -->
+                    <div class="col-md-6">
+                        <div class="log-label">ĐỐI TƯỢNG TÁC ĐỘNG (ENTITY)</div>
+                        <div class="log-value">
+                            @(!string.IsNullOrEmpty(Model.Entity) ? Model.Entity : "— Không xác định —")
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="log-label">MÃ ĐỐI TƯỢNG (ENTITY ID)</div>
+                        <div class="log-value" style="font-family: monospace;">
+                            @(!string.IsNullOrEmpty(Model.EntityId) ? $"#{Model.EntityId}" : "—")
+                        </div>
+                    </div>
+
+                    <!-- Account Info -->
+                    <div class="col-12">
+                        <div class="log-label">TÀI KHOẢN THỰC HIỆN / KÍCH HOẠT</div>
+                        <div class="log-value">
+                            <strong>@Model.UserFullName</strong>
+                            <span class="text-muted ms-2">(@Model.UserEmail)</span>
+                            @if (!string.IsNullOrEmpty(Model.UserId))
+                            {
+                                <span class="badge bg-light text-secondary border ms-2 rounded-0" style="font-family:monospace; font-size:0.7rem;">
+                                    UID: @Model.UserId
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Full Description -->
+                    <div class="col-12">
+                        <div class="log-label">MÔ TẢ TOÀN VĂN SỰ KIỆN (DESCRIPTION)</div>
+                        <div class="log-value-box">@Model.Description</div>
+                    </div>
+                </div>
+
+                <!-- Back Button -->
+                <div class="mt-4 pt-3 border-top border-1">
+                    <a asp-action="Index" class="btn-back-brutal">
+                        <i class="bi bi-arrow-left"></i> QUAY LẠI DANH SÁCH NHẬT KÝ
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,409 @@
+@model GymManagement.ViewModels.AdminTransactionListViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Giao Dịch Toàn Sàn";
+}
+
+<style>
+    /* ==================== NIKE BRUTAL MINIMALISM SYSTEM ==================== */
+    :root {
+        --ink-black: #252525;
+        --ink-dark: #333333;
+        --ink-gray: #7D7D7D;
+        --ink-light: #F8F9FA;
+        --ink-border: #E0E0E0;
+    }
+
+    .brutal-container {
+        font-family: 'Inter', sans-serif;
+        color: var(--ink-black);
+    }
+
+    .brutal-header-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        text-transform: uppercase;
+        color: var(--ink-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .brutal-subtitle {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+    }
+
+    /* KPI Block System (Large Black Brutal Cards) */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .kpi-card-black {
+        background: var(--ink-black);
+        color: #fff;
+        padding: 2rem 2.2rem;
+        border-radius: 0 !important;
+        border: 0;
+        position: relative;
+    }
+
+    .kpi-card-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.8rem;
+    }
+
+    .kpi-card-value {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.3rem;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        color: #fff;
+        line-height: 1.1;
+        margin-bottom: 0.4rem;
+    }
+
+    .kpi-card-sub {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Filter Inputs (Bottom Line Only) */
+    .filter-input-bottom {
+        border: 0;
+        border-bottom: 1.5px solid var(--ink-border);
+        border-radius: 0 !important;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.85rem;
+        font-family: 'Inter', sans-serif;
+        background: transparent;
+        outline: none;
+        transition: border-color 0.2s;
+        color: var(--ink-black);
+    }
+
+    .filter-input-bottom:focus {
+        border-bottom-color: var(--ink-black);
+        box-shadow: none;
+    }
+
+    .btn-submit-filter {
+        background: var(--ink-black);
+        color: #fff;
+        border: 0;
+        border-radius: 0 !important;
+        padding: 0.65rem 1.5rem;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        transition: background 0.15s;
+    }
+
+    .btn-submit-filter:hover {
+        background: #000;
+        color: #fff;
+    }
+
+    /* Data Table (Flat, Nike Brutalism) */
+    .table-brutal {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+
+    .table-brutal thead th {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+        background: var(--ink-light);
+        padding: 0.9rem 1rem;
+        border-top: 1px solid var(--ink-border);
+        border-bottom: 1.5px solid var(--ink-black);
+    }
+
+    .table-brutal tbody td {
+        padding: 1.1rem 1rem;
+        font-size: 0.85rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #EBEBEB;
+        background: #fff;
+    }
+
+    .table-brutal tbody tr:hover td {
+        background: #F9F9F9;
+    }
+
+    /* Status Badges (Square Brutalist) */
+    .badge-status-success {
+        background: var(--ink-black);
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 0;
+        display: inline-block;
+    }
+
+    .badge-status-pending {
+        background: #fff;
+        color: var(--ink-black);
+        border: 1px solid var(--ink-black);
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 7px;
+        border-radius: 0;
+        display: inline-block;
+    }
+
+    .badge-status-failed {
+        background: #FCE8E6;
+        color: #C5221F;
+        border: 1px solid #C5221F;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 7px;
+        border-radius: 0;
+        display: inline-block;
+    }
+</style>
+
+<div class="container-fluid px-0 brutal-container">
+
+    <!-- Page Header -->
+    <div class="mb-4">
+        <span class="brutal-subtitle">GIÁM SÁT DÒNG TIỀN & DOANH THU</span>
+        <h1 class="brutal-header-title">GIAO DỊCH TOÀN SÀN</h1>
+    </div>
+
+    <!-- ==================== KPI SUMMARY (2 KHỐI VUÔNG LỚN NỀN ĐEN) ==================== -->
+    <div class="kpi-grid">
+        <!-- Khối 1: Tổng Doanh Thu Toàn Sàn -->
+        <div class="kpi-card-black">
+            <div class="kpi-card-label">
+                <i class="bi bi-wallet2 me-1"></i> TỔNG DOANH THU TOÀN SÀN
+            </div>
+            <div class="kpi-card-value">
+                @Model.TotalRevenue.ToString("N0") <span style="font-size:1.2rem; font-weight:700;">VNĐ</span>
+            </div>
+            <div class="kpi-card-sub">
+                Được tổng hợp từ các giao dịch thành công (Success)
+            </div>
+        </div>
+
+        <!-- Khối 2: Số Giao Dịch Thành Công -->
+        <div class="kpi-card-black">
+            <div class="kpi-card-label">
+                <i class="bi bi-check-circle me-1"></i> SỐ GIAO DỊCH THÀNH CÔNG
+            </div>
+            <div class="kpi-card-value">
+                @Model.SuccessCount <span style="font-size:1.2rem; font-weight:700; color:rgba(255,255,255,0.6);">/ @Model.TotalTransactions</span>
+            </div>
+            <div class="kpi-card-sub">
+                Đang chờ: <strong class="text-white">@Model.PendingCount</strong> | Thất bại: <strong class="text-white">@Model.FailedCount</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FILTER BAR ==================== -->
+    <div class="p-3 bg-light mb-4 border border-1 border-light">
+        <form method="get" asp-action="Index" class="row g-3 align-items-end">
+            <!-- Chọn Gym -->
+            <div class="col-md-4">
+                <label class="form-label mb-1" style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#7D7D7D;">
+                    CƠ SỞ PHÒNG GYM
+                </label>
+                <select name="gymId" class="form-select filter-input-bottom">
+                    <option value="">-- Tất cả các phòng Gym --</option>
+                    @foreach (var gym in Model.AvailableGyms)
+                    {
+                        <option value="@gym.Id" selected="@(Model.SelectedGymId == gym.Id)">@gym.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Chọn Trạng thái -->
+            <div class="col-md-3">
+                <label class="form-label mb-1" style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#7D7D7D;">
+                    TRẠNG THÁI THANH TOÁN
+                </label>
+                <select name="status" class="form-select filter-input-bottom">
+                    <option value="all" selected="@(Model.SelectedStatus == "all")">Tất cả trạng thái</option>
+                    <option value="Success" selected="@(string.Equals(Model.SelectedStatus, "Success", StringComparison.OrdinalIgnoreCase))">Thành công (Success)</option>
+                    <option value="Pending" selected="@(string.Equals(Model.SelectedStatus, "Pending", StringComparison.OrdinalIgnoreCase))">Đang xử lý (Pending)</option>
+                    <option value="Failed" selected="@(string.Equals(Model.SelectedStatus, "Failed", StringComparison.OrdinalIgnoreCase))">Thất bại (Failed)</option>
+                </select>
+            </div>
+
+            <!-- Tìm kiếm từ khóa -->
+            <div class="col-md-3">
+                <label class="form-label mb-1" style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#7D7D7D;">
+                    TÌM KIẾM TỪ KHÓA
+                </label>
+                <input type="text" name="search" value="@Model.SearchKeyword"
+                       class="form-control filter-input-bottom"
+                       placeholder="Mã GD, Hóa đơn, Hội viên, Email..." />
+            </div>
+
+            <!-- Nút Lọc -->
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-submit-filter w-100">
+                    <i class="bi bi-funnel me-1"></i> LỌC
+                </button>
+                @if (Model.SelectedGymId.HasValue || Model.SelectedStatus != "all" || !string.IsNullOrEmpty(Model.SearchKeyword))
+                {
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-0 d-inline-flex align-items-center" title="Xóa bộ lọc">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- ==================== BẢNG DỮ LIỆU GIAO DỊCH ==================== -->
+    @if (!Model.Transactions.Any())
+    {
+        <div class="text-center py-5 border border-1 border-light bg-light">
+            <i class="bi bi-receipt fs-1 text-muted d-block mb-3"></i>
+            <p class="fw-bold text-uppercase mb-1" style="font-family:'Montserrat',sans-serif; letter-spacing:1px;">
+                KHÔNG TÌM THẤY GIAO DỊCH NÀO
+            </p>
+            <p class="text-muted small mb-0">Thử điều chỉnh bộ lọc cơ sở phòng Gym hoặc trạng thái thanh toán.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table-brutal">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">MÃ GD / HÓA ĐƠN</th>
+                        <th>HỘI VIÊN THANH TOÁN</th>
+                        <th>CƠ SỞ PHÒNG GYM</th>
+                        <th>GÓI VÉ ĐĂNG KÝ</th>
+                        <th style="width: 140px;">SỐ TIỀN</th>
+                        <th style="width: 140px;">THỜI GIAN</th>
+                        <th class="text-end" style="width: 120px;">TRẠNG THÁI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var txn in Model.Transactions)
+                    {
+                        <tr>
+                            <!-- Mã GD / Hóa đơn -->
+                            <td>
+                                @if (!string.IsNullOrEmpty(txn.InvoiceCode))
+                                {
+                                    <div class="fw-bold text-dark" style="font-family: monospace; font-size:0.82rem;">
+                                        @txn.InvoiceCode
+                                    </div>
+                                }
+                                <div class="text-muted small" style="font-family: monospace; font-size:0.72rem;">
+                                    Ref: @(txn.VnpTxnRef ?? $"TXN#{txn.Id}")
+                                </div>
+                            </td>
+
+                            <!-- Hội viên -->
+                            <td>
+                                <div class="fw-bold text-dark" style="font-size:0.85rem;">
+                                    @txn.MemberFullName
+                                </div>
+                                <div class="text-muted small" style="font-size:0.75rem;">
+                                    @txn.MemberEmail
+                                </div>
+                            </td>
+
+                            <!-- Cơ sở Gym -->
+                            <td>
+                                <div class="fw-bold text-dark" style="font-family:'Montserrat',sans-serif; font-size:0.82rem;">
+                                    @txn.GymName
+                                </div>
+                                <div class="text-muted small text-truncate" style="max-width:200px; font-size:0.72rem;" title="@txn.GymAddress">
+                                    @txn.GymAddress
+                                </div>
+                            </td>
+
+                            <!-- Gói vé -->
+                            <td>
+                                <div class="fw-bold text-dark" style="font-size:0.82rem;">
+                                    @txn.PackageName
+                                </div>
+                                <span class="badge bg-light text-dark border rounded-0" style="font-size:0.65rem; text-transform:uppercase;">
+                                    @(txn.PackageType == "Daily" ? "Vé ngày" : $"Gói {txn.DurationInMonths} tháng")
+                                </span>
+                            </td>
+
+                            <!-- Số tiền -->
+                            <td>
+                                <span class="fw-bold text-dark" style="font-family:'Montserrat',sans-serif; font-size:0.95rem; letter-spacing:-0.3px;">
+                                    @txn.Amount.ToString("N0") đ
+                                </span>
+                                <div class="text-muted small" style="font-size:0.7rem;">
+                                    @txn.PaymentMethod
+                                </div>
+                            </td>
+
+                            <!-- Thời gian -->
+                            <td>
+                                <div class="fw-bold text-dark" style="font-size:0.82rem;">
+                                    @txn.CreatedAt.ToString("HH:mm:ss")
+                                </div>
+                                <div class="text-muted small" style="font-size:0.72rem;">
+                                    @txn.CreatedAt.ToString("dd/MM/yyyy")
+                                </div>
+                            </td>
+
+                            <!-- Trạng thái -->
+                            <td class="text-end">
+                                @if (txn.Status == "Success")
+                                {
+                                    <span class="badge-status-success">
+                                        <i class="bi bi-check-lg me-1"></i>SUCCESS
+                                    </span>
+                                }
+                                else if (txn.Status == "Pending")
+                                {
+                                    <span class="badge-status-pending">
+                                        <i class="bi bi-hourglass me-1"></i>PENDING
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-status-failed">
+                                        <i class="bi bi-x-lg me-1"></i>FAILED
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>

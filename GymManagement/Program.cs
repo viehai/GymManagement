@@ -15,6 +15,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.SignIn.RequireConfirmedEmail = true;
     options.Password.RequiredLength = 6;
     options.Password.RequireNonAlphanumeric = false; // nới lỏng cho môi trường học tập, có thể bật lại nếu muốn chặt hơn
+    
+    // Cấu hình chống Brute-force: Tự động khóa 5 phút sau 5 lần nhập sai mật khẩu liên tiếp
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
 })
 .AddEntityFrameworkStores<GymDbContext>()
 .AddDefaultTokenProviders();
@@ -77,6 +82,51 @@ using (var scope = app.Services.CreateScope())
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }
+    }
+
+    // Seed dữ liệu mẫu cho SystemLogs nếu đang trống
+    var dbContext = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+    if (!await dbContext.SystemLogs.AnyAsync())
+    {
+        dbContext.SystemLogs.AddRange(
+            new SystemLog
+            {
+                Action = "SystemStartup",
+                Entity = "ApplicationCore",
+                EntityId = "NET8",
+                Level = "Info",
+                Description = "Khởi động máy chủ GymPro Management Core và đồng bộ cơ sở dữ liệu thành công.",
+                CreatedAt = DateTime.Now.AddHours(-12)
+            },
+            new SystemLog
+            {
+                Action = "OwnerApproved",
+                Entity = "Gym",
+                EntityId = "1",
+                Level = "Info",
+                Description = "Quản trị viên đã phê duyệt cơ sở phòng Gym và nâng cấp tài khoản thành Owner.",
+                CreatedAt = DateTime.Now.AddHours(-8)
+            },
+            new SystemLog
+            {
+                Action = "SecurityAlert",
+                Entity = "Account",
+                EntityId = "Auth",
+                Level = "Warning",
+                Description = "Phát hiện nhiều lần đăng nhập không thành công từ địa chỉ IP không xác định.",
+                CreatedAt = DateTime.Now.AddHours(-3)
+            },
+            new SystemLog
+            {
+                Action = "PaymentSuccess",
+                Entity = "Transaction",
+                EntityId = "101",
+                Level = "Info",
+                Description = "Hội viên thanh toán thành công gói tập qua cổng thanh toán trực tuyến VNPay.",
+                CreatedAt = DateTime.Now.AddMinutes(-45)
+            }
+        );
+        await dbContext.SaveChangesAsync();
     }
 }
 

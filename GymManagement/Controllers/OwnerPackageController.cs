@@ -95,6 +95,19 @@ namespace GymManagement.Controllers
             _context.MembershipPackages.Add(model);
             await _context.SaveChangesAsync();
 
+            var user = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = userId,
+                Action = "PackageCreated",
+                Entity = "MembershipPackage",
+                EntityId = model.Id.ToString(),
+                Level = "Info",
+                Description = $"Chủ phòng {user?.FullName} đã tạo gói vé mới: \"{model.Name}\" ({model.Price:N0} VNĐ) tại phòng Gym \"{gym?.Name}\".",
+                CreatedAt = DateTime.Now
+            });
+            await _context.SaveChangesAsync();
+
             TempData["Success"] = "Gói dịch vụ đã được tạo thành công.";
             return RedirectToAction("Index", new { gymId = model.GymId });
         }
@@ -150,6 +163,18 @@ namespace GymManagement.Controllers
             package.Price = model.Price;
             package.IsActive = model.IsActive;
 
+            var user = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = userId,
+                Action = "PackageUpdated",
+                Entity = "MembershipPackage",
+                EntityId = package.Id.ToString(),
+                Level = "Info",
+                Description = $"Chủ phòng {user?.FullName} đã cập nhật gói vé: \"{package.Name}\" ({package.Price:N0} VNĐ) tại phòng Gym \"{package.Gym?.Name}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Gói dịch vụ đã được cập nhật.";
@@ -169,7 +194,23 @@ namespace GymManagement.Controllers
             if (package == null) return NotFound();
 
             int gymId = package.GymId;
+            string pkgName = package.Name;
+            string gymName = package.Gym?.Name ?? "—";
+
             _context.MembershipPackages.Remove(package);
+
+            var user = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = userId,
+                Action = "PackageDeleted",
+                Entity = "MembershipPackage",
+                EntityId = id.ToString(),
+                Level = "Warning",
+                Description = $"Chủ phòng {user?.FullName} đã xóa gói vé \"{pkgName}\" khỏi cơ sở \"{gymName}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Gói dịch vụ đã được xóa.";

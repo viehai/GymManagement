@@ -145,6 +145,18 @@ namespace GymManagement.Controllers
                 // Mở khóa
                 await _userManager.SetLockoutEndDateAsync(targetUser, null);
                 TempData["Success"] = $"Đã mở khóa tài khoản \"{targetUser.Email}\".";
+
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = currentAdmin?.Id,
+                    Action = "UserUnlocked",
+                    Entity = "ApplicationUser",
+                    EntityId = targetUser.Id,
+                    Level = "Info",
+                    Description = $"Quản trị viên đã mở khóa tài khoản người dùng {targetUser.Email}.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
             }
             else
             {
@@ -152,6 +164,18 @@ namespace GymManagement.Controllers
                 await _userManager.SetLockoutEndDateAsync(targetUser, DateTimeOffset.UtcNow.AddYears(100));
                 await _userManager.UpdateSecurityStampAsync(targetUser);
                 TempData["Warning"] = $"Đã khóa tài khoản \"{targetUser.Email}\".";
+
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = currentAdmin?.Id,
+                    Action = "UserLocked",
+                    Entity = "ApplicationUser",
+                    EntityId = targetUser.Id,
+                    Level = "Warning",
+                    Description = $"Quản trị viên đã khóa tài khoản người dùng {targetUser.Email}.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
             }
 
             return RedirectToAction(nameof(Index), new { filter = returnFilter });
@@ -165,6 +189,8 @@ namespace GymManagement.Controllers
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
+
+            var currentAdmin = await _userManager.GetUserAsync(User);
 
             // 1. Gán vai trò Owner nếu chưa có
             var roles = await _userManager.GetRolesAsync(user);
@@ -195,6 +221,17 @@ namespace GymManagement.Controllers
 
                 await _emailHelper.SendEmailAsync(user.Email!, approveSubject, approveBody);
             }
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentAdmin?.Id,
+                Action = "OwnerApproved",
+                Entity = "ApplicationUser",
+                EntityId = user.Id,
+                Level = "Info",
+                Description = $"Quản trị viên đã phê duyệt tài khoản {user.Email} thành Chủ phòng Gym và kích hoạt {pendingGyms.Count} cơ sở Gym.",
+                CreatedAt = DateTime.Now
+            });
 
             await _context.SaveChangesAsync();
 
@@ -297,6 +334,18 @@ namespace GymManagement.Controllers
                     extraNotice = $" Đã tự động kích hoạt lại (Approved) {suspendedGyms.Count} cơ sở phòng Gym của người này.";
                 }
             }
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentUser?.Id,
+                Action = "RoleChanged",
+                Entity = "ApplicationUser",
+                EntityId = user.Id,
+                Level = "Info",
+                Description = $"Quản trị viên đã thay đổi vai trò của tài khoản {user.Email} thành {model.SelectedRole}.{extraNotice}",
+                CreatedAt = DateTime.Now
+            });
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = $"Đã cập nhật vai trò của \"{user.Email}\" thành {model.SelectedRole} thành công!{extraNotice}";
             return RedirectToAction(nameof(Index));

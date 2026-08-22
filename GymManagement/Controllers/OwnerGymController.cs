@@ -85,6 +85,19 @@ namespace GymManagement.Controllers
             };
 
             _context.Gyms.Add(gym);
+
+            var user = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = userId,
+                Action = "GymRegistrationSubmitted",
+                Entity = "Gym",
+                EntityId = gym.Id.ToString(),
+                Level = "Info",
+                Description = $"Chủ phòng {user?.FullName} ({user?.Email}) đã tạo cơ sở phòng Gym mới \"{gym.Name}\" và đang chờ Admin duyệt.",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Phòng Gym mới đã được tạo và đang chờ phê duyệt.";
@@ -146,6 +159,18 @@ namespace GymManagement.Controllers
             gym.Address = model.Address;
             gym.Description = model.Description;
 
+            var user = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = userId,
+                Action = "GymProfileUpdated",
+                Entity = "Gym",
+                EntityId = gym.Id.ToString(),
+                Level = "Info",
+                Description = $"Chủ phòng {user?.FullName} đã cập nhật thông tin cơ sở phòng Gym \"{gym.Name}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Thông tin phòng Gym đã được cập nhật.";
@@ -165,6 +190,19 @@ namespace GymManagement.Controllers
                 DeleteImage(gym.ImageUrl);
 
             _context.Gyms.Remove(gym);
+
+            var user = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = userId,
+                Action = "GymDeleted",
+                Entity = "Gym",
+                EntityId = id.ToString(),
+                Level = "Warning",
+                Description = $"Chủ phòng {user?.FullName} đã xóa cơ sở phòng Gym \"{gym.Name}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Phòng Gym đã được xóa.";

@@ -95,6 +95,19 @@ namespace GymManagement.Controllers
                 await _emailHelper.SendEmailAsync(owner.Email!, approveSubject, approveBody);
             }
 
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentAdmin?.Id,
+                Action = "GymApproved",
+                Entity = "Gym",
+                EntityId = gym.Id.ToString(),
+                Level = "Info",
+                Description = $"Quản trị viên đã phê duyệt cơ sở phòng Gym \"{gym.Name}\" ({gym.Address}) của chủ phòng {gym.Owner?.FullName}.",
+                CreatedAt = DateTime.Now
+            });
+            await _context.SaveChangesAsync();
+
             TempData["Success"] = "Phong Gym da duoc phe duyet thanh cong.";
             return RedirectToAction("PendingGyms");
         }
@@ -112,6 +125,18 @@ namespace GymManagement.Controllers
                 return NotFound();
 
             gym.Status = "Rejected";
+
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentAdmin?.Id,
+                Action = "GymRejected",
+                Entity = "Gym",
+                EntityId = gym.Id.ToString(),
+                Level = "Warning",
+                Description = $"Quản trị viên đã từ chối đơn đăng ký phòng Gym \"{gym.Name}\". Lý do: {(string.IsNullOrWhiteSpace(reason) ? "Không đạt yêu cầu" : reason)}.",
+                CreatedAt = DateTime.Now
+            });
             await _context.SaveChangesAsync();
 
             var owner = gym.Owner;

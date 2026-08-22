@@ -1,0 +1,399 @@
+@model GymManagement.ViewModels.AdminLogListViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Nhật Ký Hệ Thống";
+}
+
+<style>
+    /* ==================== NIKE BRUTAL MINIMALISM SYSTEM ==================== */
+    :root {
+        --ink-black: #252525;
+        --ink-dark: #333333;
+        --ink-gray: #7D7D7D;
+        --ink-light: #F8F9FA;
+        --ink-border: #E0E0E0;
+    }
+
+    .brutal-container {
+        font-family: 'Inter', sans-serif;
+        color: var(--ink-black);
+    }
+
+    .brutal-header-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        text-transform: uppercase;
+        color: var(--ink-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .brutal-subtitle {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+    }
+
+    /* Filter Nav (Ink Wash Tabs) */
+    .filter-tab-bar {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        border-bottom: 1.5px solid var(--ink-border);
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+    }
+
+    .filter-tab-btn {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+        text-decoration: none;
+        padding: 0.85rem 0;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+    }
+
+    .filter-tab-btn:hover {
+        color: var(--ink-black);
+    }
+
+    .filter-tab-btn.active {
+        color: var(--ink-black);
+        border-bottom-color: var(--ink-black);
+    }
+
+    .filter-count-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 1px 6px;
+        background: #ECECEC;
+        color: var(--ink-black);
+    }
+
+    .filter-tab-btn.active .filter-count-badge {
+        background: var(--ink-black);
+        color: #fff;
+    }
+
+    /* Search & Filter Bar */
+    .search-input-brutal {
+        border: 0;
+        border-bottom: 1.5px solid var(--ink-border);
+        border-radius: 0 !important;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.85rem;
+        font-family: 'Inter', sans-serif;
+        background: transparent;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .search-input-brutal:focus {
+        border-bottom-color: var(--ink-black);
+        box-shadow: none;
+    }
+
+    .btn-search-brutal {
+        background: var(--ink-black);
+        color: #fff;
+        border: 0;
+        border-radius: 0 !important;
+        padding: 0.55rem 1.25rem;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: background 0.15s;
+    }
+
+    .btn-search-brutal:hover {
+        background: #000;
+        color: #fff;
+    }
+
+    /* Data Table (Flat, No Radius, No Shadow) */
+    .table-brutal {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+
+    .table-brutal thead th {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-gray);
+        background: var(--ink-light);
+        padding: 0.9rem 1rem;
+        border-top: 1px solid var(--ink-border);
+        border-bottom: 1.5px solid var(--ink-black);
+    }
+
+    .table-brutal tbody td {
+        padding: 1rem;
+        font-size: 0.84rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #EBEBEB;
+        background: #fff;
+    }
+
+    .table-brutal tbody tr:hover td {
+        background: #F9F9F9;
+    }
+
+    /* Square Level Badges */
+    .badge-level-info {
+        background: #E8F0FE;
+        color: #1A73E8;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 0;
+    }
+
+    .badge-level-warning {
+        background: #FEF7E0;
+        color: #B06000;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 0;
+    }
+
+    .badge-level-error {
+        background: #FCE8E6;
+        color: #C5221F;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 0;
+    }
+
+    .btn-act-brutal {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.35rem 0.75rem;
+        border-radius: 0 !important;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: all 0.15s;
+        border: 1px solid var(--ink-black);
+        background: transparent;
+        color: var(--ink-black);
+    }
+
+    .btn-act-brutal:hover {
+        background: var(--ink-black);
+        color: #fff;
+    }
+</style>
+
+<div class="container-fluid px-0 brutal-container">
+
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
+        <div>
+            <span class="brutal-subtitle">GIÁM SÁT & BẢO MẬT HỆ THỐNG</span>
+            <h1 class="brutal-header-title">NHẬT KÝ HỆ THỐNG</h1>
+        </div>
+        <div class="text-md-end text-muted small" style="font-family:'Montserrat',sans-serif; letter-spacing:0.5px;">
+            Tổng số: <strong class="text-dark">@Model.TotalCount</strong> sự kiện ghi nhận
+        </div>
+    </div>
+
+    <!-- Filter Tabs (Nike Brutal Tab Bar) -->
+    <div class="filter-tab-bar">
+        <a asp-action="Index" asp-route-level="all" asp-route-actionName="@Model.CurrentAction" asp-route-search="@Model.SearchKeyword"
+           class="filter-tab-btn @(Model.CurrentLevel == "all" ? "active" : "")">
+            TẤT CẢ <span class="filter-count-badge">@Model.TotalCount</span>
+        </a>
+        <a asp-action="Index" asp-route-level="Info" asp-route-actionName="@Model.CurrentAction" asp-route-search="@Model.SearchKeyword"
+           class="filter-tab-btn @(string.Equals(Model.CurrentLevel, "Info", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+            INFO <span class="filter-count-badge">@Model.InfoCount</span>
+        </a>
+        <a asp-action="Index" asp-route-level="Warning" asp-route-actionName="@Model.CurrentAction" asp-route-search="@Model.SearchKeyword"
+           class="filter-tab-btn @(string.Equals(Model.CurrentLevel, "Warning", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+            WARNING <span class="filter-count-badge">@Model.WarningCount</span>
+        </a>
+        <a asp-action="Index" asp-route-level="Error" asp-route-actionName="@Model.CurrentAction" asp-route-search="@Model.SearchKeyword"
+           class="filter-tab-btn @(string.Equals(Model.CurrentLevel, "Error", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+            ERROR <span class="filter-count-badge">@Model.ErrorCount</span>
+        </a>
+    </div>
+
+    <!-- Search and Action Filter Bar -->
+    <form method="get" asp-action="Index" class="row g-2 mb-4 align-items-center">
+        <input type="hidden" name="level" value="@Model.CurrentLevel" />
+
+        <div class="col-md-5">
+            <input type="text" name="search" value="@Model.SearchKeyword"
+                   class="form-control search-input-brutal w-100"
+                   placeholder="Tìm theo mô tả, hành động, entity, email..." />
+        </div>
+
+        <div class="col-md-4">
+            <select name="actionName" class="form-select search-input-brutal" onchange="this.form.submit()">
+                <option value="">-- Lọc theo Hành động (Action) --</option>
+                @foreach (var act in Model.AvailableActions)
+                {
+                    <option value="@act" selected="@(Model.CurrentAction == act)">@act</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-search-brutal flex-grow-1">
+                <i class="bi bi-search me-1"></i> TÌM KIẾM
+            </button>
+            @if (!string.IsNullOrEmpty(Model.SearchKeyword) || !string.IsNullOrEmpty(Model.CurrentAction) || Model.CurrentLevel != "all")
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary rounded-0 d-inline-flex align-items-center" title="Xóa bộ lọc">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            }
+        </div>
+    </form>
+
+    <!-- Data Table -->
+    @if (!Model.Items.Any())
+    {
+        <div class="text-center py-5 border border-1 border-light bg-light">
+            <i class="bi bi-journal-x fs-1 text-muted d-block mb-3"></i>
+            <p class="fw-bold text-uppercase mb-1" style="font-family:'Montserrat',sans-serif; letter-spacing:1px;">
+                KHÔNG TÌM THẤY BẢN GHI NHẬT KÝ NÀO
+            </p>
+            <p class="text-muted small mb-0">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table-brutal">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">ID</th>
+                        <th style="width: 100px;">MỨC ĐỘ</th>
+                        <th style="width: 160px;">THỜI GIAN</th>
+                        <th>HÀNH ĐỘNG (ACTION)</th>
+                        <th>ĐỐI TƯỢNG (ENTITY)</th>
+                        <th>TÀI KHOẢN</th>
+                        <th>MÔ TẢ TÓM TẮT</th>
+                        <th class="text-end" style="width: 100px;">HÀNH ĐỘNG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.Items)
+                    {
+                        <tr>
+                            <!-- ID -->
+                            <td class="text-muted" style="font-family: monospace; font-size:0.8rem;">
+                                #@log.Id
+                            </td>
+
+                            <!-- Mức độ (Level) -->
+                            <td>
+                                @if (log.Level == "Error")
+                                {
+                                    <span class="badge-level-error">ERROR</span>
+                                }
+                                else if (log.Level == "Warning")
+                                {
+                                    <span class="badge-level-warning">WARN</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-level-info">INFO</span>
+                                }
+                            </td>
+
+                            <!-- Thời gian -->
+                            <td>
+                                <div class="fw-bold text-dark" style="font-size:0.82rem;">
+                                    @log.CreatedAt.ToString("HH:mm:ss")
+                                </div>
+                                <div class="text-muted small" style="font-size:0.72rem;">
+                                    @log.CreatedAt.ToString("dd/MM/yyyy")
+                                </div>
+                            </td>
+
+                            <!-- Hành động -->
+                            <td>
+                                <span class="fw-bold text-dark" style="font-family:'Montserrat',sans-serif; font-size:0.8rem; letter-spacing:0.5px;">
+                                    @log.Action
+                                </span>
+                            </td>
+
+                            <!-- Entity -->
+                            <td>
+                                @if (!string.IsNullOrEmpty(log.Entity))
+                                {
+                                    <span class="badge bg-light text-dark border border-secondary rounded-0 small text-uppercase" style="font-size:0.68rem;">
+                                        @log.Entity @(!string.IsNullOrEmpty(log.EntityId) ? $"#{log.EntityId}" : "")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </td>
+
+                            <!-- Người dùng -->
+                            <td>
+                                <div class="fw-bold text-dark" style="font-size:0.8rem;">
+                                    @log.UserFullName
+                                </div>
+                                <div class="text-muted small text-truncate" style="max-width:180px; font-size:0.72rem;" title="@log.UserEmail">
+                                    @log.UserEmail
+                                </div>
+                            </td>
+
+                            <!-- Mô tả -->
+                            <td>
+                                <span class="text-muted d-inline-block text-truncate" style="max-width: 280px; font-size:0.8rem;" title="@log.Description">
+                                    @log.Description
+                                </span>
+                            </td>
+
+                            <!-- Action -->
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@log.Id" class="btn-act-brutal" title="Xem chi tiết nhật ký">
+                                    <i class="bi bi-eye"></i> CHI TIẾT
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>

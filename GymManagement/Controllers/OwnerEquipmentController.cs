@@ -140,6 +140,19 @@ namespace GymManagement.Controllers
                     IsVisible = true
                 };
                 _context.GymEquipments.Add(ge);
+                
+                var equipment = await _context.Equipments.FindAsync(equipmentId);
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = user.Id,
+                    Action = "EquipmentAddedFromCatalog",
+                    Entity = "GymEquipment",
+                    EntityId = ge.Id.ToString(),
+                    Level = "Info",
+                    Description = $"Chủ phòng {user.FullName} đã thêm máy \"{equipment?.Name}\" từ Catalog vào phòng Gym \"{gym.Name}\".",
+                    CreatedAt = DateTime.Now
+                });
+
                 await _context.SaveChangesAsync();
 
                 TempData["Success"] = "Đã thêm thiết bị từ Catalog vào phòng Gym thành công!";
@@ -263,6 +276,18 @@ namespace GymManagement.Controllers
             };
 
             _context.GymEquipments.Add(ge);
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = user.Id,
+                Action = "CustomEquipmentCreated",
+                Entity = "GymEquipment",
+                EntityId = ge.Id.ToString(),
+                Level = "Info",
+                Description = $"Chủ phòng {user.FullName} đã tạo thiết bị custom \"{model.CustomName}\" (Nhóm cơ: {model.CustomCategory}) cho phòng Gym \"{gym.Name}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = $"Đã thêm thiết bị tự chọn \"{model.CustomName}\" ({model.CustomCategory}) thành công!";
@@ -308,6 +333,7 @@ namespace GymManagement.Controllers
 
             var ge = await _context.GymEquipments
                 .Include(g => g.Gym)
+                .Include(g => g.Equipment)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (ge == null || ge.Gym == null || ge.Gym.OwnerId != user.Id)
@@ -316,7 +342,22 @@ namespace GymManagement.Controllers
             }
 
             int gymId = ge.GymId;
+            string eqName = ge.IsCustom ? ge.CustomName : (ge.Equipment?.Name ?? "Thiết bị");
+            string gymName = ge.Gym.Name;
+
             _context.GymEquipments.Remove(ge);
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = user.Id,
+                Action = "EquipmentRemoved",
+                Entity = "GymEquipment",
+                EntityId = id.ToString(),
+                Level = "Warning",
+                Description = $"Chủ phòng {user.FullName} đã gỡ thiết bị \"{eqName}\" khỏi phòng Gym \"{gymName}\".",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Đã xóa thiết bị khỏi danh mục phòng Gym thành công!";

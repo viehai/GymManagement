@@ -1,5 +1,6 @@
 using GymManagement.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ namespace GymManagement.Controllers
     {
         private readonly GymDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         private static readonly List<string> EquipmentCategories = new()
         {
@@ -25,10 +27,11 @@ namespace GymManagement.Controllers
             "Strength - Đa Dụng (Multi-purpose)"
         };
 
-        public AdminEquipmentController(GymDbContext context, IWebHostEnvironment env)
+        public AdminEquipmentController(GymDbContext context, IWebHostEnvironment env, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _env = env;
+            _userManager = userManager;
         }
 
         // ==================== ADM-06: DANH SÁCH CATALOG THIẾT BỊ ====================
@@ -105,6 +108,19 @@ namespace GymManagement.Controllers
             _context.Equipments.Add(model);
             await _context.SaveChangesAsync();
 
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentAdmin?.Id,
+                Action = "EquipmentCatalogCreated",
+                Entity = "Equipment",
+                EntityId = model.Id.ToString(),
+                Level = "Info",
+                Description = $"Quản trị viên đã thêm thiết bị mới \"{model.Name}\" (Danh mục: {model.Category}) vào Catalog gốc.",
+                CreatedAt = DateTime.Now
+            });
+            await _context.SaveChangesAsync();
+
             TempData["Success"] = $"Đã thêm thiết bị \"{model.Name}\" vào Catalog thành công!";
             return RedirectToAction(nameof(Index));
         }
@@ -179,6 +195,18 @@ namespace GymManagement.Controllers
             existing.Description = model.Description;
             existing.Category = model.Category;
 
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentAdmin?.Id,
+                Action = "EquipmentCatalogUpdated",
+                Entity = "Equipment",
+                EntityId = existing.Id.ToString(),
+                Level = "Info",
+                Description = $"Quản trị viên đã cập nhật thông tin thiết bị Catalog: \"{existing.Name}\" (Danh mục: {existing.Category}).",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = $"Đã cập nhật thông tin thiết bị \"{existing.Name}\" thành công!";
@@ -206,6 +234,19 @@ namespace GymManagement.Controllers
             }
 
             _context.Equipments.Remove(equipment);
+
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = currentAdmin?.Id,
+                Action = "EquipmentCatalogDeleted",
+                Entity = "Equipment",
+                EntityId = equipment.Id.ToString(),
+                Level = "Warning",
+                Description = $"Quản trị viên đã xóa thiết bị \"{equipment.Name}\" khỏi Catalog gốc.",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = $"Đã xóa thiết bị \"{equipment.Name}\" khỏi Catalog thành công!";

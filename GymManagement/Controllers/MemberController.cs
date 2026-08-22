@@ -72,6 +72,18 @@ namespace GymManagement.Controllers
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
             if (result.Succeeded)
             {
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = user.Id,
+                    Action = "PasswordChanged",
+                    Entity = "Account",
+                    EntityId = user.Id,
+                    Level = "Info",
+                    Description = $"Người dùng {user.Email} đã đổi mật khẩu tài khoản thành công.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+
                 await _signInManager.RefreshSignInAsync(user);
                 TempData["Success"] = "Đổi mật khẩu thành công!";
                 return RedirectToAction("Profile");
@@ -151,6 +163,18 @@ namespace GymManagement.Controllers
             };
 
             _context.Gyms.Add(gym);
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = user.Id,
+                Action = "GymRegistrationSubmitted",
+                Entity = "Gym",
+                EntityId = gym.Id.ToString(),
+                Level = "Info",
+                Description = $"Người dùng {user.FullName} ({user.Email}) đã gửi hồ sơ đăng ký mở phòng Gym mới: \"{gym.Name}\" ({gym.Address}).",
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Yêu cầu đăng ký phòng Gym đã được gửi! Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.";

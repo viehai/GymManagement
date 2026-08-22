@@ -91,6 +91,18 @@ namespace GymManagement.Controllers
                     TempData["Message"] = "Đăng ký thành công! (Tự động xác nhận email do chưa cấu hình SMTP). Bạn có thể đăng nhập ngay.";
                 }
 
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = user.Id,
+                    Action = "UserRegistered",
+                    Entity = "ApplicationUser",
+                    EntityId = user.Id,
+                    Level = "Info",
+                    Description = $"Người dùng mới {user.FullName} ({user.Email}) đã đăng ký tài khoản thành công.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction("Login");
             }
 
@@ -178,7 +190,19 @@ namespace GymManagement.Controllers
 
             if (result.IsLockedOut)
             {
-                ModelState.AddModelError("", "Tài khoản tạm thời bị khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau.");
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = user.Id,
+                    Action = "SecurityAlert",
+                    Entity = "Account",
+                    EntityId = user.Id,
+                    Level = "Warning",
+                    Description = $"Phát hiện tài khoản {user.Email} bị tạm khóa 5 phút do nhập sai mật khẩu quá 5 lần liên tiếp (chống tấn công Brute-force).",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+
+                ModelState.AddModelError("", "Tài khoản tạm thời bị khóa 5 phút do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.");
                 return View(model);
             }
 
@@ -200,12 +224,12 @@ namespace GymManagement.Controllers
             return View();
         }
 
-        // ==================== QUÊN MẬT KHẨU - OTP ====================
+        // ==================== QUÊN MẬT KHẨU / OTP ====================
 
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View(new ForgotPasswordViewModel());
+            return View();
         }
 
         [HttpPost]
@@ -216,27 +240,42 @@ namespace GymManagement.Controllers
                 return View(model);
 
             var user = await _userManager.FindByEmailAsync(model.Email);
+
+            // Bảo mật: không báo rõ email có tồn tại hay không, chỉ redirect sang VerifyOtp
             if (user == null)
             {
-                // Không tiết lộ email có tồn tại hay không (tránh lộ thông tin cho kẻ dò email)
-                ModelState.AddModelError("", "Không tìm thấy tài khoản với email này.");
-                return View(model);
+                return RedirectToAction("VerifyOtp", new { email = model.Email });
             }
 
-            string otp = OtpHelper.GenerateOtp();
+            // Sinh mã OTP 6 chữ số ngẫu nhiên
+            string otp = new Random().Next(100000, 999999).ToString();
 
-            var otpEntity = new PasswordResetOtp
+            // Lưu vào bảng PasswordResetOtps (hết hạn sau 5 phút)
+            var otpRecord = new PasswordResetOtp
             {
                 UserId = user.Id,
                 OtpCode = otp,
-                ExpiredAt = OtpHelper.GetExpiryTime(),
-                IsUsed = false
+                ExpiredAt = DateTime.Now.AddMinutes(5),
+                IsUsed = false,
+                CreatedAt = DateTime.Now
             };
-
-            _context.PasswordResetOtps.Add(otpEntity);
+            _context.PasswordResetOtps.Add(otpRecord);
             await _context.SaveChangesAsync();
 
-            await _emailHelper.SendOtpEmailAsync(user.Email, otp);
+            // Gửi OTP qua email
+            string subject = "Mã xác minh đặt lại mật khẩu - Gym Management";
+            string body = $@"
+                <div style='font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;'>
+                    <h2 style='color: #333;'>Yêu cầu đặt lại mật khẩu</h2>
+                    <p>Chào <strong>{user.FullName}</strong>,</p>
+                    <p>Mã OTP xác minh của bạn là:</p>
+                    <div style='font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #ff3e3e; padding: 12px 0; text-align: center;'>
+                        {otp}
+                    </div>
+                    <p style='color: #888; font-size: 13px;'>Mã có hiệu lực trong <strong>5 phút</strong>. Không chia sẻ mã này cho bất kỳ ai.</p>
+                </div>";
+
+            await _emailHelper.SendEmailAsync(user.Email, subject, body);
 
             return RedirectToAction("VerifyOtp", new { email = model.Email });
         }
@@ -257,11 +296,11 @@ namespace GymManagement.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                ModelState.AddModelError("", "Có lỗi xảy ra, vui lòng thử lại từ đầu.");
+                ModelState.AddModelError("", "Mã OTP không đúng hoặc đã hết hạn.");
                 return View(model);
             }
 
-            // Lấy OTP mới nhất, chưa dùng, chưa hết hạn của user này
+            // Tìm OTP hợp lệ chưa dùng và chưa hết hạn của user này
             var validOtp = await _context.PasswordResetOtps
                 .Where(o => o.UserId == user.Id
                             && o.OtpCode == model.OtpCode
@@ -319,6 +358,18 @@ namespace GymManagement.Controllers
 
             if (result.Succeeded)
             {
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = user.Id,
+                    Action = "PasswordResetSuccess",
+                    Entity = "Account",
+                    EntityId = user.Id,
+                    Level = "Info",
+                    Description = $"Tài khoản {user.Email} đã khôi phục mật khẩu thành công qua mã xác minh OTP.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+
                 TempData["Message"] = "Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login");
             }
