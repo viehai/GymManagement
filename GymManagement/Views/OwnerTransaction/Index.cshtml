@@ -118,7 +118,8 @@
                         <th>Phương thức</th>
                         <th>Thời gian</th>
                         <th>Hóa đơn</th>
-                        <th class="text-end">Trạng thái</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -167,10 +168,26 @@
                                     <span style="color:#ccc;">—</span>
                                 }
                             </td>
-                            <td class="text-end">
+                            <td>
                                 <span class="@tx.StatusBadgeClass">
                                     @tx.StatusLabel
                                 </span>
+                            </td>
+                            <td class="text-end">
+                                @if (tx.Status == "Pending")
+                                {
+                                    <form asp-controller="OwnerTransaction" asp-action="ApproveTransaction" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="transactionId" value="@tx.TransactionId" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-0 py-1 px-2 fw-bold shadow-sm" style="font-size:0.72rem; letter-spacing:0.5px;" onclick="return confirm('Bạn xác nhận đã nhận đủ @tx.Amount.ToString("N0") đ từ Hội viên và muốn duyệt kích hoạt gói tập ngay?')">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Duyệt thành công
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small" style="font-size:0.75rem;">—</span>
+                                }
                             </td>
                         </tr>
                     }

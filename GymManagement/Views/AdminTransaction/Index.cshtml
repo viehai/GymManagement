@@ -302,13 +302,14 @@
             <table class="table-brutal">
                 <thead>
                     <tr>
-                        <th style="width: 140px;">MÃ GD / HÓA ĐƠN</th>
+                        <th style="width: 130px;">MÃ GD / HÓA ĐƠN</th>
                         <th>HỘI VIÊN THANH TOÁN</th>
                         <th>CƠ SỞ PHÒNG GYM</th>
                         <th>GÓI VÉ ĐĂNG KÝ</th>
-                        <th style="width: 140px;">SỐ TIỀN</th>
-                        <th style="width: 140px;">THỜI GIAN</th>
-                        <th class="text-end" style="width: 120px;">TRẠNG THÁI</th>
+                        <th style="width: 130px;">SỐ TIỀN</th>
+                        <th style="width: 120px;">THỜI GIAN</th>
+                        <th>TRẠNG THÁI</th>
+                        <th class="text-end" style="width: 140px;">THAO TÁC</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -379,7 +380,7 @@
                             </td>
 
                             <!-- Trạng thái -->
-                            <td class="text-end">
+                            <td>
                                 @if (txn.Status == "Success")
                                 {
                                     <span class="badge-status-success">
@@ -397,6 +398,24 @@
                                     <span class="badge-status-failed">
                                         <i class="bi bi-x-lg me-1"></i>FAILED
                                     </span>
+                                }
+                            </td>
+
+                            <!-- Thao tác -->
+                            <td class="text-end">
+                                @if (txn.Status == "Pending")
+                                {
+                                    <form asp-controller="AdminTransaction" asp-action="ApproveTransaction" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="transactionId" value="@txn.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-0 py-1 px-2 fw-bold shadow-sm" style="font-size:0.7rem; letter-spacing:0.5px;" onclick="return confirm('Bạn xác nhận duyệt giao dịch #@txn.Id (@txn.Amount.ToString("N0") đ) và kích hoạt gói tập cho Hội viên?')">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Duyệt ngay
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small" style="font-size:0.75rem;">—</span>
                                 }
                             </td>
                         </tr>

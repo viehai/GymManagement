@@ -148,10 +148,10 @@
             <p class="section-label">Phương thức thanh toán</p>
 
             <div class="payment-method">
-                <i class="bi bi-credit-card-2-front pm-icon"></i>
+                <i class="bi bi-qr-code-scan pm-icon"></i>
                 <div>
-                    <p class="pm-label">VNPay</p>
-                    <p class="pm-desc">Ví điện tử / ATM / QR Code</p>
+                    <p class="pm-label">VietQR / Chuyển khoản 24/7</p>
+                    <p class="pm-desc">Quét mã QR động chuyển tiền thẳng vào ngân hàng, tự động kích hoạt vé</p>
                 </div>
             </div>
 
@@ -168,7 +168,7 @@
                 <input type="hidden" name="Price"           value="@Model.Price" />
 
                 <button id="btn-confirm-checkout" type="submit" class="btn-pay">
-                    <i class="bi bi-lock me-2"></i>Xác nhận & Thanh toán — @Model.Price.ToString("N0") đ
+                    <i class="bi bi-qr-code me-2"></i>Tiếp tục Quét mã QR — @Model.Price.ToString("N0") đ
                 </button>
             </form>
 

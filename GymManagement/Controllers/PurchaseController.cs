@@ -5,25 +5,26 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
 namespace GymManagement.Controllers
 {
     /// <summary>
-    /// Luồng mua vé của Member: DailyPass → Package → Checkout → Result.
-    /// Yêu cầu đăng nhập (Authorize). Guest bấm CTA sẽ bị redirect về Account/Login.
-    /// Mock VNPay: không cần key thật — POST Checkout tự chuyển thành công.
+    /// Luồng mua vé của Member: DailyPass → Package → Checkout → VNPay Gateway → VnPayReturn → Result.
     /// </summary>
     [Authorize]
     public class PurchaseController : Controller
     {
         private readonly GymDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
 
-        public PurchaseController(GymDbContext context, UserManager<ApplicationUser> userManager)
+        public PurchaseController(GymDbContext context, UserManager<ApplicationUser> userManager, IConfiguration configuration)
         {
             _context = context;
             _userManager = userManager;
+            _configuration = configuration;
         }
 
         // ═══════════════════════════════════════════════
@@ -62,32 +63,25 @@ namespace GymManagement.Controllers
 
             var vm = new PurchaseCheckoutViewModel
             {
-                GymId      = gym.Id,
-                GymName    = gym.Name,
-                GymAddress = gym.Address,
-                GymImage   = gym.ImageUrl ?? string.Empty,
-                PackageId         = dailyPackage.Id,
-                PackageName       = dailyPackage.Name,
-                PackageType       = dailyPackage.PackageType,
-                DurationInMonths  = dailyPackage.DurationInMonths,
-                Price             = dailyPackage.Price
+                GymId            = gym.Id,
+                GymName          = gym.Name,
+                GymAddress       = gym.Address,
+                GymImage         = gym.ImageUrl,
+                PackageId        = dailyPackage.Id,
+                PackageName      = dailyPackage.Name,
+                PackageType      = "Daily",
+                DurationInMonths = null,
+                Price            = dailyPackage.Price
             };
 
-            return View(vm);
-        }
-
-        // POST /Purchase/DailyPass/{gymId} — redirect sang Checkout
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult DailyPass(int gymId, PurchaseCheckoutViewModel vm)
-        {
             TempData["Checkout"] = JsonSerializer.Serialize(vm);
             return RedirectToAction("Checkout");
         }
 
         // ═══════════════════════════════════════════════
         // MEM-07: CHỌN GÓI THÁNG
-        // GET /Purchase/Package/{gymId}
+        // GET  /Purchase/Package/{gymId}
+        // POST /Purchase/Package
         // ═══════════════════════════════════════════════
 
         [HttpGet]
@@ -134,7 +128,6 @@ namespace GymManagement.Controllers
             return View(packages);
         }
 
-        // POST /Purchase/Package — nhận packageId, redirect sang Checkout
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Package(int gymId, int packageId)
@@ -156,10 +149,10 @@ namespace GymManagement.Controllers
 
             var vm = new PurchaseCheckoutViewModel
             {
-                GymId      = gym.Id,
-                GymName    = gym.Name,
-                GymAddress = gym.Address,
-                GymImage   = gym.ImageUrl ?? string.Empty,
+                GymId            = gym.Id,
+                GymName          = gym.Name,
+                GymAddress       = gym.Address,
+                GymImage         = gym.ImageUrl ?? string.Empty,
                 PackageId        = pkg.Id,
                 PackageName      = pkg.Name,
                 PackageType      = pkg.PackageType,
@@ -174,7 +167,7 @@ namespace GymManagement.Controllers
         // ═══════════════════════════════════════════════
         // MEM-08: XÁC NHẬN ĐƠN HÀNG
         // GET  /Purchase/Checkout
-        // POST /Purchase/Checkout → Mock success → tạo Membership + Invoice
+        // POST /Purchase/Checkout → Tạo URL VNPay và chuyển hướng
         // ═══════════════════════════════════════════════
 
         [HttpGet]
@@ -186,9 +179,7 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Search", "Gym");
             }
 
-            // Keep để POST còn đọc được
             TempData.Keep("Checkout");
-
             var vm = JsonSerializer.Deserialize<PurchaseCheckoutViewModel>(json);
             return View(vm);
         }
@@ -200,7 +191,6 @@ namespace GymManagement.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            // Kiểm tra Gym + Package còn hợp lệ
             var gym = await _context.Gyms
                 .FirstOrDefaultAsync(g => g.Id == vm.GymId && g.Status == "Approved");
             var pkg = await _context.MembershipPackages
@@ -212,71 +202,361 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Search", "Gym");
             }
 
-            // Chặn Chủ phòng Gym tự mua gói tập tại phòng của chính mình
             if (gym.OwnerId == user.Id)
             {
                 TempData["Error"] = "Giao dịch không hợp lệ: Không thể tự mua gói tập tại phòng Gym do chính bạn sở hữu.";
                 return RedirectToAction("Details", "Gym", new { id = vm.GymId });
             }
 
-            // ── Mock VNPay: tạo thẳng Transaction Success ──
+            // Tạo bản ghi Transaction ở trạng thái Pending kèm thông tin gói cần mua trong VnpTxnRef
             var transaction = new Transaction
             {
                 MemberId      = user.Id,
                 Amount        = pkg.Price,
-                Status        = "Success",
-                VnpTxnRef     = $"MOCK-{Guid.NewGuid():N}"[..20],
-                PaymentMethod = "VNPay",
+                Status        = "Pending",
+                VnpTxnRef     = $"BUY|{pkg.Id}|{gym.Id}",
+                PaymentMethod = "VietQR",
                 CreatedAt     = DateTime.Now
             };
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
 
-            // ── Tạo MemberMembership ──
-            var startDate = DateTime.Today;
-            var endDate   = MembershipHelper.CalculateEndDate(pkg.PackageType, pkg.DurationInMonths);
+            // Chuyển hướng sang màn hình Quét mã VietQR
+            return RedirectToAction("QrPayment", new { transactionId = transaction.Id });
+        }
 
-            var membership = new MemberMembership
+        // ═══════════════════════════════════════════════
+        // VIETQR: MÀN HÌNH QUÉT MÃ QR THANH TOÁN
+        // GET /Purchase/QrPayment/{transactionId}
+        // ═══════════════════════════════════════════════
+
+        [HttpGet]
+        public async Task<IActionResult> QrPayment(int transactionId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var transaction = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.Id == transactionId && t.MemberId == user.Id);
+
+            if (transaction == null) return NotFound();
+
+            // Nếu đã thanh toán rồi, chuyển thẳng sang trang Kết quả
+            if (transaction.Status == "Success")
             {
-                MemberId        = user.Id,
-                GymId           = gym.Id,
-                PackageId       = pkg.Id,
-                StartDate       = startDate,
-                EndDate         = endDate,
-                PurchaseDate    = DateTime.Now,
-                PriceAtPurchase = pkg.Price
+                return RedirectToAction("Result", new { transactionId = transaction.Id });
+            }
+
+            var bankId = _configuration["VietQrSettings:BankId"] ?? "MB";
+            var bankName = _configuration["VietQrSettings:BankName"] ?? "MBBank (Ngân hàng Quân Đội)";
+            var accountNumber = _configuration["VietQrSettings:AccountNumber"] ?? "0987654321";
+            var accountName = _configuration["VietQrSettings:AccountName"] ?? "NGUYEN VAN A";
+            var template = _configuration["VietQrSettings:Template"] ?? "compact2";
+
+            string transferContent = $"GP{transaction.Id}";
+            string encodedAccountName = Uri.EscapeDataString(accountName);
+            string encodedContent = Uri.EscapeDataString(transferContent);
+            string qrUrl = $"https://img.vietqr.io/image/{bankId}-{accountNumber}-{template}.png?amount={((long)transaction.Amount)}&addInfo={encodedContent}&accountName={encodedAccountName}";
+
+            string gymName = "GymPro Management";
+            string gymAddress = "";
+            string packageName = "Gói dịch vụ";
+            string packageType = "Daily";
+            int? durationInMonths = null;
+
+            var parts = (transaction.VnpTxnRef ?? "").Split('|');
+            if (parts.Length >= 3 && parts[0] == "BUY" && int.TryParse(parts[1], out int pId) && int.TryParse(parts[2], out int gId))
+            {
+                var pkg = await _context.MembershipPackages.FindAsync(pId);
+                var gym = await _context.Gyms.FindAsync(gId);
+                if (pkg != null) { packageName = pkg.Name; packageType = pkg.PackageType; durationInMonths = pkg.DurationInMonths; }
+                if (gym != null) { gymName = gym.Name; gymAddress = gym.Address; }
+            }
+            else if (parts.Length >= 3 && parts[0] == "RENEW" && int.TryParse(parts[1], out int mId) && int.TryParse(parts[2], out int rPkgId))
+            {
+                var mem = await _context.MemberMemberships.Include(m => m.Gym).FirstOrDefaultAsync(m => m.Id == mId);
+                var pkg = await _context.MembershipPackages.FindAsync(rPkgId);
+                if (pkg != null) { packageName = $"[Gia hạn] {pkg.Name}"; packageType = pkg.PackageType; durationInMonths = pkg.DurationInMonths; }
+                if (mem?.Gym != null) { gymName = mem.Gym.Name; gymAddress = mem.Gym.Address; }
+            }
+
+            var vm = new QrPaymentViewModel
+            {
+                TransactionId   = transaction.Id,
+                OrderRef        = transferContent,
+                Amount          = transaction.Amount,
+                BankId          = bankId,
+                BankName        = bankName,
+                AccountNumber   = accountNumber,
+                AccountName     = accountName,
+                TransferContent = transferContent,
+                QrImageUrl      = qrUrl,
+                GymName         = gymName,
+                GymAddress      = gymAddress,
+                PackageName     = packageName,
+                PackageType     = packageType,
+                DurationInMonths = durationInMonths,
+                CreatedAt       = transaction.CreatedAt
             };
-            _context.MemberMemberships.Add(membership);
-            await _context.SaveChangesAsync();
 
-            // ── Liên kết Transaction → Membership ──
-            transaction.MembershipId = membership.Id;
+            return View(vm);
+        }
 
-            // ── Tạo Invoice ──
-            var invoice = new Invoice
+        // ═══════════════════════════════════════════════
+        // POLLING API: KIỂM TRA TRẠNG THÁI THANH TOÁN (AJAX)
+        // GET /Purchase/CheckPaymentStatus?transactionId=...
+        // ═══════════════════════════════════════════════
+
+        [HttpGet]
+        public async Task<IActionResult> CheckPaymentStatus(int transactionId)
+        {
+            var transaction = await _context.Transactions.FindAsync(transactionId);
+            if (transaction == null)
             {
-                TransactionId = transaction.Id,
-                InvoiceCode   = MembershipHelper.GenerateInvoiceCode(),
-                IssuedDate    = DateTime.Now,
-                PdfUrl        = string.Empty // HTML view, không tạo file PDF
-            };
-            _context.Invoices.Add(invoice);
+                return Json(new { success = false, isPaid = false, message = "Không tìm thấy giao dịch." });
+            }
 
-            // ── Ghi Nhật ký Hệ thống (SystemLog) ──
-            _context.SystemLogs.Add(new SystemLog
+            if (transaction.Status == "Success")
             {
-                UserId = user.Id,
-                Action = "PaymentSuccess",
-                Entity = "Transaction",
-                EntityId = transaction.Id.ToString(),
-                Level = "Info",
-                Description = $"Hội viên {user.FullName} ({user.Email}) thanh toán thành công {pkg.Price:N0} VNĐ cho gói \"{pkg.Name}\" tại \"{gym.Name}\".",
-                CreatedAt = DateTime.Now
-            });
+                return Json(new
+                {
+                    success     = true,
+                    isPaid      = true,
+                    redirectUrl = Url.Action("Result", new { transactionId = transaction.Id })
+                });
+            }
 
-            await _context.SaveChangesAsync();
+            return Json(new { success = true, isPaid = false, status = transaction.Status });
+        }
 
-            return RedirectToAction("Result", new { transactionId = transaction.Id });
+        // ═══════════════════════════════════════════════
+        // SEPAY WEBHOOK: TỰ ĐỘNG NHẬN BIẾN ĐỘNG SỐ DƯ TỪ NGÂN HÀNG
+        // POST /Purchase/SepayWebhook
+        // ═══════════════════════════════════════════════
+
+        [HttpPost]
+        [AllowAnonymous]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> SepayWebhook([FromBody] SepayWebhookDto payload)
+        {
+            if (payload == null)
+            {
+                return BadRequest(new { success = false, message = "Payload trống" });
+            }
+
+            // Kiểm tra API Key bảo mật nếu được cấu hình
+            var configuredApiKey = _configuration["SePaySettings:ApiKey"];
+            if (!string.IsNullOrEmpty(configuredApiKey))
+            {
+                var authHeader = Request.Headers["Authorization"].ToString();
+                if (!authHeader.Contains(configuredApiKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Unauthorized(new { success = false, message = "API Key không hợp lệ" });
+                }
+            }
+
+            // Trích xuất mã giao dịch từ nội dung chuyển khoản (Regex bắt GP123 hoặc GYMPRO123)
+            string rawText = $"{payload.Content} {payload.Description}";
+            var match = System.Text.RegularExpressions.Regex.Match(
+                rawText, @"(?:GP|GYMPRO|GP_)\s*(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            int transactionId = 0;
+            if (match.Success)
+            {
+                int.TryParse(match.Groups[1].Value, out transactionId);
+            }
+
+            if (transactionId <= 0)
+            {
+                return Ok(new { success = false, message = "Không tìm thấy mã giao dịch GymPro trong nội dung chuyển tiền." });
+            }
+
+            var transaction = await _context.Transactions.FindAsync(transactionId);
+            if (transaction == null)
+            {
+                return Ok(new { success = false, message = $"Không tìm thấy giao dịch #{transactionId}." });
+            }
+
+            if (transaction.Status == "Success")
+            {
+                return Ok(new { success = true, message = "Giao dịch đã được xác nhận trước đó." });
+            }
+
+            // Kiểm tra số tiền nhận được có đủ hay không
+            if (payload.TransferAmount < transaction.Amount)
+            {
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = transaction.MemberId,
+                    Action = "SecurityAlert",
+                    Entity = "Transaction",
+                    EntityId = transaction.Id.ToString(),
+                    Level = "Warning",
+                    Description = $"Chuyển khoản VietQR thiếu tiền cho GD #{transaction.Id}. Cần thanh toán: {transaction.Amount:N0} đ, thực nhận: {payload.TransferAmount:N0} đ.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+                return Ok(new { success = false, message = "Số tiền chuyển khoản nhỏ hơn giá trị đơn hàng." });
+            }
+
+            bool completed = await CompletePaymentAsync(transaction, $"VietQR ({payload.Gateway ?? "Ngân hàng"})");
+            if (completed)
+            {
+                return Ok(new { success = true, message = "Thanh toán thành công và đã kích hoạt gói tập." });
+            }
+
+            return BadRequest(new { success = false, message = "Kích hoạt gói tập thất bại." });
+        }
+
+        // ═══════════════════════════════════════════════
+        // NÚT DỰ PHÒNG: TÔI ĐÃ CHUYỂN TIỀN XONG
+        // POST /Purchase/ConfirmManualPayment
+        // ═══════════════════════════════════════════════
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmManualPayment(int transactionId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var transaction = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.Id == transactionId && t.MemberId == user.Id);
+
+            if (transaction == null) return NotFound();
+
+            if (transaction.Status == "Success")
+            {
+                return RedirectToAction("Result", new { transactionId = transaction.Id });
+            }
+
+            bool completed = await CompletePaymentAsync(transaction, "VietQR (Xác nhận thủ công)");
+            if (completed)
+            {
+                TempData["Success"] = "Đã xác nhận thanh toán thành công!";
+                return RedirectToAction("Result", new { transactionId = transaction.Id });
+            }
+
+            TempData["Error"] = "Không thể xử lý giao dịch. Vui lòng thử lại.";
+            return RedirectToAction("QrPayment", new { transactionId });
+        }
+
+        // ═══════════════════════════════════════════════
+        // HELPER XỬ LÝ KÍCH HOẠT GÓI KHI THANH TOÁN THÀNH CÔNG
+        // ═══════════════════════════════════════════════
+
+        private async Task<bool> CompletePaymentAsync(Transaction transaction, string paymentSource = "VietQR")
+        {
+            if (transaction.Status == "Success") return true;
+
+            var parts = (transaction.VnpTxnRef ?? "").Split('|');
+            string orderType = parts.Length > 0 ? parts[0] : "";
+
+            if (orderType == "BUY" && parts.Length >= 3)
+            {
+                int pkgId = int.Parse(parts[1]);
+                int gymId = int.Parse(parts[2]);
+
+                var pkg = await _context.MembershipPackages.FindAsync(pkgId);
+                var gym = await _context.Gyms.FindAsync(gymId);
+
+                if (pkg != null && gym != null)
+                {
+                    var startDate = DateTime.Today;
+                    var endDate = MembershipHelper.CalculateEndDate(pkg.PackageType, pkg.DurationInMonths);
+
+                    var membership = new MemberMembership
+                    {
+                        MemberId = transaction.MemberId,
+                        GymId = gym.Id,
+                        PackageId = pkg.Id,
+                        StartDate = startDate,
+                        EndDate = endDate,
+                        PurchaseDate = DateTime.Now,
+                        PriceAtPurchase = pkg.Price
+                    };
+                    _context.MemberMemberships.Add(membership);
+                    await _context.SaveChangesAsync();
+
+                    transaction.MembershipId = membership.Id;
+                    transaction.Status = "Success";
+                    transaction.PaymentMethod = paymentSource;
+
+                    var invoice = new Invoice
+                    {
+                        TransactionId = transaction.Id,
+                        InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
+                        IssuedDate = DateTime.Now,
+                        PdfUrl = string.Empty
+                    };
+                    _context.Invoices.Add(invoice);
+
+                    var member = await _userManager.FindByIdAsync(transaction.MemberId);
+                    _context.SystemLogs.Add(new SystemLog
+                    {
+                        UserId = transaction.MemberId,
+                        Action = "PaymentSuccess",
+                        Entity = "Transaction",
+                        EntityId = transaction.Id.ToString(),
+                        Level = "Info",
+                        Description = $"Hội viên {member?.FullName} ({member?.Email}) đã thanh toán thành công {pkg.Price:N0} VNĐ qua {paymentSource} cho gói \"{pkg.Name}\" tại \"{gym.Name}\".",
+                        CreatedAt = DateTime.Now
+                    });
+
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+            }
+            else if (orderType == "RENEW" && parts.Length >= 3)
+            {
+                int memId = int.Parse(parts[1]);
+                int pkgId = int.Parse(parts[2]);
+
+                var membership = await _context.MemberMemberships
+                    .Include(m => m.Gym)
+                    .FirstOrDefaultAsync(m => m.Id == memId);
+                var pkg = await _context.MembershipPackages.FindAsync(pkgId);
+
+                if (membership != null && pkg != null)
+                {
+                    var newEndDate = MembershipHelper.CalculateRenewEndDate(
+                        membership.EndDate, pkg.PackageType, pkg.DurationInMonths);
+
+                    membership.EndDate = newEndDate;
+                    membership.PackageId = pkg.Id;
+                    membership.PriceAtPurchase = pkg.Price;
+
+                    transaction.MembershipId = membership.Id;
+                    transaction.Status = "Success";
+                    transaction.PaymentMethod = paymentSource;
+
+                    var invoice = new Invoice
+                    {
+                        TransactionId = transaction.Id,
+                        InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
+                        IssuedDate = DateTime.Now,
+                        PdfUrl = string.Empty
+                    };
+                    _context.Invoices.Add(invoice);
+
+                    var member = await _userManager.FindByIdAsync(transaction.MemberId);
+                    _context.SystemLogs.Add(new SystemLog
+                    {
+                        UserId = transaction.MemberId,
+                        Action = "MembershipRenewed",
+                        Entity = "MemberMembership",
+                        EntityId = membership.Id.ToString(),
+                        Level = "Info",
+                        Description = $"Hội viên {member?.FullName} đã gia hạn gói \"{pkg.Name}\" ({pkg.Price:N0} VNĐ) qua {paymentSource} tại \"{membership.Gym?.Name}\". Hạn mới: {newEndDate:dd/MM/yyyy}.",
+                        CreatedAt = DateTime.Now
+                    });
+
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // ═══════════════════════════════════════════════
@@ -306,7 +586,7 @@ namespace GymManagement.Controllers
         // ═══════════════════════════════════════════════
         // MEM-15: GIA HẠN VÉ
         // GET  /Purchase/Renew/{membershipId}
-        // POST /Purchase/Renew/{membershipId}
+        // POST /Purchase/Renew/{membershipId} → VNPay Gateway
         // ═══════════════════════════════════════════════
 
         [HttpGet]
@@ -383,55 +663,21 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Renew", new { membershipId });
             }
 
-            // ── Tính ngày hết hạn mới (cộng dồn nếu còn hạn) ──
-            var newEndDate = MembershipHelper.CalculateRenewEndDate(
-                membership.EndDate, pkg.PackageType, pkg.DurationInMonths);
-
-            // ── Tạo Transaction gia hạn ──
+            // Tạo Transaction gia hạn ở trạng thái Pending
             var transaction = new Transaction
             {
                 MemberId      = user.Id,
                 MembershipId  = membership.Id,
                 Amount        = pkg.Price,
-                Status        = "Success",
-                VnpTxnRef     = $"RENEW-{Guid.NewGuid():N}"[..20],
-                PaymentMethod = "VNPay",
+                Status        = "Pending",
+                VnpTxnRef     = $"RENEW|{membership.Id}|{pkg.Id}",
+                PaymentMethod = "VietQR",
                 CreatedAt     = DateTime.Now
             };
             _context.Transactions.Add(transaction);
-
-            // ── Cập nhật ngày hết hạn của Membership ──
-            membership.EndDate          = newEndDate;
-            membership.PackageId        = pkg.Id;
-            membership.PriceAtPurchase  = pkg.Price;
-
             await _context.SaveChangesAsync();
 
-            // ── Tạo Invoice gia hạn ──
-            var invoice = new Invoice
-            {
-                TransactionId = transaction.Id,
-                InvoiceCode   = MembershipHelper.GenerateInvoiceCode(),
-                IssuedDate    = DateTime.Now,
-                PdfUrl        = string.Empty
-            };
-            _context.Invoices.Add(invoice);
-
-            _context.SystemLogs.Add(new SystemLog
-            {
-                UserId = user.Id,
-                Action = "MembershipRenewed",
-                Entity = "MemberMembership",
-                EntityId = membership.Id.ToString(),
-                Level = "Info",
-                Description = $"Hội viên {user.FullName} ({user.Email}) đã gia hạn gói \"{pkg.Name}\" ({pkg.Price:N0} VNĐ) tại phòng Gym \"{membership.Gym?.Name}\". Hạn mới: {newEndDate:dd/MM/yyyy}.",
-                CreatedAt = DateTime.Now
-            });
-
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = $"Gia hạn thành công! Hạn sử dụng mới của bạn là ngày {newEndDate:dd/MM/yyyy}.";
-            return RedirectToAction("Result", new { transactionId = transaction.Id });
+            return RedirectToAction("QrPayment", new { transactionId = transaction.Id });
         }
     }
 }

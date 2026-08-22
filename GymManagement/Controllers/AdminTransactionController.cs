@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using GymManagement.Helpers;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -45,6 +46,10 @@ namespace GymManagement.Controllers
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
+            var allPackages = await _context.MembershipPackages.ToListAsync();
+            var allGyms = await _context.Gyms.ToListAsync();
+            var allMemberships = await _context.MemberMemberships.ToListAsync();
+
             // 3. Tính toán KPI Toàn sàn
             decimal totalRevenue = rawTransactions
                 .Where(t => string.Equals(t.Status, "Success", StringComparison.OrdinalIgnoreCase))
@@ -55,12 +60,79 @@ namespace GymManagement.Controllers
             int pendingCount = rawTransactions.Count(t => string.Equals(t.Status, "Pending", StringComparison.OrdinalIgnoreCase));
             int failedCount = rawTransactions.Count(t => string.Equals(t.Status, "Failed", StringComparison.OrdinalIgnoreCase));
 
-            // 4. Áp dụng bộ lọc
-            var query = rawTransactions.AsEnumerable();
+            // 4. Chuẩn hóa dữ liệu item
+            var itemsList = new List<AdminTransactionItemViewModel>();
+            foreach (var t in rawTransactions)
+            {
+                int gymIdVal = 0;
+                string gymNameVal = "—";
+                string gymAddressVal = "—";
+                string packageNameVal = "—";
+                string packageTypeVal = "Daily";
+                int? durationVal = null;
+
+                if (t.Membership != null)
+                {
+                    gymIdVal = t.Membership.GymId;
+                    gymNameVal = t.Membership.Gym?.Name ?? "—";
+                    gymAddressVal = t.Membership.Gym?.Address ?? "—";
+                    packageNameVal = t.Membership.Package?.Name ?? "—";
+                    packageTypeVal = t.Membership.Package?.PackageType ?? "Daily";
+                    durationVal = t.Membership.Package?.DurationInMonths;
+                }
+                else if (!string.IsNullOrEmpty(t.VnpTxnRef))
+                {
+                    var parts = t.VnpTxnRef.Split('|');
+                    if (parts.Length >= 3 && parts[0] == "BUY" && int.TryParse(parts[1], out int pId) && int.TryParse(parts[2], out int gId))
+                    {
+                        gymIdVal = gId;
+                        var g = allGyms.FirstOrDefault(x => x.Id == gId);
+                        var p = allPackages.FirstOrDefault(x => x.Id == pId);
+                        if (g != null) { gymNameVal = g.Name; gymAddressVal = g.Address; }
+                        if (p != null) { packageNameVal = p.Name; packageTypeVal = p.PackageType; durationVal = p.DurationInMonths; }
+                    }
+                    else if (parts.Length >= 3 && parts[0] == "RENEW" && int.TryParse(parts[1], out int mId) && int.TryParse(parts[2], out int rPkgId))
+                    {
+                        var mem = allMemberships.FirstOrDefault(x => x.Id == mId);
+                        if (mem != null)
+                        {
+                            gymIdVal = mem.GymId;
+                            var g = allGyms.FirstOrDefault(x => x.Id == mem.GymId);
+                            if (g != null) { gymNameVal = g.Name; gymAddressVal = g.Address; }
+                        }
+                        var p = allPackages.FirstOrDefault(x => x.Id == rPkgId);
+                        if (p != null) { packageNameVal = $"[Gia hạn] {p.Name}"; packageTypeVal = p.PackageType; durationVal = p.DurationInMonths; }
+                    }
+                }
+
+                itemsList.Add(new AdminTransactionItemViewModel
+                {
+                    Id = t.Id,
+                    MemberId = t.MemberId,
+                    MemberFullName = t.Member?.FullName ?? "Hội viên ẩn",
+                    MemberEmail = t.Member?.Email ?? string.Empty,
+                    GymId = gymIdVal,
+                    GymName = gymNameVal,
+                    GymAddress = gymAddressVal,
+                    PackageName = packageNameVal,
+                    PackageType = packageTypeVal,
+                    DurationInMonths = durationVal,
+                    Amount = t.Amount,
+                    Status = char.ToUpper(t.Status[0]) + t.Status.Substring(1).ToLower(),
+                    PaymentMethod = t.PaymentMethod ?? "VietQR",
+                    VnpTxnRef = t.VnpTxnRef,
+                    InvoiceCode = t.Invoice?.InvoiceCode,
+                    InvoiceId = t.Invoice?.Id,
+                    CreatedAt = t.CreatedAt
+                });
+            }
+
+            // 5. Áp dụng bộ lọc
+            var query = itemsList.AsEnumerable();
 
             if (gymId.HasValue && gymId.Value > 0)
             {
-                query = query.Where(t => t.Membership?.GymId == gymId.Value);
+                query = query.Where(t => t.GymId == gymId.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(status) && status != "all")
@@ -72,35 +144,16 @@ namespace GymManagement.Controllers
             {
                 var kw = search.Trim().ToLower();
                 query = query.Where(t =>
-                    (t.Member != null && t.Member.FullName != null && t.Member.FullName.ToLower().Contains(kw)) ||
-                    (t.Member != null && t.Member.Email != null && t.Member.Email.ToLower().Contains(kw)) ||
-                    (t.Invoice != null && t.Invoice.InvoiceCode != null && t.Invoice.InvoiceCode.ToLower().Contains(kw)) ||
+                    (t.MemberFullName != null && t.MemberFullName.ToLower().Contains(kw)) ||
+                    (t.MemberEmail != null && t.MemberEmail.ToLower().Contains(kw)) ||
+                    (t.InvoiceCode != null && t.InvoiceCode.ToLower().Contains(kw)) ||
                     (t.VnpTxnRef != null && t.VnpTxnRef.ToLower().Contains(kw)) ||
-                    (t.Membership?.Gym != null && t.Membership.Gym.Name != null && t.Membership.Gym.Name.ToLower().Contains(kw)) ||
-                    (t.Membership?.Package != null && t.Membership.Package.Name != null && t.Membership.Package.Name.ToLower().Contains(kw))
+                    (t.GymName != null && t.GymName.ToLower().Contains(kw)) ||
+                    (t.PackageName != null && t.PackageName.ToLower().Contains(kw))
                 );
             }
 
-            var items = query.Select(t => new AdminTransactionItemViewModel
-            {
-                Id = t.Id,
-                MemberId = t.MemberId,
-                MemberFullName = t.Member?.FullName ?? "Hội viên ẩn",
-                MemberEmail = t.Member?.Email ?? string.Empty,
-                GymId = t.Membership?.GymId ?? 0,
-                GymName = t.Membership?.Gym?.Name ?? "—",
-                GymAddress = t.Membership?.Gym?.Address ?? "—",
-                PackageName = t.Membership?.Package?.Name ?? "—",
-                PackageType = t.Membership?.Package?.PackageType ?? "Daily",
-                DurationInMonths = t.Membership?.Package?.DurationInMonths,
-                Amount = t.Amount,
-                Status = char.ToUpper(t.Status[0]) + t.Status.Substring(1).ToLower(),
-                PaymentMethod = t.PaymentMethod ?? "VNPay",
-                VnpTxnRef = t.VnpTxnRef,
-                InvoiceCode = t.Invoice?.InvoiceCode,
-                InvoiceId = t.Invoice?.Id,
-                CreatedAt = t.CreatedAt
-            }).ToList();
+            var items = query.ToList();
 
             var vm = new AdminTransactionListViewModel
             {
@@ -117,6 +170,118 @@ namespace GymManagement.Controllers
             };
 
             return View(vm);
+        }
+
+        // ==================== DUYỆT GIAO DỊCH THỦ CÔNG DÀNH CHO ADMIN ====================
+        // POST: /AdminTransaction/ApproveTransaction
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveTransaction(int transactionId)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Member)
+                .FirstOrDefaultAsync(t => t.Id == transactionId && t.Status == "Pending");
+
+            if (transaction == null)
+            {
+                TempData["Error"] = "Không tìm thấy giao dịch hoặc giao dịch này đã được duyệt trước đó.";
+                return RedirectToAction("Index");
+            }
+
+            var parts = (transaction.VnpTxnRef ?? "").Split('|');
+
+            if (parts.Length >= 3 && parts[0] == "BUY")
+            {
+                int pkgId = int.Parse(parts[1]);
+                int gId = int.Parse(parts[2]);
+                var pkg = await _context.MembershipPackages.FindAsync(pkgId);
+                var gym = await _context.Gyms.FindAsync(gId);
+
+                if (pkg != null && gym != null)
+                {
+                    var membership = new MemberMembership
+                    {
+                        MemberId = transaction.MemberId,
+                        GymId = gym.Id,
+                        PackageId = pkg.Id,
+                        StartDate = DateTime.Today,
+                        EndDate = MembershipHelper.CalculateEndDate(pkg.PackageType, pkg.DurationInMonths),
+                        PurchaseDate = DateTime.Now,
+                        PriceAtPurchase = pkg.Price
+                    };
+                    _context.MemberMemberships.Add(membership);
+                    await _context.SaveChangesAsync();
+
+                    transaction.MembershipId = membership.Id;
+                    transaction.Status = "Success";
+                    transaction.PaymentMethod = "VietQR (Admin duyệt)";
+
+                    var invoice = new Invoice
+                    {
+                        TransactionId = transaction.Id,
+                        InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
+                        IssuedDate = DateTime.Now,
+                        PdfUrl = string.Empty
+                    };
+                    _context.Invoices.Add(invoice);
+
+                    _context.SystemLogs.Add(new SystemLog
+                    {
+                        Action = "TransactionApprovedByAdmin",
+                        Entity = "Transaction",
+                        EntityId = transaction.Id.ToString(),
+                        Level = "Info",
+                        Description = $"Admin đã xác nhận duyệt thành công giao dịch #{transaction.Id} ({transaction.Amount:N0} đ) cho hội viên {transaction.Member?.FullName} ({transaction.Member?.Email}).",
+                        CreatedAt = DateTime.Now
+                    });
+
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = $"Đã duyệt thành công giao dịch #{transaction.Id} và kích hoạt gói tập cho Hội viên!";
+                }
+            }
+            else if (parts.Length >= 3 && parts[0] == "RENEW")
+            {
+                int mId = int.Parse(parts[1]);
+                int pkgId = int.Parse(parts[2]);
+                var mem = await _context.MemberMemberships.Include(m => m.Gym).FirstOrDefaultAsync(m => m.Id == mId);
+                var pkg = await _context.MembershipPackages.FindAsync(pkgId);
+
+                if (mem != null && pkg != null)
+                {
+                    var newEndDate = MembershipHelper.CalculateRenewEndDate(mem.EndDate, pkg.PackageType, pkg.DurationInMonths);
+                    mem.EndDate = newEndDate;
+                    mem.PackageId = pkg.Id;
+                    mem.PriceAtPurchase = pkg.Price;
+
+                    transaction.MembershipId = mem.Id;
+                    transaction.Status = "Success";
+                    transaction.PaymentMethod = "VietQR (Admin duyệt)";
+
+                    var invoice = new Invoice
+                    {
+                        TransactionId = transaction.Id,
+                        InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
+                        IssuedDate = DateTime.Now,
+                        PdfUrl = string.Empty
+                    };
+                    _context.Invoices.Add(invoice);
+
+                    _context.SystemLogs.Add(new SystemLog
+                    {
+                        Action = "TransactionApprovedByAdmin",
+                        Entity = "Transaction",
+                        EntityId = transaction.Id.ToString(),
+                        Level = "Info",
+                        Description = $"Admin đã duyệt gia hạn thành công gói \"{pkg.Name}\" cho hội viên {transaction.Member?.FullName}. Hạn mới: {newEndDate:dd/MM/yyyy}.",
+                        CreatedAt = DateTime.Now
+                    });
+
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = $"Đã duyệt gia hạn thành công giao dịch #{transaction.Id}!";
+                }
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }

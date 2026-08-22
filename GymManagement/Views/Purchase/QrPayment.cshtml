@@ -1,0 +1,282 @@
+@model GymManagement.ViewModels.QrPaymentViewModel
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Thanh toán VietQR — GymPro";
+}
+
+<style>
+    .qr-hero {
+        background: #252525;
+        padding: 2.2rem 0 1.8rem;
+    }
+    .qr-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(255,255,255,0.5); margin-bottom: 0.3rem;
+    }
+    .qr-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+        color: #fff; margin: 0;
+    }
+
+    .qr-body { padding: 2.5rem 0 5rem; }
+
+    /* ── Live Pulse Radar ── */
+    .pulse-container {
+        display: inline-flex; align-items: center; gap: 0.6rem;
+        background: #F8F9FA; border: 1.5px solid #252525;
+        padding: 0.55rem 1rem; margin-bottom: 1.5rem;
+    }
+    .pulse-dot {
+        width: 10px; height: 10px;
+        background-color: #28a745;
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        animation: pulse-green 1.6s infinite;
+    }
+    @@keyframes pulse-green {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+    .pulse-text {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem; font-weight: 700;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: #252525; margin: 0;
+    }
+
+    /* ── QR Card ── */
+    .qr-box {
+        border: 2px solid #252525;
+        background: #FFFFFF;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 6px 6px 0px #252525;
+    }
+    .qr-img {
+        max-width: 100%;
+        width: 320px;
+        height: auto;
+        display: inline-block;
+        border: 1px solid #E0E0E0;
+    }
+
+    /* ── Info Box ── */
+    .bank-info-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    .bank-info-table tr {
+        border-bottom: 1px solid #EAEAEA;
+    }
+    .bank-info-table td {
+        padding: 0.85rem 0.5rem;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+    .bank-info-table td:first-child {
+        color: #7D7D7D;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.68rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        width: 38%;
+    }
+    .bank-info-table td:last-child {
+        font-weight: 600;
+        color: #252525;
+        text-align: right;
+    }
+
+    .copy-badge {
+        background: #252525;
+        color: #FFFFFF;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border: none;
+        padding: 3px 8px;
+        cursor: pointer;
+        margin-left: 6px;
+        transition: background 0.15s;
+        display: inline-inline;
+    }
+    .copy-badge:hover { background: #545454; }
+
+    .highlight-content {
+        background: #FFF3CD;
+        color: #856404;
+        font-weight: 900;
+        font-size: 1.1rem;
+        letter-spacing: 2px;
+        padding: 4px 10px;
+        border: 1px dashed #856404;
+        display: inline-block;
+    }
+
+    .btn-manual-confirm {
+        display: block; width: 100%;
+        background: #FFFFFF; color: #252525;
+        border: 2px solid #252525; border-radius: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 0.72rem;
+        letter-spacing: 1.5px; text-transform: uppercase;
+        padding: 0.85rem; cursor: pointer;
+        transition: all 0.2s; margin-top: 1.2rem;
+    }
+    .btn-manual-confirm:hover {
+        background: #252525; color: #FFFFFF;
+    }
+
+    .btn-back-link {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem; font-weight: 600;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: #7D7D7D; text-decoration: none;
+        display: inline-block; margin-top: 1.2rem;
+    }
+    .btn-back-link:hover { color: #252525; }
+</style>
+
+<!-- Hero Header -->
+<div class="qr-hero">
+    <div class="container">
+        <p class="qr-hero-label">VIETQR NAPAS 24/7</p>
+        <h1>QUÉT MÃ THANH TOÁN TỰ ĐỘNG</h1>
+    </div>
+</div>
+
+<div class="container qr-body">
+    <div class="row g-4 align-items-start">
+
+        <!-- Cột Trái: Mã QR động -->
+        <div class="col-12 col-lg-5 text-center">
+            <div class="qr-box">
+                <p class="fw-bold text-uppercase mb-2" style="font-family:'Montserrat',sans-serif; font-size:0.75rem; letter-spacing:1.5px; color:#252525;">
+                    MÃ VIETQR ĐỘNG CHÍNH XÁC
+                </p>
+                <img src="@Model.QrImageUrl"
+                     alt="VietQR Payment Code"
+                     class="qr-img mb-3"
+                     id="qr-image" />
+                <p class="text-muted small mb-0" style="font-size:0.75rem; line-height:1.4;">
+                    Mở App Ngân hàng hoặc Ví điện tử (MoMo, ZaloPay...) để quét mã thanh toán tức thì.
+                </p>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Thông tin chuyển khoản & Polling -->
+        <div class="col-12 col-lg-7">
+
+            <!-- Radar trạng thái tự động -->
+            <div class="pulse-container w-100">
+                <span class="pulse-dot"></span>
+                <span class="pulse-text" id="status-label">ĐANG CHỜ THANH TOÁN (TỰ ĐỘNG NHẬN DIỆN)...</span>
+            </div>
+
+            <!-- Card thông tin đơn hàng -->
+            <div class="p-3 border border-dark bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.68rem; letter-spacing:1px;">Cơ sở & Gói tập</span>
+                    <span class="fw-bold text-dark">@Model.PackageName</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.68rem; letter-spacing:1px;">Phòng Gym</span>
+                    <span class="text-secondary small">@Model.GymName</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.68rem; letter-spacing:1px;">Tổng thanh toán</span>
+                    <span class="fs-4 fw-bolder text-dark" style="font-family:'Montserrat',sans-serif; letter-spacing:-0.5px;">
+                        @Model.Amount.ToString("N0") đ
+                    </span>
+                </div>
+            </div>
+
+            <!-- Bảng thông tin tài khoản chuyển tiền thủ công -->
+            <table class="bank-info-table">
+                <tr>
+                    <td>Ngân hàng thụ hưởng</td>
+                    <td><strong>@Model.BankName</strong> (@Model.BankId)</td>
+                </tr>
+                <tr>
+                    <td>Số tài khoản</td>
+                    <td>
+                        <span id="txt-stk" class="fw-bold fs-6">@Model.AccountNumber</span>
+                        <button type="button" class="copy-badge" onclick="copyText('@Model.AccountNumber', this)">SAO CHÉP</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tên chủ tài khoản</td>
+                    <td class="text-uppercase fw-bold">@Model.AccountName</td>
+                </tr>
+                <tr>
+                    <td>Số tiền chính xác</td>
+                    <td>
+                        <strong class="text-danger">@Model.Amount.ToString("N0") đ</strong>
+                        <button type="button" class="copy-badge" onclick="copyText('@(((long)Model.Amount))', this)">SAO CHÉP</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Nội dung chuyển khoản<br /><span class="text-danger fw-normal" style="font-size:0.65rem;">(Bắt buộc ghi đúng để tự động kích hoạt)</span></td>
+                    <td>
+                        <span class="highlight-content" id="txt-content">@Model.TransferContent</span>
+                        <button type="button" class="copy-badge" onclick="copyText('@Model.TransferContent', this)">SAO CHÉP</button>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-2">
+                <a class="btn-back-link m-0" asp-controller="Gym" asp-action="Search">
+                    <i class="bi bi-arrow-left me-1"></i> Hủy và quay lại tìm gym
+                </a>
+                <span class="text-muted small" style="font-size:0.75rem; font-family:'Montserrat',sans-serif; letter-spacing:0.5px;">MÃ GIAO DỊCH: #@Model.TransactionId</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function copyText(text, btnElement) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "ĐÃ CHÉP!";
+            btnElement.style.background = "#28a745";
+            setTimeout(() => {
+                btnElement.innerText = originalText;
+                btnElement.style.background = "#252525";
+            }, 2000);
+        });
+    }
+
+    // ── Polling kiểm tra trạng thái thanh toán tự động mỗi 2 giây ──
+    const transactionId = @Model.TransactionId;
+    let pollInterval = setInterval(checkPayment, 2000);
+
+    function checkPayment() {
+        fetch('/Purchase/CheckPaymentStatus?transactionId=' + transactionId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.isPaid && data.redirectUrl) {
+                    clearInterval(pollInterval);
+                    document.getElementById('status-label').innerText = "THANH TOÁN THÀNH CÔNG! ĐANG CHUYỂN HƯỚNG...";
+                    document.getElementById('status-label').style.color = "#28a745";
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl;
+                    }, 1000);
+                }
+            })
+            .catch(err => console.log("Lỗi polling:", err));
+    }
+</script>
+}
