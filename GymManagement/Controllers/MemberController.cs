@@ -300,7 +300,7 @@ namespace GymManagement.Controllers
             var membership = await _context.MemberMemberships
                 .Include(m => m.Gym)
                 .Include(m => m.Package)
-                .Include(m => m.Transaction)
+                .Include(m => m.Transactions)
                     .ThenInclude(t => t.Invoice)
                 .FirstOrDefaultAsync(m => m.Id == id && m.MemberId == user.Id);
 

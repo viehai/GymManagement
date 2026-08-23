@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GymManagement.Models
@@ -38,6 +38,9 @@ namespace GymManagement.Models
         [ForeignKey("PackageId")]
         public MembershipPackage Package { get; set; }
 
-        public Transaction Transaction { get; set; }
+        public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+        [NotMapped]
+        public Transaction? Transaction => Transactions.OrderByDescending(t => t.CreatedAt).FirstOrDefault();
     }
 }

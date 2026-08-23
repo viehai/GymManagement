@@ -698,11 +698,11 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Renew", new { membershipId });
             }
 
-            // Tạo Transaction gia hạn ở trạng thái Pending
+            // Tạo Transaction gia hạn ở trạng thái Pending (MembershipId = null khi đang chờ thanh toán)
             var transaction = new Transaction
             {
                 MemberId      = user.Id,
-                MembershipId  = membership.Id,
+                MembershipId  = null,
                 Amount        = pkg.Price,
                 Status        = "Pending",
                 VnpTxnRef     = $"RENEW|{membership.Id}|{pkg.Id}",

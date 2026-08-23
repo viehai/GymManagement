@@ -102,7 +102,7 @@ namespace GymManagement.Controllers
             var query = _context.MemberMemberships
                 .Include(m => m.Gym)
                 .Include(m => m.Package)
-                .Include(m => m.Transaction)
+                .Include(m => m.Transactions)
                     .ThenInclude(t => t.Invoice)
                 .Where(m => m.MemberId == memberId && m.Gym.OwnerId == userId);
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Models
@@ -111,10 +111,10 @@ namespace GymManagement.Models
                       .HasForeignKey(t => t.MemberId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // 1-1 với MemberMembership: 1 giao dịch thành công tạo đúng 1 membership
+                // 1 Membership có thể có nhiều Transaction (Giao dịch mua ban đầu + các giao dịch gia hạn)
                 entity.HasOne(t => t.Membership)
-                      .WithOne(m => m.Transaction)
-                      .HasForeignKey<Transaction>(t => t.MembershipId)
+                      .WithMany(m => m.Transactions)
+                      .HasForeignKey(t => t.MembershipId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
