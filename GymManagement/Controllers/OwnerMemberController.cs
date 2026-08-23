@@ -55,11 +55,19 @@ namespace GymManagement.Controllers
                 .OrderByDescending(m => m.EndDate)
                 .ToListAsync();
 
+            // Lọc Distinct theo từng cặp (Hội viên + Cơ sở Gym):
+            // - Trong cùng 1 phòng Gym: Hội viên chỉ xuất hiện 1 dòng duy nhất (lấy gói có thời hạn mới nhất).
+            // - Khác phòng Gym: Hội viên vẫn xuất hiện đầy đủ ở từng cơ sở phòng Gym tương ứng.
+            var distinctMemberships = memberships
+                .GroupBy(m => new { m.MemberId, m.GymId })
+                .Select(g => g.OrderByDescending(m => m.EndDate).ThenByDescending(m => m.PurchaseDate).First())
+                .ToList();
+
             var vm = new OwnerMemberListViewModel
             {
                 SelectedGymId = gymId,
                 MyGyms = myGyms,
-                Members = memberships.Select(m => new OwnerMemberItemViewModel
+                Members = distinctMemberships.Select(m => new OwnerMemberItemViewModel
                 {
                     MembershipId     = m.Id,
                     MemberId         = m.MemberId,

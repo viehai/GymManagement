@@ -1,0 +1,575 @@
+Requirement & Design Specification
+PR
+N222
+Job Management System
+Version: 1.0
+Group 1
+HE19
+XXXX
+ 
+– 
+Full name
+HE19
+XXXX
+ – 
+Full name
+Table of content
+Table of content
+2
+I. Overview
+3
+1. User Requirements
+3
+1.1 Actors
+3
+1.2 Use Cases
+4
+a. Diagram(s)
+4
+b. Descriptions
+5
+2. Overall Functionalities
+6
+2.1 Screens Flow
+6
+2.2 Screen Descriptions
+6
+2.3 Screen Authorization
+8
+3. System High Level Design
+9
+3.1 Database Schema
+9
+3.2 Table Descriptions
+9
+II. Web Application
+11
+III. Students Contribution
+19
+IV. Apendix
+19
+4.1. Assumptions & Dependencies
+19
+4.2. Limitations & Exclusions
+19
+4.3. Business Rules
+19
+I. Overview
+The Job Management System is a web-based application designed to manage job postings, applications, and user accounts efficiently. The system provides different access levels for users, employers, administrators, and guests to ensure secure and organized workflow. It allows users to search and apply for jobs, employers to post and manage job advertisements, and administrators to oversee the entire system.
+The project is developed using Java Servlet, JSP, and JDBC technologies, with data managed by the Microsoft SQL Server database system. This system was created to streamline the recruitment process, enhance data management, and improve communication between job seekers and employers.
+1. User Requirements
+1.1 Actors
+#
+Actor
+Description
+1
+Job Seeker
+Main user who searches and applies for jobs, and manages personal profiles.
+2
+Employer
+Employers or recruiters who post job advertisements and manage applicants.
+3
+Admin
+System administrators responsible for managing users, posts, and reports.
+4
+Guest
+Unregistered or not logged-in users who can browse basic job listings and register for an account.
+1.2 Use Cases
+a. Diagram(s)
+b. Descriptions
+ID
+Feature
+Use Case
+Use Case Description
+1
+Guest
+View basic job listings
+Browse and view available job postings without login
+2
+View job details
+View detailed information about specific job posting–
+3
+Register for account
+Create new account to access full system features
+4
+Job seeker
+Log In / Log Out
+Create account, authenticate, and end session
+5
+Search and view job listings
+Search for jobs using filters and view results
+6
+View job details
+View detailed information about specific job posting
+7
+Manage personal profile and resume
+Add, edit, update personal information and resume/CV
+8
+Apply for jobs
+Submit job applications with resume and cover letter
+9
+View application status
+Track and view status of submitted applications
+10
+Employer
+Log In / Log Out
+Authenticate as employer to access hiring features
+11
+Post job advertisements
+Create and publish new job postings
+12
+View applicant list
+View list of candidates who applied for jobs
+13
+Review and approve/reject applicants
+Evaluate applications and make hiring decisions
+14
+Manage job postings
+Edit, update, close, or delete job advertisements
+15
+Admin
+Log In / Log Out
+Authenticate as administrator to access admin panel
+16
+Manage job seeker
+Add, edit, delete, view, suspend user accounts
+17
+Manage employers
+Add, edit, delete, verify employer accounts
+18
+Manage job postings
+Monitor, approve, edit, or remove job advertisements
+19
+Handle reports and system content
+Review user reports, manage content moderation
+2. Overall Functionalities
+2.1 Screens Flow
+2.2 Screen Descriptions
+#
+Feature
+Screen
+Description
+1
+Registration
+Registration Page
+Allows new users to create an account by entering basic information.
+2
+Login
+Login Page
+Enables Job Seekers, Employers, and Admins to log in using their credentials.
+3
+Home Navigation
+Home Page
+Displays system introduction and provides access to Login and Registration.
+4
+Search Job
+Search Job
+Job Seekers can search for available job listings by title or category.
+5
+View Job Listing
+View Basic Job List
+Displays the list of available jobs with brief information.
+6
+View Job Details
+View Job Details
+Shows detailed information about a selected job and allows applying.
+7
+Profile Management
+Manage Profile and Resume
+Job Seekers can update their personal information and upload resumes.
+8
+Application Tracking
+View Application Status
+Job Seekers can check the current status of their job applications.
+9
+Job Seeker Dashboard
+Job Seeker Dashboard
+Main interface for job seekers to manage profiles, applications, and job search.
+10
+Post Job
+Post Job
+Employers can create and post new job vacancies.
+11
+Applicant Management
+View Applicant List
+Employers can view the list of applicants who applied for their job postings.
+12
+Applicant Review
+Review Applicants
+Employers can review applicant profiles and approve or reject them.
+13
+Job Posting Management
+Manage Job Postings
+Admin and Employer can manage job postings. Admin can view and edit all job posts, while Employer can manage only their own posts.
+14
+Employer Dashboard
+Employer Dashboard
+Main interface for employers to manage jobs and applicants.
+15
+Manage Job Seekers
+Manage Job Seekers
+Admin can view, edit, or delete job seeker accounts.
+16
+Manage Employers
+Manage Employers
+Admin can view, edit, or delete employer accounts.
+17
+Report Handling
+Handle Reports
+Admin can review and respond to user reports or complaints.
+18
+Admin Dashboard
+Admin Dashboard
+Main interface for admin to manage users, jobs, and system reports.
+19
+Logout
+Logout
+Allows users to securely exit the system and end their session.
+2.3 Screen Authorization
+#
+Screen
+Admin
+Employer
+Job Seeker
+1
+Register
+X
+X
+2
+Login
+X
+X
+X
+3
+Home
+X
+X
+X
+4
+Manage Job Posting
+X
+X
+5
+Manage Application
+X
+X
+6
+View Job List
+X
+X
+X
+7
+Apply Job
+X
+8
+Profile Management
+X
+X
+X
+9
+Admin Dashboard
+X
+3. System High Level Design
+3.1 Database Schema
+3.2 Table Descriptions
+No
+Table
+Description
+1
+Jobs
+Stores detailed information about posted job listings (Title, Description, Salary, Location, Requirements...).
+2
+Categories
+Manages job categories (e.g., "IT", "Marketing", "Accounting").
+3
+Companies
+Stores information about the companies posting jobs (Name, Description, Location, Website...).
+4
+Users
+Manages user accounts (Email, Password, FullName, Phone...). This is a central table for both students and employers.
+5
+Roles
+Defines the roles within the system (e.g., "Admin", "Student", "Employer").
+6
+Applications
+Manages student applications for jobs, including status and the CV snapshot (CVSnapshot).
+7
+Students
+Stores detailed academic information for students (Major, GPA...). This table links to the Users table.
+8
+Skills
+A master list of all available skills (e.g., "React", "SQL", "Communication").
+9
+JobSkills
+A junction table linking a job (JobId) to the multiple skills (SkillId) it requires.
+10
+StudentSkills
+A junction table linking a student (StudentId) to the multiple skills (SkillId) they possess.
+II. 
+Web Application
+3.1. Student logs in with the designated account
+Field Name
+Field Type
+Description
+User name
+Text Box 
+This is for user to input user name for logging in
+Password
+Password Box
+This is for user to input password for logging in
+Login
+Button
+User clicks to authenticate him/herself into the system with provided email/user name & password
+3.2. Staff screen after logging in
+Section
+Field Name
+Field Type
+Description
+Global Navigation (Header)
+One1
+Logo / Link
+Displays the site logo and navigates to the homepage when clicked.
+Home
+Navigation Link
+Navigates to the Home section.
+Find job
+Navigation Link
+Navigates to the job search/listing page.
+Company
+Navigation Link
+Navigates to the company listing page.
+(Search Icon)
+Icon Button
+Opens the search functionality (likely a search bar or new search page).
+Student
+Link / Toggle
+Toggles the content view or filters for "Student" users.
+User name
+User Profile Menu
+Displays the logged-in user's name and opens a dropdown menu for profile/settings.
+Hero Section
+Job title or keywords
+Search Input
+An input field where users can type keywords or job titles to search.
+Search
+Button
+Submits the search query based on the entered keywords.
+Popular Category
+Data Science
+Category Card / Link
+Navigates to the job listings page for the "Data Science" category.
+Design
+Category Card / Link
+Navigates to the job listings page for the "Design" category.
+Engineering
+Category Card / Link
+Navigates to the job listings page for the "Engineering" category.
+Marketing
+Category Card / Link
+Navigates to the job listings page for the "Marketing" category.
+Software Development
+Category Card / Link
+Navigates to the job listings page for the "Software Development" category.
+Top Companies
+TechCorp
+Company Card / Link
+A card displaying info for 'TechCorp'. Clicks to view the company profile or jobs.
+GreenWorks
+Company Card / Link
+A card displaying info for 'GreenWorks'. Clicks to view the company profile or jobs.
+More >
+Link
+Navigates to the full list of top companies.
+Newest Jobs
+Junior Java Developer
+Job Card / Link
+A card displaying info for the 'Junior Java Developer' position. Clicks to view job details.
+Data Analyst Intern
+Job Card / Link
+A card displaying info for the 'Data Analyst Intern' position. Clicks to view job details.
+UI/UX Designer
+Job Card / Link
+A card displaying info for the 'UI/UX Designer' position. Clicks to view job details.
+More >
+Link
+Navigates to the full list of newest jobs.
+"Steps to Your Dream Job"
+Create account
+Informational Card
+Displays information for Step 1: Create an account.
+Upload CV / Resume
+Informational Card
+Displays information for Step 2: Upload a CV / Resume.
+Find suitable job
+Informational Card
+Displays information for Step 3: Find a suitable job.
+Apply job
+Informational Card
+Displays information for Step 4: Apply for the job.
+3.3. Student can view list job and apply job
+Section
+Field Name
+Field Type
+Description
+Global Navigation (Header)
+One1
+Logo / Link
+Displays the site logo and navigates to the homepage when clicked.
+Home
+Navigation Link
+Navigates to the Home section.
+Find job
+Navigation Link
+Navigates to the job search/listing page.
+Company
+Navigation Link
+Navigates to the company listing page.
+(Search Icon)
+Icon Button
+Opens the search functionality.
+Student
+Link / Toggle
+Toggles the content view or filters for "Student" users.
+Nguyễn Anh Tú
+User Profile Menu
+Displays the logged-in user's name and opens a dropdown menu for profile/settings.
+Hero Section
+Job title or keywords
+Search Input
+An input field where users can type keywords or job titles to search.
+Search
+Button
+Submits the search query based on the entered keywords.
+Popular Category
+Data Science
+Category Card / Link
+Navigates to the job listings page for the "Data Science" category.
+Design
+Category Card / Link
+Navigates to the job listings page for the "Design" category.
+Engineering
+Category Card / Link
+Navigates to the job listings page for the "Engineering" category.
+Marketing
+Category Card / Link
+Navigates to the job listings page for the "Marketing" category.
+Software Development
+Category Card / Link
+Navigates to the job listings page for the "Software Development" category.
+Top Companies
+TechCorp
+Company Card / Link
+A card displaying info for 'TechCorp'. Clicks to view the company profile or jobs.
+GreenWorks
+Company Card / Link
+A card displaying info for 'GreenWorks'. Clicks to view the company profile or jobs.
+More >
+Link
+Navigates to the full list of top companies.
+Newest Jobs
+Junior Java Developer
+Job Card / Link
+A card displaying info for the 'Junior Java Developer' position. Clicks to view job details.
+Data Analyst Intern
+Job Card / Link
+A card displaying info for the 'Data Analyst Intern' position. Clicks to view job details.
+UI/UX Designer
+Job Card / Link
+A card displaying info for the 'UI/UX Designer' position. Clicks to view job details.
+More >
+Link
+Navigates to the full list of newest jobs.
+"Steps to Your Dream Job"
+Create account
+Informational Card
+Displays information for Step 1: Create an account.
+Upload CV / Resume
+Informational Card
+Displays information for Step 2: Upload a CV / Resume.
+Find suitable job
+Informational Card
+Displays information for Step 3: Find a suitable job.
+Apply job
+Informational Card
+Displays information for Step 4: Apply for the job.
+Discover The Best Job
+Job title or keywords
+Search Input
+An input field for users to type search keywords.
+Search
+Icon Button
+Submits the search query from the adjacent input field.
+Work Language
+Filter Button
+A filter button for "Work Language".
+Publication Date
+Filter Button
+A filter button for "Publication Date".
+Education Level
+Filter Button
+A filter button for "Education Level".
+Job type
+Filter Button
+A filter button for "Job type".
+Distance
+Filter Button
+A filter button for "Distance".
+Salary
+Filter Button
+A filter button for "Salary".
+Work modes
+Filter Button
+A filter button for "Work modes".
+Boss's beauty
+Filter Button
+A filter button for "Boss's beauty".
+Job Detail Page
+TechCorp (Header)
+Company Link
+Displays the company name and logo; clicks to view the company profile.
+Apply Now
+Button
+Clicks to open the application form/modal for this job.
+Application Form
+CV Snapshot URL
+Text Input
+An input field to paste a public URL for the user's CV.
+Cover Letter / Note
+Text Area
+A large text input field for the user to type a cover letter or note.
+Submit Application
+Button
+Submits the job application form.
+Error: You have...
+Error Message
+A red error notification indicating the user has already applied for this job.
+III. Students Contribution
+StudentNumber
+FullName
+Works
+Percentage
+HE19XXXX
+Full name
+Design DB
+5
+0%
+HE19XXXX
+Full name
+Code Login function
+5
+0
+%
+I
+V
+. 
+Apendix
+4.1. Assumptions & Dependencies
+AS-1: The system will be used within the organization's internal network.
+DE-1: Users have basic knowledge of using Windows applications.
+4.2. Limitations & Exclusions
+L-E: The system will not support mobile platforms in the current version.
+4.
+3. Business Rules
+BR- 1: Default admin account: MemberID is “Admin” and password is “@admin123”.
+BR- 2: Default staff account: MemberID is “Staff” and password is “@staff123”.
+ 
