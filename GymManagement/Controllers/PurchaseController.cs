@@ -303,6 +303,41 @@ namespace GymManagement.Controllers
         }
 
         // ═══════════════════════════════════════════════
+        // HỦY PHIÊN THANH TOÁN (KHI BẤM HỦY VÀ QUAY LẠI)
+        // POST /Purchase/CancelPayment
+        // ═══════════════════════════════════════════════
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelPayment(int transactionId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var transaction = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.Id == transactionId && t.MemberId == user.Id && t.Status == "Pending");
+
+            if (transaction != null)
+            {
+                transaction.Status = "Failed";
+                _context.SystemLogs.Add(new SystemLog
+                {
+                    UserId = user.Id,
+                    Action = "PaymentCancelled",
+                    Entity = "Transaction",
+                    EntityId = transaction.Id.ToString(),
+                    Level = "Info",
+                    Description = $"Hội viên {user.FullName} ({user.Email}) đã chủ động hủy phiên thanh toán #{transaction.Id}.",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Info"] = "Bạn đã hủy phiên thanh toán.";
+            return RedirectToAction("Search", "Gym");
+        }
+
+        // ═══════════════════════════════════════════════
         // POLLING API: KIỂM TRA TRẠNG THÁI THANH TOÁN (AJAX)
         // GET /Purchase/CheckPaymentStatus?transactionId=...
         // ═══════════════════════════════════════════════
