@@ -225,9 +225,10 @@
                                 </li>
                             }
                             <li class="nav-item">
-                                <span class="nav-link nav-user-name">
+                                <a class="nav-link nav-user-name @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" && ViewContext.RouteData.Values["action"]?.ToString() == "Profile" ? "active" : "")"
+                                   asp-controller="Member" asp-action="Profile" title="Xem trang cá nhân">
                                     <i class="bi bi-person me-1"></i>@User.Identity.Name
-                                </span>
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
