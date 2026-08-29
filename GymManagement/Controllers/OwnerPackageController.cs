@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -104,7 +105,7 @@ namespace GymManagement.Controllers
                 EntityId = model.Id.ToString(),
                 Level = "Info",
                 Description = $"Chủ phòng {user?.FullName} đã tạo gói vé mới: \"{model.Name}\" ({model.Price:N0} VNĐ) tại phòng Gym \"{gym?.Name}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
             await _context.SaveChangesAsync();
 
@@ -172,7 +173,7 @@ namespace GymManagement.Controllers
                 EntityId = package.Id.ToString(),
                 Level = "Info",
                 Description = $"Chủ phòng {user?.FullName} đã cập nhật gói vé: \"{package.Name}\" ({package.Price:N0} VNĐ) tại phòng Gym \"{package.Gym?.Name}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -189,6 +190,7 @@ namespace GymManagement.Controllers
             var userId = await GetCurrentUserIdAsync();
             var package = await _context.MembershipPackages
                 .Include(p => p.Gym)
+                .Include(p => p.MemberMemberships)
                 .FirstOrDefaultAsync(p => p.Id == id && p.Gym.OwnerId == userId);
 
             if (package == null) return NotFound();
@@ -196,6 +198,13 @@ namespace GymManagement.Controllers
             int gymId = package.GymId;
             string pkgName = package.Name;
             string gymName = package.Gym?.Name ?? "—";
+
+            // Chặn xóa nếu đã có hội viên từng mua gói này
+            if (package.MemberMemberships.Any())
+            {
+                TempData["Error"] = $"Không thể xóa gói \"{pkgName}\" vì đã có {package.MemberMemberships.Count} hội viên sử dụng. Hãy dùng \"Tạm dừng\" để ngừng bán gói này.";
+                return RedirectToAction("Index", new { gymId });
+            }
 
             _context.MembershipPackages.Remove(package);
 
@@ -208,7 +217,7 @@ namespace GymManagement.Controllers
                 EntityId = id.ToString(),
                 Level = "Warning",
                 Description = $"Chủ phòng {user?.FullName} đã xóa gói vé \"{pkgName}\" khỏi cơ sở \"{gymName}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();

@@ -154,7 +154,7 @@ namespace GymManagement.Controllers
                     EntityId = targetUser.Id,
                     Level = "Info",
                     Description = $"Quản trị viên đã mở khóa tài khoản người dùng {targetUser.Email}.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
             }
@@ -173,7 +173,7 @@ namespace GymManagement.Controllers
                     EntityId = targetUser.Id,
                     Level = "Warning",
                     Description = $"Quản trị viên đã khóa tài khoản người dùng {targetUser.Email}.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
             }
@@ -230,7 +230,7 @@ namespace GymManagement.Controllers
                 EntityId = user.Id,
                 Level = "Info",
                 Description = $"Quản trị viên đã phê duyệt tài khoản {user.Email} thành Chủ phòng Gym và kích hoạt {pendingGyms.Count} cơ sở Gym.",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -343,7 +343,7 @@ namespace GymManagement.Controllers
                 EntityId = user.Id,
                 Level = "Info",
                 Description = $"Quản trị viên đã thay đổi vai trò của tài khoản {user.Email} thành {model.SelectedRole}.{extraNotice}",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
             await _context.SaveChangesAsync();
 

@@ -13,7 +13,7 @@ namespace GymManagement.Helpers
         /// </summary>
         public static DateTime CalculateEndDate(string packageType, int? durationInMonths)
         {
-            var today = DateTime.Today;
+            var today = VnTime.Today;
 
             if (packageType == "Daily")
                 return today.AddDays(1).AddSeconds(-1); // 23:59:59 hôm nay
@@ -31,7 +31,7 @@ namespace GymManagement.Helpers
         /// </summary>
         public static DateTime CalculateRenewEndDate(DateTime currentEndDate, string packageType, int? durationInMonths)
         {
-            var baseDate = currentEndDate > DateTime.Today ? currentEndDate : DateTime.Today;
+            var baseDate = currentEndDate > VnTime.Today ? currentEndDate : VnTime.Today;
 
             if (packageType == "Daily")
                 return baseDate.AddDays(1);
@@ -48,7 +48,7 @@ namespace GymManagement.Helpers
         /// </summary>
         public static string GenerateInvoiceCode()
         {
-            var datePart = DateTime.Now.ToString("yyyyMMdd");
+            var datePart = VnTime.Now.ToString("yyyyMMdd");
             var randomPart = Guid.NewGuid().ToString("N")[..6].ToUpper();
             return $"INV-{datePart}-{randomPart}";
         }

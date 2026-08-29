@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -40,7 +41,7 @@ namespace GymManagement.Controllers
                 .ToListAsync();
 
             var activeMembershipsCount = await _context.MemberMemberships
-                .CountAsync(m => m.MemberId == user.Id && m.EndDate >= DateTime.Today);
+                .CountAsync(m => m.MemberId == user.Id && m.EndDate >= VnTime.Today);
 
             var transactionCount = await _context.Transactions
                 .CountAsync(t => t.MemberId == user.Id);
@@ -80,7 +81,7 @@ namespace GymManagement.Controllers
                     EntityId = user.Id,
                     Level = "Info",
                     Description = $"Người dùng {user.Email} đã đổi mật khẩu tài khoản thành công.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
 
@@ -159,7 +160,7 @@ namespace GymManagement.Controllers
                 Description = model.Description,
                 ImageUrl = imageUrl,
                 Status = "Pending",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             };
 
             _context.Gyms.Add(gym);
@@ -172,7 +173,7 @@ namespace GymManagement.Controllers
                 EntityId = gym.Id.ToString(),
                 Level = "Info",
                 Description = $"Người dùng {user.FullName} ({user.Email}) đã gửi hồ sơ đăng ký mở phòng Gym mới: \"{gym.Name}\" ({gym.Address}).",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -251,8 +252,8 @@ namespace GymManagement.Controllers
                 PackageType      = pkg?.PackageType ?? string.Empty,
                 DurationInMonths = pkg?.DurationInMonths,
                 Amount           = invoice.Transaction.Amount,
-                StartDate        = membership?.StartDate ?? DateTime.Today,
-                EndDate          = membership?.EndDate ?? DateTime.Today
+                StartDate        = membership?.StartDate ?? VnTime.Today,
+                EndDate          = membership?.EndDate ?? VnTime.Today
             };
 
             return View(vm);

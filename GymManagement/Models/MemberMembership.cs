@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GymManagement.Helpers;
 
 namespace GymManagement.Models
 {
@@ -22,7 +23,7 @@ namespace GymManagement.Models
         [Required]
         public DateTime EndDate { get; set; }
 
-        public DateTime PurchaseDate { get; set; } = DateTime.Now;
+        public DateTime PurchaseDate { get; set; } = VnTime.Now;
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -81,7 +82,7 @@ namespace GymManagement.Controllers
                 Description = model.Description,
                 ImageUrl = imageUrl,
                 Status = "Pending",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             };
 
             _context.Gyms.Add(gym);
@@ -95,7 +96,7 @@ namespace GymManagement.Controllers
                 EntityId = gym.Id.ToString(),
                 Level = "Info",
                 Description = $"Chủ phòng {user?.FullName} ({user?.Email}) đã tạo cơ sở phòng Gym mới \"{gym.Name}\" và đang chờ Admin duyệt.",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -168,7 +169,7 @@ namespace GymManagement.Controllers
                 EntityId = gym.Id.ToString(),
                 Level = "Info",
                 Description = $"Chủ phòng {user?.FullName} đã cập nhật thông tin cơ sở phòng Gym \"{gym.Name}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -183,8 +184,17 @@ namespace GymManagement.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var userId = await GetCurrentUserIdAsync();
-            var gym = await _context.Gyms.FirstOrDefaultAsync(g => g.Id == id && g.OwnerId == userId);
+            var gym = await _context.Gyms
+                .Include(g => g.MemberMemberships)
+                .FirstOrDefaultAsync(g => g.Id == id && g.OwnerId == userId);
             if (gym == null) return NotFound();
+
+            // Chặn xóa nếu đã có hội viên từng đăng ký tại cơ sở này
+            if (gym.MemberMemberships.Any())
+            {
+                TempData["Error"] = $"Không thể xóa cơ sở \"{gym.Name}\" vì đã có {gym.MemberMemberships.Count} hội viên đăng ký. Vui lòng liên hệ Admin để được hỗ trợ.";
+                return RedirectToAction("Index");
+            }
 
             if (!string.IsNullOrEmpty(gym.ImageUrl))
                 DeleteImage(gym.ImageUrl);
@@ -200,7 +210,7 @@ namespace GymManagement.Controllers
                 EntityId = id.ToString(),
                 Level = "Warning",
                 Description = $"Chủ phòng {user?.FullName} đã xóa cơ sở phòng Gym \"{gym.Name}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();

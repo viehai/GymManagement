@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GymManagement.Helpers;
 
 namespace GymManagement.Models
 {
@@ -19,7 +20,7 @@ namespace GymManagement.Models
 
         public bool IsUsed { get; set; } = false;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = VnTime.Now;
 
         // Navigation property
         [ForeignKey("UserId")]

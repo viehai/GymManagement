@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -150,7 +151,7 @@ namespace GymManagement.Controllers
                     EntityId = ge.Id.ToString(),
                     Level = "Info",
                     Description = $"Chủ phòng {user.FullName} đã thêm máy \"{equipment?.Name}\" từ Catalog vào phòng Gym \"{gym.Name}\".",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
 
                 await _context.SaveChangesAsync();
@@ -285,7 +286,7 @@ namespace GymManagement.Controllers
                 EntityId = ge.Id.ToString(),
                 Level = "Info",
                 Description = $"Chủ phòng {user.FullName} đã tạo thiết bị custom \"{model.CustomName}\" (Nhóm cơ: {model.CustomCategory}) cho phòng Gym \"{gym.Name}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -355,7 +356,7 @@ namespace GymManagement.Controllers
                 EntityId = id.ToString(),
                 Level = "Warning",
                 Description = $"Chủ phòng {user.FullName} đã gỡ thiết bị \"{eqName}\" khỏi phòng Gym \"{gymName}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();

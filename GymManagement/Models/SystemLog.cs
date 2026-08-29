@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GymManagement.Helpers;
 
 namespace GymManagement.Models
 {
@@ -28,7 +29,7 @@ namespace GymManagement.Models
         [StringLength(20)]
         public string Level { get; set; } = "Info";
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = VnTime.Now;
 
         // Navigation property
         [ForeignKey("UserId")]

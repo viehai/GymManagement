@@ -1,4 +1,4 @@
-﻿namespace GymManagement.Helpers
+namespace GymManagement.Helpers
 {
     public static class OtpHelper
     {
@@ -13,7 +13,7 @@
         // Thời hạn hiệu lực của OTP: 5 phút
         public static DateTime GetExpiryTime()
         {
-            return DateTime.Now.AddMinutes(5);
+            return VnTime.Now.AddMinutes(5);
         }
     }
 }

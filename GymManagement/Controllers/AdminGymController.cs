@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -52,7 +53,7 @@ namespace GymManagement.Controllers
                 EntityId = gym.Id.ToString(),
                 Level = isReopening ? "Info" : "Warning",
                 Description = $"Quản trị viên đã {(isReopening ? "mở lại hoạt động (Approved)" : "đình chỉ hoạt động (Suspended)")} cơ sở phòng Gym \"{gym.Name}\".",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();

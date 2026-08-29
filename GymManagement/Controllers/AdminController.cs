@@ -104,7 +104,7 @@ namespace GymManagement.Controllers
                 EntityId = gym.Id.ToString(),
                 Level = "Info",
                 Description = $"Quản trị viên đã phê duyệt cơ sở phòng Gym \"{gym.Name}\" ({gym.Address}) của chủ phòng {gym.Owner?.FullName}.",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
             await _context.SaveChangesAsync();
 
@@ -135,7 +135,7 @@ namespace GymManagement.Controllers
                 EntityId = gym.Id.ToString(),
                 Level = "Warning",
                 Description = $"Quản trị viên đã từ chối đơn đăng ký phòng Gym \"{gym.Name}\". Lý do: {(string.IsNullOrWhiteSpace(reason) ? "Không đạt yêu cầu" : reason)}.",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
             await _context.SaveChangesAsync();
 

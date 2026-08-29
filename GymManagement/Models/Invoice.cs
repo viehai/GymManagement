@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GymManagement.Helpers;
 
 namespace GymManagement.Models
 {
@@ -14,7 +15,7 @@ namespace GymManagement.Models
         [StringLength(50)]
         public string InvoiceCode { get; set; }
 
-        public DateTime IssuedDate { get; set; } = DateTime.Now;
+        public DateTime IssuedDate { get; set; } = VnTime.Now;
 
         [StringLength(500)]
         public string PdfUrl { get; set; } = string.Empty;

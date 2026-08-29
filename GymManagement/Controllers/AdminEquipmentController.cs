@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -117,7 +118,7 @@ namespace GymManagement.Controllers
                 EntityId = model.Id.ToString(),
                 Level = "Info",
                 Description = $"Quản trị viên đã thêm thiết bị mới \"{model.Name}\" (Danh mục: {model.Category}) vào Catalog gốc.",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
             await _context.SaveChangesAsync();
 
@@ -204,7 +205,7 @@ namespace GymManagement.Controllers
                 EntityId = existing.Id.ToString(),
                 Level = "Info",
                 Description = $"Quản trị viên đã cập nhật thông tin thiết bị Catalog: \"{existing.Name}\" (Danh mục: {existing.Category}).",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -244,7 +245,7 @@ namespace GymManagement.Controllers
                 EntityId = equipment.Id.ToString(),
                 Level = "Warning",
                 Description = $"Quản trị viên đã xóa thiết bị \"{equipment.Name}\" khỏi Catalog gốc.",
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             });
 
             await _context.SaveChangesAsync();

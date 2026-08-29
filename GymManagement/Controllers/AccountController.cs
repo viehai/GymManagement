@@ -99,7 +99,7 @@ namespace GymManagement.Controllers
                     EntityId = user.Id,
                     Level = "Info",
                     Description = $"Người dùng mới {user.FullName} ({user.Email}) đã đăng ký tài khoản thành công.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
 
@@ -198,7 +198,7 @@ namespace GymManagement.Controllers
                     EntityId = user.Id,
                     Level = "Warning",
                     Description = $"Phát hiện tài khoản {user.Email} bị tạm khóa 5 phút do nhập sai mật khẩu quá 5 lần liên tiếp (chống tấn công Brute-force).",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
 
@@ -255,9 +255,9 @@ namespace GymManagement.Controllers
             {
                 UserId = user.Id,
                 OtpCode = otp,
-                ExpiredAt = DateTime.Now.AddMinutes(5),
+                ExpiredAt = VnTime.Now.AddMinutes(5),
                 IsUsed = false,
-                CreatedAt = DateTime.Now
+                CreatedAt = VnTime.Now
             };
             _context.PasswordResetOtps.Add(otpRecord);
             await _context.SaveChangesAsync();
@@ -305,7 +305,7 @@ namespace GymManagement.Controllers
                 .Where(o => o.UserId == user.Id
                             && o.OtpCode == model.OtpCode
                             && !o.IsUsed
-                            && o.ExpiredAt >= DateTime.Now)
+                            && o.ExpiredAt >= VnTime.Now)
                 .OrderByDescending(o => o.CreatedAt)
                 .FirstOrDefaultAsync();
 
@@ -366,7 +366,7 @@ namespace GymManagement.Controllers
                     EntityId = user.Id,
                     Level = "Info",
                     Description = $"Tài khoản {user.Email} đã khôi phục mật khẩu thành công qua mã xác minh OTP.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
 

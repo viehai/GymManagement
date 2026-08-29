@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GymManagement.Helpers;
 
 namespace GymManagement.Controllers
 {
@@ -52,7 +53,7 @@ namespace GymManagement.Controllers
             // Lọc membership active
             var memberQuery = _context.MemberMemberships
                 .Include(m => m.Gym)
-                .Where(m => m.Gym.OwnerId == userId && m.EndDate >= DateTime.Today);
+                .Where(m => m.Gym.OwnerId == userId && m.EndDate >= VnTime.Today);
 
             if (gymId.HasValue && gymId.Value > 0)
             {
@@ -63,7 +64,7 @@ namespace GymManagement.Controllers
             var allTransactions = await txQuery.ToListAsync();
             var activeMemberships = await memberQuery.ToListAsync();
 
-            var now = DateTime.Now;
+            var now = VnTime.Now;
             var startOfThisMonth = new DateTime(now.Year, now.Month, 1);
             var startOfLastMonth = startOfThisMonth.AddMonths(-1);
             var endOfLastMonth   = startOfThisMonth.AddTicks(-1);

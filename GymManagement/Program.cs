@@ -96,7 +96,7 @@ using (var scope = app.Services.CreateScope())
                 EntityId = "NET8",
                 Level = "Info",
                 Description = "Khởi động máy chủ GymPro Management Core và đồng bộ cơ sở dữ liệu thành công.",
-                CreatedAt = DateTime.Now.AddHours(-12)
+                CreatedAt = VnTime.Now.AddHours(-12)
             },
             new SystemLog
             {
@@ -105,7 +105,7 @@ using (var scope = app.Services.CreateScope())
                 EntityId = "1",
                 Level = "Info",
                 Description = "Quản trị viên đã phê duyệt cơ sở phòng Gym và nâng cấp tài khoản thành Owner.",
-                CreatedAt = DateTime.Now.AddHours(-8)
+                CreatedAt = VnTime.Now.AddHours(-8)
             },
             new SystemLog
             {
@@ -114,7 +114,7 @@ using (var scope = app.Services.CreateScope())
                 EntityId = "Auth",
                 Level = "Warning",
                 Description = "Phát hiện nhiều lần đăng nhập không thành công từ địa chỉ IP không xác định.",
-                CreatedAt = DateTime.Now.AddHours(-3)
+                CreatedAt = VnTime.Now.AddHours(-3)
             },
             new SystemLog
             {
@@ -123,7 +123,7 @@ using (var scope = app.Services.CreateScope())
                 EntityId = "101",
                 Level = "Info",
                 Description = "Hội viên thanh toán thành công gói tập qua phương thức chuyển khoản VietQR.",
-                CreatedAt = DateTime.Now.AddMinutes(-45)
+                CreatedAt = VnTime.Now.AddMinutes(-45)
             }
         );
         await dbContext.SaveChangesAsync();

@@ -204,9 +204,9 @@ namespace GymManagement.Controllers
                         MemberId = transaction.MemberId,
                         GymId = gym.Id,
                         PackageId = pkg.Id,
-                        StartDate = DateTime.Today,
+                        StartDate = VnTime.Today,
                         EndDate = MembershipHelper.CalculateEndDate(pkg.PackageType, pkg.DurationInMonths),
-                        PurchaseDate = DateTime.Now,
+                        PurchaseDate = VnTime.Now,
                         PriceAtPurchase = pkg.Price
                     };
                     _context.MemberMemberships.Add(membership);
@@ -220,7 +220,7 @@ namespace GymManagement.Controllers
                     {
                         TransactionId = transaction.Id,
                         InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
-                        IssuedDate = DateTime.Now,
+                        IssuedDate = VnTime.Now,
                         PdfUrl = string.Empty
                     };
                     _context.Invoices.Add(invoice);
@@ -232,7 +232,7 @@ namespace GymManagement.Controllers
                         EntityId = transaction.Id.ToString(),
                         Level = "Info",
                         Description = $"Admin đã xác nhận duyệt thành công giao dịch #{transaction.Id} ({transaction.Amount:N0} đ) cho hội viên {transaction.Member?.FullName} ({transaction.Member?.Email}).",
-                        CreatedAt = DateTime.Now
+                        CreatedAt = VnTime.Now
                     });
 
                     await _context.SaveChangesAsync();
@@ -261,7 +261,7 @@ namespace GymManagement.Controllers
                     {
                         TransactionId = transaction.Id,
                         InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
-                        IssuedDate = DateTime.Now,
+                        IssuedDate = VnTime.Now,
                         PdfUrl = string.Empty
                     };
                     _context.Invoices.Add(invoice);
@@ -273,7 +273,7 @@ namespace GymManagement.Controllers
                         EntityId = transaction.Id.ToString(),
                         Level = "Info",
                         Description = $"Admin đã duyệt gia hạn thành công gói \"{pkg.Name}\" cho hội viên {transaction.Member?.FullName}. Hạn mới: {newEndDate:dd/MM/yyyy}.",
-                        CreatedAt = DateTime.Now
+                        CreatedAt = VnTime.Now
                     });
 
                     await _context.SaveChangesAsync();

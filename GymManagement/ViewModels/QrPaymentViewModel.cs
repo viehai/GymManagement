@@ -1,4 +1,5 @@
 using System;
+using GymManagement.Helpers;
 
 namespace GymManagement.ViewModels
 {
@@ -19,7 +20,7 @@ namespace GymManagement.ViewModels
         public string PackageName { get; set; } = string.Empty;
         public string PackageType { get; set; } = string.Empty;
         public int? DurationInMonths { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = VnTime.Now;
     }
 
     public class SepayWebhookDto

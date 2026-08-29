@@ -216,7 +216,7 @@ namespace GymManagement.Controllers
                 Status        = "Pending",
                 VnpTxnRef     = $"BUY|{pkg.Id}|{gym.Id}",
                 PaymentMethod = "VietQR",
-                CreatedAt     = DateTime.Now
+                CreatedAt     = VnTime.Now
             };
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
@@ -328,7 +328,7 @@ namespace GymManagement.Controllers
                     EntityId = transaction.Id.ToString(),
                     Level = "Info",
                     Description = $"Hội viên {user.FullName} ({user.Email}) đã chủ động hủy phiên thanh toán #{transaction.Id}.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
             }
@@ -428,7 +428,7 @@ namespace GymManagement.Controllers
                     EntityId = transaction.Id.ToString(),
                     Level = "Warning",
                     Description = $"Chuyển khoản VietQR thiếu tiền cho GD #{transaction.Id}. Cần thanh toán: {transaction.Amount:N0} đ, thực nhận: {payload.TransferAmount:N0} đ.",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = VnTime.Now
                 });
                 await _context.SaveChangesAsync();
                 return Ok(new { success = false, message = "Số tiền chuyển khoản nhỏ hơn giá trị đơn hàng." });
@@ -497,7 +497,7 @@ namespace GymManagement.Controllers
 
                 if (pkg != null && gym != null)
                 {
-                    var startDate = DateTime.Today;
+                    var startDate = VnTime.Today;
                     var endDate = MembershipHelper.CalculateEndDate(pkg.PackageType, pkg.DurationInMonths);
 
                     var membership = new MemberMembership
@@ -507,7 +507,7 @@ namespace GymManagement.Controllers
                         PackageId = pkg.Id,
                         StartDate = startDate,
                         EndDate = endDate,
-                        PurchaseDate = DateTime.Now,
+                        PurchaseDate = VnTime.Now,
                         PriceAtPurchase = pkg.Price
                     };
                     _context.MemberMemberships.Add(membership);
@@ -521,7 +521,7 @@ namespace GymManagement.Controllers
                     {
                         TransactionId = transaction.Id,
                         InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
-                        IssuedDate = DateTime.Now,
+                        IssuedDate = VnTime.Now,
                         PdfUrl = string.Empty
                     };
                     _context.Invoices.Add(invoice);
@@ -535,7 +535,7 @@ namespace GymManagement.Controllers
                         EntityId = transaction.Id.ToString(),
                         Level = "Info",
                         Description = $"Hội viên {member?.FullName} ({member?.Email}) đã thanh toán thành công {pkg.Price:N0} VNĐ qua {paymentSource} cho gói \"{pkg.Name}\" tại \"{gym.Name}\".",
-                        CreatedAt = DateTime.Now
+                        CreatedAt = VnTime.Now
                     });
 
                     await _context.SaveChangesAsync();
@@ -569,7 +569,7 @@ namespace GymManagement.Controllers
                     {
                         TransactionId = transaction.Id,
                         InvoiceCode = MembershipHelper.GenerateInvoiceCode(),
-                        IssuedDate = DateTime.Now,
+                        IssuedDate = VnTime.Now,
                         PdfUrl = string.Empty
                     };
                     _context.Invoices.Add(invoice);
@@ -583,7 +583,7 @@ namespace GymManagement.Controllers
                         EntityId = membership.Id.ToString(),
                         Level = "Info",
                         Description = $"Hội viên {member?.FullName} đã gia hạn gói \"{pkg.Name}\" ({pkg.Price:N0} VNĐ) qua {paymentSource} tại \"{membership.Gym?.Name}\". Hạn mới: {newEndDate:dd/MM/yyyy}.",
-                        CreatedAt = DateTime.Now
+                        CreatedAt = VnTime.Now
                     });
 
                     await _context.SaveChangesAsync();
@@ -707,7 +707,7 @@ namespace GymManagement.Controllers
                 Status        = "Pending",
                 VnpTxnRef     = $"RENEW|{membership.Id}|{pkg.Id}",
                 PaymentMethod = "VietQR",
-                CreatedAt     = DateTime.Now
+                CreatedAt     = VnTime.Now
             };
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();

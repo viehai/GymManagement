@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GymManagement.Helpers;
 
 namespace GymManagement.Models
 {
@@ -10,7 +11,7 @@ namespace GymManagement.Models
         [Required]
         public string MemberId { get; set; }
 
-        // Gán sau khi tạo MemberMembership thành công (sau khi thanh toán OK)
+        // GÃ¡n sau khi táº¡o MemberMembership thÃ nh cÃ´ng (sau khi thanh toÃ¡n OK)
         public int? MembershipId { get; set; }
 
         [Required]
@@ -29,7 +30,7 @@ namespace GymManagement.Models
         [StringLength(50)]
         public string PaymentMethod { get; set; } = "VietQR";
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = VnTime.Now;
 
         // Navigation properties
         [ForeignKey("MemberId")]
