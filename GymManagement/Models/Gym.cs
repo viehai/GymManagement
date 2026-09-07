@@ -38,5 +38,6 @@ namespace GymManagement.Models
         public ICollection<GymEquipment> GymEquipments { get; set; }
         public ICollection<MembershipPackage> MembershipPackages { get; set; }
         public ICollection<MemberMembership> MemberMemberships { get; set; }
+        public ICollection<GymImage> GymImages { get; set; }
     }
 }

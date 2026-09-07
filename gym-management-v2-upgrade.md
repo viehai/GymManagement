@@ -1,0 +1,477 @@
+# 🚀 GymPro V2 — Đề Xuất Nâng Cấp Hệ Thống Quản Lý Phòng Gym
+
+> **Baseline**: V1 đã hoàn thành 61/61 functions (100%) — ASP.NET Core MVC thuần, Identity, VietQR + SePay Webhook  
+> **Mục tiêu V2**: Nâng tầm trải nghiệm, tăng giá trị vận hành cho Owner, và xây dựng hệ sinh thái loyalty cho Member
+
+---
+
+## 📋 TỔNG QUAN CÁC MODULE NÂNG CẤP
+
+| # | Module | Mức độ | Mô tả ngắn |
+|---|--------|--------|-------------|
+| 1 | 🖼️ Multi-Image Gallery | ⭐⭐ | Owner upload nhiều ảnh cho Gym, kéo thả sắp xếp, gallery carousel |
+| 2 | 🚫 Đình Chỉ Hội Viên | ⭐⭐ | Owner tạm đình chỉ / cấm vĩnh viễn Member vi phạm tại gym |
+| 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng |
+| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên |
+| 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập |
+| 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) |
+| 7 | 📊 Nâng cấp Dashboard & Báo cáo | ⭐⭐ | Biểu đồ nâng cao, thống kê VIP, xuất báo cáo Excel/PDF |
+
+> ⭐ = Đơn giản &nbsp; ⭐⭐ = Trung bình &nbsp; ⭐⭐⭐ = Phức tạp
+
+---
+
+## MODULE 1: 🖼️ MULTI-IMAGE GALLERY
+
+### 1.1 Vấn đề V1
+- Mỗi Gym chỉ có **1 ảnh đại diện duy nhất** (`ImageUrl` trên `Gym.cs`)
+- Không đủ để thể hiện không gian, thiết bị, nội thất... → Member khó quyết định mua vé
+
+### 1.2 Giải pháp V2
+
+#### Database — Entity mới: `GymImage.cs`
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `GymId` | int (FK → Gym) | Gym sở hữu |
+| `ImageUrl` | string | Đường dẫn file ảnh |
+| `DisplayOrder` | int | Thứ tự hiển thị (kéo thả) |
+| `IsCover` | bool | Ảnh bìa đại diện chính |
+| `UploadedAt` | DateTime | Thời điểm upload |
+
+#### Functions mới
+
+| Mã | Function | Screen | Mô tả |
+|----|----------|--------|-------|
+| OWN-21 | Upload nhiều ảnh Gym | `OwnerGym/ManageImages/{gymId}` | Upload tối đa **10 ảnh**, kéo thả sắp xếp, chọn ảnh bìa |
+| OWN-22 | Xóa / thay đổi thứ tự ảnh | `OwnerGym/ManageImages/{gymId}` | Xóa từng ảnh, drag & drop thay đổi DisplayOrder |
+| GUE-10 | Xem gallery ảnh Gym | `Gym/Details/{id}` (nâng cấp) | Carousel / lightbox gallery ảnh phòng gym |
+
+#### Ghi chú kỹ thuật
+- Upload file lưu vào `wwwroot/uploads/gyms/{gymId}/`
+- Validate: max 10 ảnh, mỗi ảnh ≤ 5MB, chấp nhận `.jpg/.png/.webp`
+- Ảnh bìa (`IsCover = true`) hiển thị ở Search results & card Gym
+
+---
+
+## MODULE 2: 🚫 ĐÌNH CHỈ HỘI VIÊN (MEMBER SUSPENSION)
+
+### 2.1 Vấn đề V1
+- Owner chỉ có thể **xem** danh sách hội viên, KHÔNG có quyền xử lý vi phạm
+- Nếu hội viên gây rối / vi phạm nội quy, Owner phải nhờ Admin can thiệp → chậm trễ
+
+### 2.2 Giải pháp V2
+
+#### Database — Entity mới: `MemberSuspension.cs`
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `GymId` | int (FK → Gym) | Gym thực hiện đình chỉ |
+| `MemberId` | string (FK → ApplicationUser) | Hội viên bị đình chỉ |
+| `SuspendedByUserId` | string (FK → ApplicationUser) | Owner thực hiện |
+| `Reason` | string | Lý do đình chỉ (bắt buộc nhập) |
+| `SuspensionType` | enum | `Temporary` (tạm thời) / `Permanent` (vĩnh viễn) |
+| `StartDate` | DateTime | Ngày bắt đầu đình chỉ |
+| `EndDate` | DateTime? | Ngày kết thúc (null nếu Permanent) |
+| `Status` | enum | `Active` / `Lifted` (đã gỡ) |
+| `LiftedAt` | DateTime? | Thời điểm gỡ đình chỉ |
+| `LiftedReason` | string? | Lý do gỡ đình chỉ |
+| `CreatedAt` | DateTime | Thời gian tạo |
+
+#### Functions mới
+
+| Mã | Function | Screen | Mô tả |
+|----|----------|--------|-------|
+| OWN-23 | Đình chỉ hội viên | `OwnerMember/Suspend/{membershipId}` | Chọn loại (tạm thời/vĩnh viễn), nhập lý do, set thời hạn |
+| OWN-24 | Gỡ đình chỉ hội viên | `OwnerMember/LiftSuspension/{id}` | Gỡ bỏ đình chỉ trước hạn, nhập lý do gỡ |
+| OWN-25 | Xem danh sách đình chỉ | `OwnerMember/Suspensions/{gymId}` | Danh sách hội viên đang/đã bị đình chỉ, lọc theo trạng thái |
+| MEM-17 | Xem trạng thái đình chỉ | `Member/MyMemberships` (nâng cấp) | Badge cảnh báo nếu đang bị đình chỉ tại gym nào đó |
+| ADM-17 | Giám sát đình chỉ toàn hệ thống | `AdminSuspension/Index` | Admin xem tổng quan đình chỉ trên toàn bộ gym |
+
+#### Business Rules
+- **Tạm thời (`Temporary`)**: Hội viên không thể check-in trong khoảng StartDate → EndDate, vé vẫn chạy (không gia hạn bù ngày)
+- **Vĩnh viễn (`Permanent`)**: Hội viên bị cấm tại gym đó, không thể mua vé mới tại gym đã cấm
+- Khi Member bị đình chỉ → **gửi email thông báo** kèm lý do + thời hạn
+- Khi gỡ đình chỉ → **gửi email thông báo** khôi phục
+- Owner KHÔNG thể đình chỉ chính mình hoặc Admin
+- **Ghi SystemLog** mỗi lần đình chỉ / gỡ đình chỉ
+
+---
+
+## MODULE 3: 👑 VIP LOYALTY SYSTEM
+
+### 3.1 Ý tưởng
+- Hội viên mua vé đạt ngưỡng do Owner cài đặt → tự động được **thăng hạng VIP** tại gym đó
+- VIP là **theo từng Gym** (1 Member có thể là VIP tại gym A nhưng thường ở gym B)
+- Owner tự quyết ngưỡng, phần thưởng, và chính sách VIP
+
+### 3.2 Giải pháp V2
+
+#### Database — Entities mới
+
+**`VipTierSetting.cs`** — Owner cấu hình các mức VIP
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `GymId` | int (FK → Gym) | |
+| `TierName` | string | Tên hạng VIP (VD: Silver, Gold, Platinum) |
+| `MinPurchaseCount` | int | Số lần mua tối thiểu để đạt hạng |
+| `DiscountPercent` | decimal? | % giảm giá cho vé tiếp theo (có thể null nếu không giảm) |
+| `BenefitDescription` | string | Mô tả quyền lợi VIP dạng text |
+| `BadgeColor` | string | Màu badge hiển thị (VD: `#C0C0C0`, `#FFD700`, `#E5E4E2`) |
+| `DisplayOrder` | int | Thứ tự hạng (1 = thấp nhất) |
+| `IsActive` | bool | Bật/tắt tier |
+
+**`MemberVipStatus.cs`** — Trạng thái VIP hiện tại của Member tại mỗi Gym
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `MemberId` | string (FK → ApplicationUser) | |
+| `GymId` | int (FK → Gym) | |
+| `CurrentTierId` | int? (FK → VipTierSetting) | Hạng VIP hiện tại (null = chưa đạt) |
+| `TotalPurchaseCount` | int | Tổng số lần mua vé thành công tại gym này |
+| `AchievedAt` | DateTime? | Thời điểm đạt hạng hiện tại |
+| `LastPurchaseAt` | DateTime? | Lần mua gần nhất |
+
+#### Functions mới
+
+| Mã | Function | Screen | Mô tả |
+|----|----------|--------|-------|
+| OWN-26 | Cấu hình VIP Tiers | `OwnerVip/Settings/{gymId}` | Tạo/sửa/xóa các mức VIP, set ngưỡng mua, giảm giá, quyền lợi |
+| OWN-27 | Xem danh sách VIP Members | `OwnerVip/Members/{gymId}` | Danh sách hội viên VIP, lọc theo tier, tổng mua |
+| OWN-28 | Xem chi tiết VIP 1 hội viên | `OwnerMember/Details/{id}` (nâng cấp) | Thêm badge VIP, lịch sử thăng hạng, quyền lợi hiện tại |
+| MEM-18 | Xem hạng VIP của tôi | `Member/MyVipStatus` | Danh sách gym đang có VIP, hạng, tiến trình đến hạng kế tiếp |
+| MEM-19 | Xem quyền lợi VIP | `Member/VipBenefits/{gymId}` | Chi tiết quyền lợi: % giảm giá, ưu tiên... |
+
+#### Business Rules & Logic thăng hạng
+```
+Khi Transaction.Status chuyển thành "Success":
+  1. Tăng MemberVipStatus.TotalPurchaseCount += 1
+  2. Lấy danh sách VipTierSetting của Gym, sắp xếp theo MinPurchaseCount DESC
+  3. Tìm tier cao nhất mà TotalPurchaseCount >= MinPurchaseCount
+  4. Nếu tier mới > tier hiện tại:
+     → Cập nhật CurrentTierId, AchievedAt = DateTime.Now
+     → Gửi email chúc mừng thăng hạng
+     → Ghi SystemLog
+  5. Khi mua vé mới, nếu có DiscountPercent → tự động áp giảm giá
+```
+
+#### Ví dụ cấu hình mẫu
+
+| Tier | MinPurchaseCount | Discount | Badge |
+|------|-----------------|----------|-------|
+| 🥈 Silver | 5 lần | 5% | Bạc |
+| 🥇 Gold | 15 lần | 10% | Vàng |
+| 💎 Platinum | 30 lần | 15% | Kim cương |
+
+> Owner hoàn toàn tự do thiết lập: có thể tạo 1 tier hoặc 10 tiers, tùy chiến lược kinh doanh.
+
+---
+
+## MODULE 4: 📱 QR CHECK-IN THÔNG MINH
+
+### 4.1 Vấn đề V1
+- Không có cơ chế **check-in** khi hội viên đến tập
+- Owner không biết ai đang ở trong phòng, ai đã hết hạn
+- Không có bằng chứng hội viên đã sử dụng dịch vụ
+
+### 4.2 Giải pháp V2
+
+#### Luồng hoạt động
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        QR CHECK-IN FLOW                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [Member mở app/web]                                                    │
+│        │                                                                │
+│        ▼                                                                │
+│  [Xem mã QR cá nhân]  ◄── QR chứa: MemberId + Token bảo mật          │
+│  (Member/MyQrCode)         (đổi token định kỳ để chống giả mạo)        │
+│        │                                                                │
+│        ▼                                                                │
+│  [Owner quét QR bằng camera/điện thoại]                                 │
+│  (OwnerCheckin/Scan/{gymId})                                            │
+│        │                                                                │
+│        ▼                                                                │
+│  ┌─────────────────────────────────────────────────┐                    │
+│  │         THÔNG TIN HIỂN THỊ SAU KHI QUÉT         │                    │
+│  ├─────────────────────────────────────────────────┤                    │
+│  │  👤 Họ tên: Nguyễn Văn A                       │                    │
+│  │  📧 Email: nguyenvana@gmail.com                 │                    │
+│  │  📞 SĐT: 0912 345 678                          │                    │
+│  │  ─────────────────────────────────               │                    │
+│  │  📦 Gói tập: Gói Tháng Premium                  │                    │
+│  │  📅 Hạn đến: 15/09/2026                         │                    │
+│  │  ⏳ Còn lại: 17 ngày                            │                    │
+│  │  👑 Hạng VIP: Gold (Giảm 10%)                   │                    │
+│  │  🚫 Đình chỉ: Không                             │                    │
+│  │  ─────────────────────────────────               │                    │
+│  │  ✅ TRẠNG THÁI: HỢP LỆ — Cho phép vào tập     │                    │
+│  │         [BẤM CHECK-IN]                           │                    │
+│  └─────────────────────────────────────────────────┘                    │
+│        │                                                                │
+│        ▼                                                                │
+│  [Ghi nhận CheckinLog] → Thời gian, GymId, MemberId                   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Database — Entities mới
+
+**`MemberQrToken.cs`** — Token bảo mật cho QR của Member
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `MemberId` | string (FK → ApplicationUser) | |
+| `Token` | string | GUID/Hash token nhúng trong QR |
+| `GeneratedAt` | DateTime | Thời điểm sinh token |
+| `ExpiresAt` | DateTime | Hết hạn (VD: 24h sau khi sinh) |
+
+**`CheckinLog.cs`** — Lịch sử check-in
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `MemberId` | string (FK → ApplicationUser) | |
+| `GymId` | int (FK → Gym) | |
+| `MembershipId` | int (FK → MemberMembership) | Vé nào được dùng |
+| `CheckinTime` | DateTime | Thời điểm check-in |
+| `CheckedByUserId` | string (FK → ApplicationUser) | Owner/Staff quét |
+| `Status` | enum | `Success` / `Expired` / `Suspended` / `NoActiveMembership` |
+
+#### Functions mới
+
+| Mã | Function | Screen | Mô tả |
+|----|----------|--------|-------|
+| MEM-20 | Xem mã QR cá nhân | `Member/MyQrCode` | Hiển thị QR Code + nút tải/lưu ảnh QR |
+| MEM-21 | Lịch sử check-in | `Member/CheckinHistory` | Danh sách lần check-in tại các gym, lọc theo thời gian |
+| OWN-29 | Quét QR check-in | `OwnerCheckin/Scan/{gymId}` | Mở camera quét QR, hiển thị thông tin Member + trạng thái |
+| OWN-30 | Xác nhận check-in | `OwnerCheckin/Confirm` (POST) | Bấm xác nhận cho Member vào tập |
+| OWN-31 | Lịch sử check-in gym | `OwnerCheckin/History/{gymId}` | Danh sách check-in hôm nay / theo ngày, thống kê lượt tập |
+| OWN-32 | Thống kê lượt check-in | `OwnerDashboard/CheckinStats/{gymId}` | Biểu đồ check-in theo ngày/tuần/tháng, giờ cao điểm |
+| ADM-18 | Giám sát check-in toàn hệ thống | `AdminCheckin/Index` | Thống kê check-in tổng quan |
+
+#### Nội dung mã QR
+```json
+{
+  "memberId": "user-guid-here",
+  "token": "secure-token-guid",
+  "generatedAt": "2026-08-29T12:00:00"
+}
+```
+- QR được encode dưới dạng **JSON → Base64 → QR Image**
+- Sinh QR bằng thư viện **QRCoder** (NuGet) — hoàn toàn server-side, không cần API bên thứ ba
+- Token **đổi mỗi 24 giờ** (hoặc khi Member bấm "Làm mới QR") → chống chụp ảnh QR giả mạo
+
+#### Logic kiểm tra khi quét
+
+```
+Khi Owner quét QR thành công:
+  1. Decode QR → lấy MemberId + Token
+  2. Verify Token còn hiệu lực (chưa hết hạn)
+  3. Kiểm tra MemberMembership:
+     - Có vé active tại gym này? (EndDate >= today)
+     - Gói tập là gì? Hạn đến bao giờ?
+  4. Kiểm tra MemberSuspension:
+     - Đang bị đình chỉ tại gym này?
+  5. Lấy MemberVipStatus:
+     - Hạng VIP hiện tại, quyền lợi
+  6. Trả về kết quả tổng hợp:
+     ✅ HỢP LỆ → Nút "Check-in" cho phép vào tập
+     ❌ HẾT HẠN → Cảnh báo đỏ, gợi ý gia hạn
+     🚫 ĐÌNH CHỈ → Hiện lý do, thời hạn đình chỉ
+     ⚠️ KHÔNG CÓ VÉ → Hiện thông báo chưa mua vé tại gym này
+```
+
+---
+
+## MODULE 5: ⭐ RATING & REVIEW
+
+### 5.1 Ý tưởng
+- Member đã từng mua vé tại gym mới được phép đánh giá
+- Giúp Guest/Member khác tham khảo khi chọn gym
+
+### 5.2 Giải pháp V2
+
+#### Database — Entity mới: `GymReview.cs`
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `GymId` | int (FK → Gym) | |
+| `MemberId` | string (FK → ApplicationUser) | |
+| `Rating` | int | Số sao 1-5 |
+| `Comment` | string? | Nội dung đánh giá (tối đa 500 ký tự) |
+| `CreatedAt` | DateTime | Thời điểm đánh giá |
+| `IsVisible` | bool | Owner có thể ẩn review vi phạm |
+
+#### Functions mới
+
+| Mã | Function | Screen | Mô tả |
+|----|----------|--------|-------|
+| MEM-22 | Viết đánh giá Gym | `Gym/Details/{id}` (nâng cấp) | Form chấm sao + viết nhận xét (chỉ khi đã mua vé) |
+| MEM-23 | Sửa/xóa đánh giá | `Member/MyReviews` | Quản lý các đánh giá đã viết |
+| GUE-11 | Xem đánh giá Gym | `Gym/Details/{id}` (nâng cấp) | Danh sách review, trung bình sao |
+| OWN-33 | Quản lý review | `OwnerReview/Index/{gymId}` | Xem tất cả review, ẩn review vi phạm |
+| ADM-19 | Giám sát review toàn hệ thống | `AdminReview/Index` | Quản lý review bị report |
+
+#### Business Rules
+- **1 Member chỉ được 1 review / gym** (có thể sửa lại)
+- Chỉ Member **đã từng có vé Success** tại gym mới được đánh giá
+- Owner có thể **ẩn review** nhưng KHÔNG được xóa (Admin mới được xóa)
+- Điểm trung bình sao hiển thị trên card Gym ở trang Search
+
+---
+
+## MODULE 6: 🔔 NOTIFICATION CENTER
+
+### 6.1 Ý tưởng
+- Thay thế / bổ sung hệ thống banner cảnh báo V1 bằng **trung tâm thông báo** đầy đủ
+- Cả Member, Owner, Admin đều có inbox thông báo riêng
+
+### 6.2 Giải pháp V2
+
+#### Database — Entity mới: `Notification.cs`
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `UserId` | string (FK → ApplicationUser) | Người nhận |
+| `Title` | string | Tiêu đề thông báo |
+| `Message` | string | Nội dung chi tiết |
+| `Type` | enum | `Info` / `Warning` / `Success` / `Danger` |
+| `Category` | enum | `Membership` / `Suspension` / `VipUpgrade` / `Payment` / `System` / `Review` |
+| `LinkUrl` | string? | URL liên kết (VD: `/Member/MembershipDetails/5`) |
+| `IsRead` | bool | Đã đọc chưa |
+| `CreatedAt` | DateTime | Thời điểm tạo |
+
+#### Functions mới
+
+| Mã | Function | Screen | Mô tả |
+|----|----------|--------|-------|
+| MEM-24 | Xem danh sách thông báo | `Notification/Index` | Inbox thông báo, lọc đã đọc/chưa đọc, phân trang |
+| MEM-25 | Đánh dấu đã đọc | Action (AJAX) | Đánh dấu 1 hoặc tất cả là đã đọc |
+| ALL | Badge số thông báo chưa đọc | `_Layout` (nâng cấp) | Biểu tượng 🔔 trên thanh nav với badge đếm |
+
+#### Các sự kiện tự động tạo thông báo
+
+| Sự kiện | Người nhận | Type | Mô tả |
+|---------|-----------|------|-------|
+| Vé sắp hết hạn (≤ 3 ngày) | Member | Warning | "Vé tại {GymName} sẽ hết hạn vào {EndDate}" |
+| Vé đã hết hạn | Member | Danger | "Vé tại {GymName} đã hết hạn, gia hạn ngay!" |
+| Thanh toán thành công | Member | Success | "Thanh toán {Amount} cho {PackageName} thành công" |
+| Bị đình chỉ | Member | Danger | "Bạn bị đình chỉ tại {GymName}: {Reason}" |
+| Gỡ đình chỉ | Member | Success | "Đình chỉ tại {GymName} đã được gỡ bỏ" |
+| Thăng hạng VIP | Member | Success | "Chúc mừng! Bạn đạt hạng {TierName} tại {GymName}" |
+| Có review mới | Owner | Info | "Hội viên {MemberName} đánh giá {Rating}⭐ cho {GymName}" |
+| Gym được duyệt | Owner | Success | "Gym {GymName} đã được Admin phê duyệt!" |
+| Gym bị từ chối | Owner | Danger | "Gym {GymName} bị từ chối: {Reason}" |
+| Có giao dịch mới | Owner | Info | "{MemberName} mua {PackageName} tại {GymName}" |
+
+---
+
+## MODULE 7: 📊 NÂNG CẤP DASHBOARD & BÁO CÁO
+
+### 7.1 Nâng cấp Owner Dashboard
+
+| Function | Mô tả |
+|----------|-------|
+| Biểu đồ check-in theo giờ | Xác định khung giờ cao điểm (VD: 17h-20h) |
+| Biểu đồ thành viên VIP | Tỷ lệ Silver / Gold / Platinum |
+| Top Member tích cực | Xếp hạng theo số lần check-in tháng này |
+| Tỷ lệ gia hạn | % member gia hạn vé so với tổng hết hạn |
+| Xuất báo cáo Excel | Tải báo cáo doanh thu, danh sách member dạng `.xlsx` |
+
+### 7.2 Nâng cấp Admin Dashboard
+
+| Function | Mô tả |
+|----------|-------|
+| Thống kê VIP toàn hệ thống | Tổng VIP member, phân bổ theo tier |
+| Thống kê đình chỉ | Số ca đình chỉ / tháng, gym nào nhiều nhất |
+| Biểu đồ check-in toàn sàn | Lượt check-in tổng hợp theo thời gian |
+| Top Gym đánh giá cao | Xếp hạng gym theo rating trung bình |
+
+---
+
+## 🗃️ TỔNG HỢP DATABASE CHANGES (V2)
+
+### Entities mới cần tạo
+
+| # | Entity | Bảng DB |
+|---|--------|---------|
+| 1 | `GymImage.cs` | GymImages |
+| 2 | `MemberSuspension.cs` | MemberSuspensions |
+| 3 | `VipTierSetting.cs` | VipTierSettings |
+| 4 | `MemberVipStatus.cs` | MemberVipStatuses |
+| 5 | `MemberQrToken.cs` | MemberQrTokens |
+| 6 | `CheckinLog.cs` | CheckinLogs |
+| 7 | `GymReview.cs` | GymReviews |
+| 8 | `Notification.cs` | Notifications |
+
+### Entities V1 cần sửa
+
+| Entity | Thay đổi |
+|--------|----------|
+| `Gym.cs` | Thêm navigation: `ICollection<GymImage>`, `ICollection<GymReview>`, `ICollection<VipTierSetting>` |
+| `ApplicationUser.cs` | Thêm navigation: `ICollection<MemberVipStatus>`, `ICollection<CheckinLog>`, `ICollection<Notification>` |
+| `GymDbContext.cs` | Thêm 8 DbSet mới + cấu hình relationships |
+
+---
+
+## 📊 TỔNG HỢP FUNCTIONS V2
+
+| Role | Functions V1 | Functions mới V2 | Tổng V2 |
+|------|-------------|-------------------|---------|
+| **Guest** | 9 | +2 | 11 |
+| **Member** | 16 | +9 | 25 |
+| **Owner** | 20 | +13 | 33 |
+| **Admin** | 16 | +3 | 19 |
+| **TỔNG** | **61** | **+27** | **88** |
+
+---
+
+## 🗓️ ĐỀ XUẤT THỨ TỰ TRIỂN KHAI
+
+### Phase 1 — Nền tảng (Làm trước)
+1. **Module 1**: Multi-Image Gallery — đơn giản, UI impact lớn
+2. **Module 2**: Đình chỉ hội viên — business logic rõ ràng
+3. **Module 6**: Notification Center — hạ tầng cần cho các module khác
+
+### Phase 2 — Core V2 Features
+4. **Module 3**: VIP Loyalty System — phụ thuộc vào Purchase flow
+5. **Module 4**: QR Check-in — tích hợp VIP + Suspension info
+
+### Phase 3 — Polish & Analytics
+6. **Module 5**: Rating & Review — tăng tương tác cộng đồng
+7. **Module 7**: Nâng cấp Dashboard — tổng hợp dữ liệu từ tất cả module mới
+
+---
+
+## 📦 THƯ VIỆN NUGET CẦN THÊM (V2)
+
+| Package | Mục đích |
+|---------|----------|
+| `QRCoder` | Sinh QR Code server-side cho Member QR |
+| `ClosedXML` | Xuất báo cáo Excel (.xlsx) |
+| *(Tùy chọn)* `SignalR` | Real-time notification badge (nếu muốn real-time, không bắt buộc — có thể dùng polling AJAX) |
+
+---
+
+## ⚙️ GIỮ NGUYÊN KIẾN TRÚC V1
+
+> **Quan trọng**: V2 vẫn giữ nguyên kiến trúc **MVC thuần** của V1:
+> - Controller gọi thẳng `GymDbContext` — KHÔNG thêm Service/Repository layer
+> - Logic dùng chung đặt trong `Helpers/` (VD: `VipHelper.cs`, `QrHelper.cs`, `NotificationHelper.cs`)
+> - UI phong cách **Nike Brutal Minimalism** — mở rộng Design System sẵn có
+> - Thanh toán vẫn dùng **VietQR + SePay Webhook**
+
+---
+
+> 📝 **Ghi chú**: Đây là bản đề xuất chi tiết. Bạn có thể chọn triển khai toàn bộ hoặc chọn từng module theo ưu tiên. Mỗi module được thiết kế **độc lập** nên có thể làm riêng lẻ mà không phá vỡ V1.

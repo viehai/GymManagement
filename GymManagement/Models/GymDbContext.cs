@@ -14,12 +14,22 @@ namespace GymManagement.Models
         public DbSet<MemberMembership> MemberMemberships { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<GymImage> GymImages { get; set; }
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); // BẮT BUỘC gọi trước, để Identity tự cấu hình bảng AspNet*
+
+            // ===================== GYM IMAGE =====================
+            modelBuilder.Entity<GymImage>(entity =>
+            {
+                entity.HasOne(gi => gi.Gym)
+                      .WithMany(g => g.GymImages)
+                      .HasForeignKey(gi => gi.GymId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // ===================== GYM =====================
             modelBuilder.Entity<Gym>(entity =>

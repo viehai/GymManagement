@@ -126,6 +126,25 @@ using (var scope = app.Services.CreateScope())
                 CreatedAt = VnTime.Now.AddMinutes(-45)
             }
         );
+    }
+
+    // Đồng bộ ảnh bìa Gym.ImageUrl với GymImages (IsCover=true) cho tất cả các phòng Gym hiện có
+    var gymsToSync = await dbContext.Gyms
+        .Include(g => g.GymImages)
+        .ToListAsync();
+
+    bool hasAnyGymSync = false;
+    foreach (var g in gymsToSync)
+    {
+        var cover = g.GymImages.FirstOrDefault(i => i.IsCover) ?? g.GymImages.OrderBy(i => i.DisplayOrder).FirstOrDefault();
+        if (cover != null && g.ImageUrl != cover.ImageUrl)
+        {
+            g.ImageUrl = cover.ImageUrl;
+            hasAnyGymSync = true;
+        }
+    }
+    if (hasAnyGymSync)
+    {
         await dbContext.SaveChangesAsync();
     }
 }

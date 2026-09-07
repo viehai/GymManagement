@@ -316,23 +316,211 @@
         .gym-hero-caption h1 { font-size: 1.4rem; }
         .gym-sidebar { position: static; }
     }
+
+    /* ── Gallery Carousel (V2) ── */
+    .gallery-hero {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 21 / 7;
+        overflow: hidden;
+        background: #111;
+        cursor: pointer;
+    }
+    @@media (max-width: 768px) { .gallery-hero { aspect-ratio: 16 / 9; } }
+
+    .gallery-hero .slide {
+        position: absolute; inset: 0;
+        opacity: 0; transition: opacity 0.5s ease;
+    }
+    .gallery-hero .slide.active { opacity: 1; }
+    .gallery-hero .slide img {
+        width: 100%; height: 100%;
+        object-fit: cover; display: block;
+    }
+    .gallery-hero .slide-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(37,37,37,0.75) 0%, transparent 55%);
+    }
+    .gallery-hero-caption {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        padding: 2rem 2.5rem; pointer-events: none;
+    }
+    @@media (max-width: 768px) { .gallery-hero-caption { padding: 1.2rem 1rem; } }
+    .gallery-hero-caption h1 {
+        font-family: 'Montserrat', sans-serif; font-weight: 900;
+        font-size: clamp(1.4rem, 4vw, 2.8rem); color: #FFF;
+        margin: 0 0 0.4rem; letter-spacing: -0.5px; line-height: 1.1;
+    }
+    .gallery-hero-caption .gym-address {
+        font-size: 0.88rem; color: rgba(255,255,255,0.8);
+        display: flex; align-items: center; gap: 5px;
+    }
+    /* Arrow nav */
+    .gallery-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        background: rgba(37,37,37,0.65); color: #FFF; border: none;
+        width: 40px; height: 40px; font-size: 1.1rem;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: background 0.2s; z-index: 5;
+        pointer-events: all;
+    }
+    .gallery-nav:hover { background: rgba(37,37,37,0.9); }
+    .gallery-nav.prev { left: 12px; }
+    .gallery-nav.next { right: 12px; }
+    /* Counter badge */
+    .gallery-counter {
+        position: absolute; top: 12px; right: 12px;
+        background: rgba(37,37,37,0.65); color: #FFF;
+        font-family: 'Montserrat', sans-serif; font-size: 0.68rem;
+        font-weight: 700; letter-spacing: 1px;
+        padding: 0.25rem 0.6rem; z-index: 5;
+    }
+    /* Expand hint */
+    .gallery-expand-hint {
+        position: absolute; bottom: 60px; right: 12px;
+        background: rgba(37,37,37,0.65); color: rgba(255,255,255,0.9);
+        font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+        font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+        padding: 0.3rem 0.7rem; z-index: 5; cursor: pointer;
+        transition: background 0.15s;
+        pointer-events: all;
+    }
+    .gallery-expand-hint:hover { background: rgba(37,37,37,0.9); }
+    /* Thumbnail strip */
+    .gallery-thumbstrip {
+        display: flex; gap: 4px; padding: 4px;
+        background: #111; overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .gallery-thumbstrip::-webkit-scrollbar { display: none; }
+    .gallery-thumbstrip .thumb {
+        width: 72px; height: 52px; flex-shrink: 0;
+        object-fit: cover; cursor: pointer;
+        opacity: 0.5; border: 2px solid transparent;
+        transition: opacity 0.2s, border-color 0.2s;
+    }
+    .gallery-thumbstrip .thumb.active {
+        opacity: 1; border-color: #FFF;
+    }
+    /* Lightbox */
+    .gym-lightbox {
+        display: none; position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.95);
+        align-items: center; justify-content: center;
+        flex-direction: column; gap: 12px;
+    }
+    .gym-lightbox.open { display: flex; }
+    .gym-lightbox-img {
+        max-width: 92vw; max-height: 82vh;
+        object-fit: contain; display: block;
+    }
+    .gym-lightbox-close {
+        position: absolute; top: 16px; right: 20px;
+        color: #FFF; font-size: 1.8rem; cursor: pointer;
+        background: none; border: none; opacity: 0.8;
+    }
+    .gym-lightbox-close:hover { opacity: 1; }
+    .gym-lightbox-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        background: rgba(255,255,255,0.12); color: #FFF; border: none;
+        width: 48px; height: 48px; font-size: 1.4rem;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: background 0.2s;
+    }
+    .gym-lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+    .gym-lightbox-nav.prev { left: 16px; }
+    .gym-lightbox-nav.next { right: 16px; }
+    .gym-lightbox-counter {
+        color: rgba(255,255,255,0.6); font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem; font-weight: 600; letter-spacing: 1.5px;
+    }
 </style>
 
-<!-- ═══════════════════════════════════════════════
-     HERO BANNER
-═══════════════════════════════════════════════ -->
-<div class="gym-hero">
-    <img src="@Model.DisplayImage"
-         alt="Ảnh đại diện @Model.Name"
-         onerror="this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_1905,h_945,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';" />
-    <div class="gym-hero-overlay"></div>
-    <div class="gym-hero-caption">
-        <h1>@Model.Name</h1>
-        <p class="gym-address">
-            <i class="bi bi-geo-alt" aria-hidden="true"></i>
-            <span>@Model.Address</span>
-        </p>
+@if (Model.HasGallery)
+{
+    <!-- ═══════════════ GALLERY HERO (V2) ═══════════════ -->
+    <div class="gallery-hero" id="gallery-hero" title="Bấm để xem ảnh lớn">
+        @foreach (var img in Model.GalleryImages)
+        {
+            <div class="slide @(img.IsCover ? "active" : "")" data-src="@img.ImageUrl">
+                <img src="@img.ImageUrl" alt="@Model.Name" loading="lazy" />
+                <div class="slide-overlay"></div>
+            </div>
+        }
+
+        <!-- Caption -->
+        <div class="gallery-hero-caption">
+            <h1>@Model.Name</h1>
+            <p class="gym-address">
+                <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                <span>@Model.Address</span>
+            </p>
+        </div>
+
+        <!-- Counter -->
+        <span class="gallery-counter" id="gallery-counter">1 / @Model.GalleryImages.Count</span>
+
+        <!-- Nav arrows (shown only if >1 image) -->
+        @if (Model.GalleryImages.Count > 1)
+        {
+            <button class="gallery-nav prev" id="gallery-prev" aria-label="Ảnh trước">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="gallery-nav next" id="gallery-next" aria-label="Ảnh kế">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        }
+
+        <!-- Expand hint -->
+        <button class="gallery-expand-hint" id="gallery-expand" aria-label="Xem ảnh lớn">
+            <i class="bi bi-arrows-fullscreen me-1"></i>Xem gallery
+        </button>
     </div>
+
+    <!-- Thumbnail strip -->
+    @if (Model.GalleryImages.Count > 1)
+    {
+        <div class="gallery-thumbstrip" id="thumb-strip">
+            @foreach (var img in Model.GalleryImages)
+            {
+                <img src="@img.ImageUrl"
+                     class="thumb @(img.IsCover ? "active" : "")"
+                     alt="Thumbnail"
+                     data-src="@img.ImageUrl"
+                     loading="lazy" />
+            }
+        </div>
+    }
+}
+else
+{
+    <!-- ═══════════════ HERO BANNER (V1 fallback) ═══════════════ -->
+    <div class="gym-hero">
+        <img src="@Model.DisplayImage"
+             alt="Ảnh đại diện @Model.Name"
+             onerror="this.src='https://static.wixstatic.com/media/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg/v1/fill/w_1905,h_945,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7e9c4c_5d4a9443f1fd4b7a8f8d0ca05ef2b8a8~mv2.jpg';" />
+        <div class="gym-hero-overlay"></div>
+        <div class="gym-hero-caption">
+            <h1>@Model.Name</h1>
+            <p class="gym-address">
+                <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                <span>@Model.Address</span>
+            </p>
+        </div>
+    </div>
+}
+
+<!-- Lightbox modal -->
+<div class="gym-lightbox" id="gym-lightbox" role="dialog" aria-label="Gallery lightbox">
+    <button class="gym-lightbox-close" id="lightbox-close" aria-label="Đóng">&times;</button>
+    <button class="gym-lightbox-nav prev" id="lightbox-prev" aria-label="Ảnh trước">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <img src="" alt="" class="gym-lightbox-img" id="lightbox-img" />
+    <span class="gym-lightbox-counter" id="lightbox-counter"></span>
+    <button class="gym-lightbox-nav next" id="lightbox-next" aria-label="Ảnh kế">
+        <i class="bi bi-chevron-right"></i>
+    </button>
 </div>
 
 <!-- Breadcrumb -->
@@ -576,5 +764,103 @@
                 }
             });
         }
+
+        // ── Gallery carousel + Lightbox ────────────────────────────────
+        (function () {
+            const slides    = Array.from(document.querySelectorAll('.gallery-hero .slide'));
+            const thumbs    = Array.from(document.querySelectorAll('#thumb-strip .thumb'));
+            const counterEl = document.getElementById('gallery-counter');
+            const lightbox  = document.getElementById('gym-lightbox');
+            const lbImg     = document.getElementById('lightbox-img');
+            const lbCounter = document.getElementById('lightbox-counter');
+
+            if (!slides.length) return;
+
+            let current = slides.findIndex(s => s.classList.contains('active'));
+            if (current < 0) current = 0;
+
+            function goTo(idx) {
+                slides[current].classList.remove('active');
+                if (thumbs[current]) thumbs[current].classList.remove('active');
+
+                current = (idx + slides.length) % slides.length;
+
+                slides[current].classList.add('active');
+                if (thumbs[current]) thumbs[current].classList.add('active');
+                if (counterEl) counterEl.textContent = (current + 1) + ' / ' + slides.length;
+            }
+
+            // Arrow nav
+            const prevBtn = document.getElementById('gallery-prev');
+            const nextBtn = document.getElementById('gallery-next');
+            if (prevBtn) prevBtn.addEventListener('click', e => { e.stopPropagation(); goTo(current - 1); });
+            if (nextBtn) nextBtn.addEventListener('click', e => { e.stopPropagation(); goTo(current + 1); });
+
+            // Thumbnail clicks
+            thumbs.forEach((t, i) => t.addEventListener('click', () => goTo(i)));
+
+            // Auto-play every 4s
+            let autoPlay = setInterval(() => goTo(current + 1), 4000);
+            const heroEl = document.getElementById('gallery-hero');
+            if (heroEl) {
+                heroEl.addEventListener('mouseenter', () => clearInterval(autoPlay));
+                heroEl.addEventListener('mouseleave', () => {
+                    autoPlay = setInterval(() => goTo(current + 1), 4000);
+                });
+            }
+
+            // ── Lightbox ──
+            if (!lightbox) return;
+
+            function getSrc(idx) {
+                return slides[idx]?.dataset?.src || slides[idx]?.querySelector('img')?.src || '';
+            }
+
+            function openLightbox(idx) {
+                current = idx;
+                lbImg.src = getSrc(current);
+                if (lbCounter) lbCounter.textContent = (current + 1) + ' / ' + slides.length;
+                lightbox.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                lightbox.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            function lbNext() {
+                current = (current + 1) % slides.length;
+                lbImg.src = getSrc(current);
+                if (lbCounter) lbCounter.textContent = (current + 1) + ' / ' + slides.length;
+            }
+
+            function lbPrev() {
+                current = (current - 1 + slides.length) % slides.length;
+                lbImg.src = getSrc(current);
+                if (lbCounter) lbCounter.textContent = (current + 1) + ' / ' + slides.length;
+            }
+
+            // Open on hero click / expand button
+            if (heroEl) heroEl.addEventListener('click', () => openLightbox(current));
+            const expandBtn = document.getElementById('gallery-expand');
+            if (expandBtn) expandBtn.addEventListener('click', e => { e.stopPropagation(); openLightbox(current); });
+
+            document.getElementById('lightbox-close')?.addEventListener('click', closeLightbox);
+            document.getElementById('lightbox-next')?.addEventListener('click', lbNext);
+            document.getElementById('lightbox-prev')?.addEventListener('click', lbPrev);
+
+            // Close on backdrop click
+            lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+            // Keyboard nav
+            document.addEventListener('keydown', e => {
+                if (!lightbox.classList.contains('open')) return;
+                if (e.key === 'ArrowRight') lbNext();
+                else if (e.key === 'ArrowLeft') lbPrev();
+                else if (e.key === 'Escape') closeLightbox();
+            });
+        })();
     </script>
 }
+

@@ -385,7 +385,8 @@
             @for (int i = 0; i < Math.Min(3, gymsList.Count); i++)
             {
                 var gym = gymsList[i];
-                var imgSrc = !string.IsNullOrEmpty(gym.ImageUrl) ? gym.ImageUrl : fallbackImages[i % fallbackImages.Length];
+                var coverUrl = gym.GymImages?.FirstOrDefault(gi => gi.IsCover)?.ImageUrl ?? gym.ImageUrl;
+                var imgSrc = !string.IsNullOrEmpty(coverUrl) ? coverUrl : fallbackImages[i % fallbackImages.Length];
 
                 <div class="col-12 col-md-4">
                     <div class="gym-invisible-card">

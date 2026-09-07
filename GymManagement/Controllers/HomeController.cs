@@ -17,6 +17,7 @@ namespace GymManagement.Controllers
         public async Task<IActionResult> Index()
         {
             var featuredGyms = await _context.Gyms
+                .Include(g => g.GymImages)
                 .Include(g => g.MembershipPackages)
                 .Where(g => g.Status == "Approved")
                 .OrderByDescending(g => g.CreatedAt)

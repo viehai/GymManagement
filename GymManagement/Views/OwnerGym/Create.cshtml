@@ -11,7 +11,7 @@
 </div>
 
 <div class="row g-4">
-    <div class="col-lg-7">
+    <div class="col-lg-8">
         <div class="content-card">
             <div class="content-card-header">
                 <h5><i class="bi bi-building-add me-2" style="color:#6366f1;"></i>Thông tin phòng Gym</h5>
@@ -38,21 +38,39 @@
                                   placeholder="Giới thiệu về phòng Gym, thiết bị, dịch vụ nổi bật..."></textarea>
                     </div>
 
+                    <!-- ═══════════════════════ GALLERY UPLOAD ═══════════════════════ -->
                     <div class="owner-form-group">
-                        <label>Hình ảnh đại diện</label>
-                        <div style="border:2px dashed #d1d5db;border-radius:10px;padding:2rem;text-align:center;cursor:pointer;position:relative;background:#fafafa;transition:all 0.18s;" id="uploadZone">
-                            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp"
-                                   id="imageInput" onchange="previewImage(event)"
+                        <label style="font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:0.5rem;display:block;">
+                            <i class="bi bi-images me-1" style="color:#6366f1;"></i>
+                            Ảnh Gallery
+                            <span style="font-size:0.72rem;font-weight:400;color:#9ca3af;margin-left:0.4rem;">Tối đa 10 ảnh · 5MB/ảnh · JPG, PNG, WebP</span>
+                        </label>
+
+                        <div id="galleryDropZone"
+                             style="border:2px dashed #d1d5db;padding:1.8rem;text-align:center;cursor:pointer;
+                                    background:#fafafa;transition:all 0.18s;position:relative;">
+                            <input type="file" name="GalleryFiles" id="galleryInput"
+                                   accept=".jpg,.jpeg,.png,.webp" multiple
                                    style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
-                            <div id="uploadPlaceholder">
-                                <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:#cbd5e1;"></i>
-                                <p style="font-size:0.82rem;color:#64748b;margin:0.4rem 0 0;">Kéo thả hoặc click để chọn ảnh</p>
-                                <p style="font-size:0.72rem;color:#94a3b8;margin:0;">JPG, PNG, WebP — tối đa 5MB</p>
-                            </div>
-                            <img id="imagePreview" style="max-width:100%;max-height:200px;border-radius:8px;display:none;object-fit:cover;margin-top:0.5rem;" />
+                            <i class="bi bi-images" style="font-size:2rem;color:#cbd5e1;"></i>
+                            <p style="font-size:0.82rem;color:#64748b;margin:0.4rem 0 0;">
+                                Kéo thả hoặc <strong>click</strong> để chọn nhiều ảnh
+                            </p>
+                            <p style="font-size:0.72rem;color:#94a3b8;margin:0.2rem 0 0;">
+                                Ảnh đầu tiên sẽ tự động là ảnh bìa
+                            </p>
                         </div>
-                        <span asp-validation-for="ImageFile" class="text-danger" style="font-size:0.78rem;"></span>
+
+                        <!-- Preview grid -->
+                        <div id="galleryPreviewGrid"
+                             style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:10px;"></div>
+
+                        <div id="galleryCounter"
+                             style="font-size:0.72rem;color:#9ca3af;margin-top:6px;display:none;">
+                            <span id="galleryCountNum">0</span> ảnh đã chọn
+                        </div>
                     </div>
+                    <!-- ══════════════════════════════════════════════════════════════ -->
 
                     <div class="d-flex gap-2 mt-2">
                         <button type="submit" class="btn-owner-primary flex-grow-1">
@@ -71,6 +89,7 @@
             <div style="font-size:0.82rem;color:rgba(255,255,255,0.55);line-height:1.7;">
                 <p><i class="bi bi-info-circle me-1" style="color:#a5b4fc;"></i> Gym mới tạo sẽ có trạng thái <strong style="color:#fbbf24;">Chờ duyệt</strong>.</p>
                 <p><i class="bi bi-envelope me-1" style="color:#a5b4fc;"></i> Bạn sẽ nhận email khi Admin phê duyệt.</p>
+                <p><i class="bi bi-images me-1" style="color:#a5b4fc;"></i> Có thể upload tối đa <strong style="color:#FFF;">10 ảnh</strong> ngay khi tạo Gym.</p>
                 <p><i class="bi bi-card-list me-1" style="color:#a5b4fc;"></i> Sau khi được duyệt, bạn có thể thêm gói dịch vụ.</p>
             </div>
         </div>
@@ -80,18 +99,66 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        function previewImage(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const preview = document.getElementById('imagePreview');
-            const placeholder = document.getElementById('uploadPlaceholder');
-            const reader = new FileReader();
-            reader.onload = e => {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                placeholder.style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        }
+        (function () {
+            const dropZone    = document.getElementById('galleryDropZone');
+            const fileInput   = document.getElementById('galleryInput');
+            const previewGrid = document.getElementById('galleryPreviewGrid');
+            const counterEl   = document.getElementById('galleryCounter');
+            const countNumEl  = document.getElementById('galleryCountNum');
+            let selectedFiles = [];
+            const MAX = 10;
+
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#6366f1'; dropZone.style.background = '#f5f3ff'; });
+            dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#d1d5db'; dropZone.style.background = '#fafafa'; });
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#d1d5db'; dropZone.style.background = '#fafafa';
+                addFiles(Array.from(e.dataTransfer.files));
+            });
+            fileInput.addEventListener('change', () => { addFiles(Array.from(fileInput.files)); });
+
+            function addFiles(files) {
+                const allowed = ['image/jpeg','image/png','image/webp'];
+                files.forEach(f => {
+                    if (selectedFiles.length >= MAX) return;
+                    if (!allowed.includes(f.type)) return;
+                    if (selectedFiles.find(x => x.name === f.name && x.size === f.size)) return;
+                    selectedFiles.push(f);
+                    renderThumb(f, selectedFiles.length - 1);
+                });
+                sync();
+            }
+
+            function renderThumb(file, idx) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'position:relative;aspect-ratio:1;overflow:hidden;background:#e5e7eb;';
+                    item.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">
+                        ${idx === 0 ? '<span style="position:absolute;bottom:3px;left:3px;background:rgba(99,102,241,0.9);color:#FFF;font-size:0.55rem;font-weight:700;padding:1px 5px;text-transform:uppercase;letter-spacing:0.5px;">Bìa</span>' : ''}
+                        <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;background:rgba(0,0,0,0.7);color:#FFF;border:none;cursor:pointer;font-size:0.75rem;display:flex;align-items:center;justify-content:center;">×</button>`;
+                    item.querySelector('button').addEventListener('click', () => {
+                        selectedFiles.splice(idx, 1);
+                        rebuildPreviews();
+                        sync();
+                    });
+                    previewGrid.appendChild(item);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function rebuildPreviews() {
+                previewGrid.innerHTML = '';
+                selectedFiles.forEach((f, i) => renderThumb(f, i));
+            }
+
+            function sync() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach(f => dt.items.add(f));
+                fileInput.files = dt.files;
+                counterEl.style.display = selectedFiles.length ? 'block' : 'none';
+                countNumEl.textContent = selectedFiles.length;
+            }
+        })();
     </script>
 }

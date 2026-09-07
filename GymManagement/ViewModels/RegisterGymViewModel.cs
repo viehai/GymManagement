@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using GymManagement.ViewModels;
 
 namespace GymManagement.ViewModels
 {
@@ -17,7 +18,15 @@ namespace GymManagement.ViewModels
         [Display(Name = "Mô tả")]
         public string? Description { get; set; }
 
+        /// <summary>Ảnh đại diện duy nhất (legacy — giữ cho backward compat).</summary>
         [Display(Name = "Hình ảnh đại diện")]
         public IFormFile? ImageFile { get; set; }
+
+        /// <summary>Danh sách ảnh gallery (tối đa 10). Dùng cho cả Create và Edit.</summary>
+        [Display(Name = "Gallery ảnh")]
+        public List<IFormFile>? GalleryFiles { get; set; }
+
+        /// <summary>Danh sách ảnh hiện tại (dùng trong form Edit để hiển thị).</summary>
+        public List<GymImageViewModel> ExistingImages { get; set; } = new();
     }
 }

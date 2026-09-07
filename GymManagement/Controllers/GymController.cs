@@ -46,7 +46,9 @@ namespace GymManagement.Controllers
                     Name        = g.Name,
                     Address     = g.Address,
                     Description = g.Description ?? string.Empty,
-                    ImageUrl    = g.ImageUrl ?? string.Empty,
+                    ImageUrl    = g.GymImages.Where(i => i.IsCover).Select(i => i.ImageUrl).FirstOrDefault()
+                                  ?? g.GymImages.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).FirstOrDefault()
+                                  ?? g.ImageUrl ?? string.Empty,
                     Status      = g.Status,
                     CreatedAt   = g.CreatedAt
                 })
@@ -67,6 +69,7 @@ namespace GymManagement.Controllers
                 .Include(g => g.GymEquipments)
                     .ThenInclude(ge => ge.Equipment)   // catalog equipment
                 .Include(g => g.MembershipPackages)
+                .Include(g => g.GymImages)
                 .FirstOrDefaultAsync(g => g.Id == id && g.Status == "Approved");
 
             if (gym == null)
@@ -107,6 +110,18 @@ namespace GymManagement.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
             bool isOwnerOfThisGym = currentUser != null && gym.OwnerId == currentUser.Id;
 
+            // ── Map Gallery Images (V2) ──
+            var galleryImages = gym.GymImages
+                .OrderBy(gi => gi.DisplayOrder)
+                .Select(gi => new GymImageViewModel
+                {
+                    Id           = gi.Id,
+                    ImageUrl     = gi.ImageUrl,
+                    DisplayOrder = gi.DisplayOrder,
+                    IsCover      = gi.IsCover
+                })
+                .ToList();
+
             var vm = new GymDetailsViewModel
             {
                 Id               = gym.Id,
@@ -117,7 +132,8 @@ namespace GymManagement.Controllers
                 OwnerId          = gym.OwnerId,
                 IsOwnerOfThisGym = isOwnerOfThisGym,
                 Equipments       = equipments,
-                Packages         = packages
+                Packages         = packages,
+                GalleryImages    = galleryImages
             };
 
             return View(vm);

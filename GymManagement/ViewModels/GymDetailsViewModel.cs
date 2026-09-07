@@ -51,6 +51,17 @@ namespace GymManagement.ViewModels
         public string OwnerId { get; set; } = string.Empty;
         public bool IsOwnerOfThisGym { get; set; }
 
+        // ── Gallery ảnh (V2) ──
+        public List<GymImageViewModel> GalleryImages { get; set; } = new();
+
+        /// <summary>Ảnh bìa: ưu tiên GalleryImages có IsCover=true, fallback ImageUrl V1.</summary>
+        public string CoverImage =>
+            GalleryImages.FirstOrDefault(i => i.IsCover)?.ImageUrl
+            ?? GalleryImages.FirstOrDefault()?.ImageUrl
+            ?? ImageUrl;
+
+        public bool HasGallery => GalleryImages.Count > 0;
+
         /// <summary>Ảnh đại diện có fallback.</summary>
         public string DisplayImage =>
             string.IsNullOrWhiteSpace(ImageUrl)

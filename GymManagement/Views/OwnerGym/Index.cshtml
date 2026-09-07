@@ -45,9 +45,12 @@ else
             };
             <div class="col-md-6 col-xl-4">
                 <div class="gym-card">
-                    @if (!string.IsNullOrEmpty(gym.ImageUrl))
+                    @{
+                        var displayImg = gym.GymImages?.FirstOrDefault(i => i.IsCover)?.ImageUrl ?? gym.ImageUrl;
+                    }
+                    @if (!string.IsNullOrEmpty(displayImg))
                     {
-                        <img src="@gym.ImageUrl" class="gym-card-img" alt="@gym.Name" />
+                        <img src="@displayImg" class="gym-card-img" alt="@gym.Name" />
                     }
                     else
                     {
