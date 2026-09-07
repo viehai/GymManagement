@@ -237,6 +237,20 @@
 <div class="mem-body">
     <div class="container">
 
+        <!-- Banner cảnh báo đình chỉ (MEM-17) -->
+        @{
+            var suspendedCount = Model.Count(m => m.IsSuspended);
+        }
+        @if (suspendedCount > 0)
+        {
+            <div style="background:#fee2e2; border-left:4px solid #dc2626; color:#991b1b; padding:1.2rem 1.6rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:12px;" id="banner-suspended">
+                <i class="bi bi-slash-circle-fill" style="font-size:1.4rem; color:#dc2626; flex-shrink:0;"></i>
+                <div style="font-size:0.88rem; line-height:1.5;">
+                    <strong>Thông báo kỷ luật:</strong> Tài khoản của bạn hiện đang bị đình chỉ tại <strong>@suspendedCount cơ sở phòng Gym</strong>. Bạn tạm thời không thể mua vé mới hoặc gia hạn thẻ tập tại các cơ sở liên quan.
+                </div>
+            </div>
+        }
+
         <!-- Banner cảnh báo sắp hết hạn (MEM-16) -->
         @if (expiringSoonCount > 0)
         {
@@ -280,6 +294,22 @@
                                 </div>
                             </div>
 
+                            @if (item.IsSuspended)
+                            {
+                                <div style="background:#FEF2F2;border-left:3px solid #EF4444;padding:0.6rem 0.8rem;margin-bottom:0.9rem;border-radius:0;">
+                                    <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.75rem;color:#991B1B;display:flex;align-items:center;gap:5px;">
+                                        <i class="bi bi-slash-circle-fill" style="color:#EF4444;"></i>
+                                        <span>Đang bị đình chỉ: @(item.SuspensionType == "Permanent" ? "Cấm vĩnh viễn" : $"Đến {item.SuspensionEndDate:dd/MM/yyyy}")</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(item.SuspensionReason))
+                                    {
+                                        <div style="font-size:0.7rem;color:#B91C1C;margin-top:2px;">
+                                            Lý do: @item.SuspensionReason
+                                        </div>
+                                    }
+                                </div>
+                            }
+
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.95rem; color:#252525;">
                                     @item.PackageName
@@ -313,13 +343,22 @@
                                class="btn-mem-action-outline">
                                 <i class="bi bi-info-circle me-1"></i> Chi tiết
                             </a>
-                            <a id="btn-renew-@item.MembershipId"
-                               asp-controller="Purchase"
-                               asp-action="Renew"
-                               asp-route-membershipId="@item.MembershipId"
-                               class="btn-mem-action-primary">
-                                <i class="bi bi-arrow-repeat me-1"></i> Gia hạn
-                            </a>
+                            @if (item.IsSuspended)
+                            {
+                                <button type="button" disabled class="btn-mem-action-primary" style="opacity:0.5;cursor:not-allowed;" title="Tài khoản đang bị đình chỉ tại cơ sở này">
+                                    <i class="bi bi-slash-circle me-1"></i> Bị đình chỉ
+                                </button>
+                            }
+                            else
+                            {
+                                <a id="btn-renew-@item.MembershipId"
+                                   asp-controller="Purchase"
+                                   asp-action="Renew"
+                                   asp-route-membershipId="@item.MembershipId"
+                                   class="btn-mem-action-primary">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Gia hạn
+                                </a>
+                            }
                         </div>
                     </div>
                 }

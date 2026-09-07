@@ -41,12 +41,24 @@ namespace GymManagement.Controllers
 
             if (gym == null) return NotFound();
 
-            // Chặn Chủ phòng Gym tự mua vé của chính mình
             var user = await _userManager.GetUserAsync(User);
-            if (user != null && gym.OwnerId == user.Id)
+            if (user != null)
             {
-                TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
-                return RedirectToAction("Details", "Gym", new { id = gymId });
+                // Chặn Chủ phòng Gym tự mua vé của chính mình
+                if (gym.OwnerId == user.Id)
+                {
+                    TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
+                    return RedirectToAction("Details", "Gym", new { id = gymId });
+                }
+
+                // Chặn nếu đang bị đình chỉ tại cơ sở này
+                var activeSuspension = await GetActiveSuspensionAsync(gym.Id, user.Id);
+                if (activeSuspension != null)
+                {
+                    string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
+                    TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {gym.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể mua vé tại cơ sở này.";
+                    return RedirectToAction("Details", "Gym", new { id = gymId });
+                }
             }
 
             // Lấy gói Daily đầu tiên còn active
@@ -93,12 +105,24 @@ namespace GymManagement.Controllers
 
             if (gym == null) return NotFound();
 
-            // Chặn Chủ phòng Gym tự mua gói của chính mình
             var user = await _userManager.GetUserAsync(User);
-            if (user != null && gym.OwnerId == user.Id)
+            if (user != null)
             {
-                TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
-                return RedirectToAction("Details", "Gym", new { id = gymId });
+                // Chặn Chủ phòng Gym tự mua gói của chính mình
+                if (gym.OwnerId == user.Id)
+                {
+                    TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
+                    return RedirectToAction("Details", "Gym", new { id = gymId });
+                }
+
+                // Chặn nếu đang bị đình chỉ tại cơ sở này
+                var activeSuspension = await GetActiveSuspensionAsync(gym.Id, user.Id);
+                if (activeSuspension != null)
+                {
+                    string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
+                    TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {gym.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể đăng ký gói tập tại cơ sở này.";
+                    return RedirectToAction("Details", "Gym", new { id = gymId });
+                }
             }
 
             var packages = gym.MembershipPackages
@@ -145,6 +169,17 @@ namespace GymManagement.Controllers
             {
                 TempData["Error"] = "Bạn là Chủ sở hữu của cơ sở phòng Gym này nên không thể tự mua gói vé của chính mình.";
                 return RedirectToAction("Details", "Gym", new { id = gymId });
+            }
+
+            if (user != null)
+            {
+                var activeSuspension = await GetActiveSuspensionAsync(gym.Id, user.Id);
+                if (activeSuspension != null)
+                {
+                    string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
+                    TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {gym.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể đăng ký gói tập tại cơ sở này.";
+                    return RedirectToAction("Details", "Gym", new { id = gymId });
+                }
             }
 
             var vm = new PurchaseCheckoutViewModel
@@ -205,6 +240,14 @@ namespace GymManagement.Controllers
             if (gym.OwnerId == user.Id)
             {
                 TempData["Error"] = "Giao dịch không hợp lệ: Không thể tự mua gói tập tại phòng Gym do chính bạn sở hữu.";
+                return RedirectToAction("Details", "Gym", new { id = vm.GymId });
+            }
+
+            var activeSuspension = await GetActiveSuspensionAsync(gym.Id, user.Id);
+            if (activeSuspension != null)
+            {
+                string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
+                TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {gym.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể thanh toán gói tập tại cơ sở này.";
                 return RedirectToAction("Details", "Gym", new { id = vm.GymId });
             }
 
@@ -637,6 +680,14 @@ namespace GymManagement.Controllers
 
             if (membership == null) return NotFound();
 
+            var activeSuspension = await GetActiveSuspensionAsync(membership.GymId, user.Id);
+            if (activeSuspension != null)
+            {
+                string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
+                TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {membership.Gym?.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể gia hạn vé tại cơ sở này.";
+                return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
+            }
+
             var activePackages = await _context.MembershipPackages
                 .Where(p => p.GymId == membership.GymId && p.IsActive)
                 .OrderBy(p => p.PackageType == "Daily" ? 0 : 1)
@@ -689,6 +740,14 @@ namespace GymManagement.Controllers
 
             if (membership == null) return NotFound();
 
+            var activeSuspension = await GetActiveSuspensionAsync(membership.GymId, user.Id);
+            if (activeSuspension != null)
+            {
+                string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
+                TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {membership.Gym?.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể gia hạn vé tại cơ sở này.";
+                return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
+            }
+
             var pkg = await _context.MembershipPackages
                 .FirstOrDefaultAsync(p => p.Id == selectedPackageId && p.GymId == membership.GymId && p.IsActive);
 
@@ -713,6 +772,19 @@ namespace GymManagement.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction("QrPayment", new { transactionId = transaction.Id });
+        }
+
+        private async Task<MemberSuspension?> GetActiveSuspensionAsync(int gymId, string userId)
+        {
+            var now = VnTime.Now;
+            return await _context.MemberSuspensions
+                .AsNoTracking()
+                .Where(s => s.GymId == gymId
+                    && s.MemberId == userId
+                    && s.Status == "Active"
+                    && (s.SuspensionType == "Permanent" || (s.EndDate != null && s.EndDate > now)))
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
         }
     }
 }

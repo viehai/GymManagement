@@ -39,5 +39,6 @@ namespace GymManagement.Models
         public ICollection<MembershipPackage> MembershipPackages { get; set; }
         public ICollection<MemberMembership> MemberMemberships { get; set; }
         public ICollection<GymImage> GymImages { get; set; }
+        public ICollection<MemberSuspension> MemberSuspensions { get; set; } = new List<MemberSuspension>();
     }
 }

@@ -47,5 +47,11 @@ namespace GymManagement.ViewModels
 
         public string PackageTypeLabel =>
             PackageType == "Daily" ? "Vé ngày" : $"Gói {DurationInMonths} tháng";
+
+        // ── Thông tin đình chỉ (V2) ──
+        public bool IsSuspended { get; set; }
+        public string? SuspensionType { get; set; }
+        public DateTime? SuspensionEndDate { get; set; }
+        public string? SuspensionReason { get; set; }
     }
 }

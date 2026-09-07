@@ -7,29 +7,29 @@
 
 ## 📋 TỔNG QUAN CÁC MODULE NÂNG CẤP
 
-| # | Module | Mức độ | Mô tả ngắn |
-|---|--------|--------|-------------|
-| 1 | 🖼️ Multi-Image Gallery | ⭐⭐ | Owner upload nhiều ảnh cho Gym, kéo thả sắp xếp, gallery carousel |
-| 2 | 🚫 Đình Chỉ Hội Viên | ⭐⭐ | Owner tạm đình chỉ / cấm vĩnh viễn Member vi phạm tại gym |
-| 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng |
-| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên |
-| 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập |
-| 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) |
-| 7 | 📊 Nâng cấp Dashboard & Báo cáo | ⭐⭐ | Biểu đồ nâng cao, thống kê VIP, xuất báo cáo Excel/PDF |
+| # | Module | Mức độ | Mô tả ngắn | Trạng thái |
+|---|--------|--------|-------------|------------|
+| 1 | 🖼️ Multi-Image Gallery | ⭐⭐ | Owner upload nhiều ảnh cho Gym, kéo thả sắp xếp, gallery carousel | ✅ **Hoàn thành** |
+| 2 | 🚫 Đình Chỉ Hội Viên | ⭐⭐ | Owner tạm đình chỉ / cấm vĩnh viễn Member vi phạm tại gym | ✅ **Hoàn thành** |
+| 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng | ⏳ Tiếp theo |
+| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên | ⏸️ Chưa làm |
+| 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập | ⏸️ Chưa làm |
+| 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) | ⏸️ Chưa làm |
+| 7 | 📊 Nâng cấp Dashboard & Báo cáo | ⭐⭐ | Biểu đồ nâng cao, thống kê VIP, xuất báo cáo Excel/PDF | ⏸️ Chưa làm |
 
 > ⭐ = Đơn giản &nbsp; ⭐⭐ = Trung bình &nbsp; ⭐⭐⭐ = Phức tạp
 
 ---
 
-## MODULE 1: 🖼️ MULTI-IMAGE GALLERY
+## MODULE 1: 🖼️ MULTI-IMAGE GALLERY — ✅ [ĐÃ HOÀN THÀNH]
 
 ### 1.1 Vấn đề V1
 - Mỗi Gym chỉ có **1 ảnh đại diện duy nhất** (`ImageUrl` trên `Gym.cs`)
 - Không đủ để thể hiện không gian, thiết bị, nội thất... → Member khó quyết định mua vé
 
-### 1.2 Giải pháp V2
+### 1.2 Giải pháp V2 (Đã triển khai)
 
-#### Database — Entity mới: `GymImage.cs`
+#### Database — Entity mới: `GymImage.cs` (Đã áp dụng Migration `AddGymImages`)
 
 | Field | Type | Mô tả |
 |-------|------|-------|
@@ -40,13 +40,13 @@
 | `IsCover` | bool | Ảnh bìa đại diện chính |
 | `UploadedAt` | DateTime | Thời điểm upload |
 
-#### Functions mới
+#### Functions đã hoàn thành
 
-| Mã | Function | Screen | Mô tả |
-|----|----------|--------|-------|
-| OWN-21 | Upload nhiều ảnh Gym | `OwnerGym/ManageImages/{gymId}` | Upload tối đa **10 ảnh**, kéo thả sắp xếp, chọn ảnh bìa |
-| OWN-22 | Xóa / thay đổi thứ tự ảnh | `OwnerGym/ManageImages/{gymId}` | Xóa từng ảnh, drag & drop thay đổi DisplayOrder |
-| GUE-10 | Xem gallery ảnh Gym | `Gym/Details/{id}` (nâng cấp) | Carousel / lightbox gallery ảnh phòng gym |
+| Mã | Function | Screen | Trạng thái | Mô tả |
+|----|----------|--------|------------|-------|
+| OWN-21 | Upload nhiều ảnh Gym | `OwnerGym/Create` & `OwnerGym/Edit/{id}` | [x] Hoàn thành | Tích hợp trực tiếp vào trang Tạo/Sửa gym: upload tối đa **10 ảnh**, kéo thả/preview, tự động chọn ảnh bìa |
+| OWN-22 | Xóa / thay đổi ảnh bìa | `OwnerGym/Edit/{id}` | [x] Hoàn thành | Xóa từng ảnh, nút ngôi sao đặt làm ảnh bìa, tự động đồng bộ `Gym.ImageUrl` mọi nơi |
+| GUE-10 | Xem gallery ảnh Gym | `Gym/Details/{id}` & `OwnerGym/Details` | [x] Hoàn thành | Gallery carousel, thumbnail strip, lightbox xem ảnh lớn, tự động fallback V1 |
 
 #### Ghi chú kỹ thuật
 - Upload file lưu vào `wwwroot/uploads/gyms/{gymId}/`
@@ -55,22 +55,22 @@
 
 ---
 
-## MODULE 2: 🚫 ĐÌNH CHỈ HỘI VIÊN (MEMBER SUSPENSION)
+## MODULE 2: 🚫 ĐÌNH CHỈ HỘI VIÊN (MEMBER SUSPENSION) — ✅ [ĐÃ HOÀN THÀNH]
 
 ### 2.1 Vấn đề V1
 - Owner chỉ có thể **xem** danh sách hội viên, KHÔNG có quyền xử lý vi phạm
 - Nếu hội viên gây rối / vi phạm nội quy, Owner phải nhờ Admin can thiệp → chậm trễ
 
-### 2.2 Giải pháp V2
+### 2.2 Giải pháp V2 (Đã triển khai)
 
-#### Database — Entity mới: `MemberSuspension.cs`
+#### Database — Entity mới: `MemberSuspension.cs` (Đã áp dụng Migration `AddMemberSuspensions`)
 
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `Id` | int (PK) | |
 | `GymId` | int (FK → Gym) | Gym thực hiện đình chỉ |
 | `MemberId` | string (FK → ApplicationUser) | Hội viên bị đình chỉ |
-| `SuspendedByUserId` | string (FK → ApplicationUser) | Owner thực hiện |
+| `SuspendedByUserId` | string (FK → ApplicationUser) | Owner/Admin thực hiện |
 | `Reason` | string | Lý do đình chỉ (bắt buộc nhập) |
 | `SuspensionType` | enum | `Temporary` (tạm thời) / `Permanent` (vĩnh viễn) |
 | `StartDate` | DateTime | Ngày bắt đầu đình chỉ |
@@ -80,18 +80,19 @@
 | `LiftedReason` | string? | Lý do gỡ đình chỉ |
 | `CreatedAt` | DateTime | Thời gian tạo |
 
-#### Functions mới
+#### Functions đã hoàn thành
 
-| Mã | Function | Screen | Mô tả |
-|----|----------|--------|-------|
-| OWN-23 | Đình chỉ hội viên | `OwnerMember/Suspend/{membershipId}` | Chọn loại (tạm thời/vĩnh viễn), nhập lý do, set thời hạn |
-| OWN-24 | Gỡ đình chỉ hội viên | `OwnerMember/LiftSuspension/{id}` | Gỡ bỏ đình chỉ trước hạn, nhập lý do gỡ |
-| OWN-25 | Xem danh sách đình chỉ | `OwnerMember/Suspensions/{gymId}` | Danh sách hội viên đang/đã bị đình chỉ, lọc theo trạng thái |
-| MEM-17 | Xem trạng thái đình chỉ | `Member/MyMemberships` (nâng cấp) | Badge cảnh báo nếu đang bị đình chỉ tại gym nào đó |
-| ADM-17 | Giám sát đình chỉ toàn hệ thống | `AdminSuspension/Index` | Admin xem tổng quan đình chỉ trên toàn bộ gym |
+| Mã | Function | Screen | Trạng thái | Mô tả |
+|----|----------|--------|------------|-------|
+| OWN-23 | Đình chỉ hội viên | `OwnerMember/Suspend` | [x] Hoàn thành | Chọn hình thức kỷ luật (tạm thời/vĩnh viễn), thời hạn (7, 14, 30, 90 ngày hoặc custom), nhập lý do, tự động gửi email và ghi SystemLog |
+| OWN-24 | Gỡ đình chỉ hội viên | `OwnerMember/LiftSuspension` | [x] Hoàn thành | Gỡ bỏ đình chỉ trước hạn ngay trên danh sách hoặc qua modal, nhập lý do gỡ, gửi email khôi phục & ghi SystemLog |
+| OWN-25 | Xem danh sách đình chỉ | `OwnerMember/Suspensions` | [x] Hoàn thành | Quản lý toàn bộ danh sách kỷ luật theo Gym, tabs lọc Đang hiệu lực / Đã gỡ / Hết hạn, thao tác gỡ nhanh |
+| MEM-17 | Xem trạng thái đình chỉ | `Member/MyMemberships` | [x] Hoàn thành | Banner cảnh báo nổi bật trên đầu trang, badge kỷ luật chi tiết trên từng thẻ gói tập, khóa nút "Gia hạn" khi bị đình chỉ |
+| ADM-17 | Giám sát đình chỉ toàn hệ thống | `AdminSuspension/Index` | [x] Hoàn thành | Admin xem toàn bộ các quyết định đình chỉ trên sàn, thống kê nhanh, lọc theo gym/trạng thái/từ khóa, can thiệp gỡ bỏ |
+| MEM-PUR | Chặn mua vé khi bị đình chỉ | `PurchaseController` | [x] Hoàn thành | Tự động kiểm tra và chặn toàn bộ các luồng DailyPass, Package, Checkout và Renew nếu hội viên có lệnh đình chỉ đang hiệu lực |
 
-#### Business Rules
-- **Tạm thời (`Temporary`)**: Hội viên không thể check-in trong khoảng StartDate → EndDate, vé vẫn chạy (không gia hạn bù ngày)
+#### Business Rules đã bảo đảm
+- **Tạm thời (`Temporary`)**: Hội viên bị chặn mua vé mới / gia hạn trong khoảng StartDate → EndDate, vé cũ vẫn trôi bình thường (không gia hạn bù ngày)
 - **Vĩnh viễn (`Permanent`)**: Hội viên bị cấm tại gym đó, không thể mua vé mới tại gym đã cấm
 - Khi Member bị đình chỉ → **gửi email thông báo** kèm lý do + thời hạn
 - Khi gỡ đình chỉ → **gửi email thông báo** khôi phục
@@ -440,9 +441,9 @@ Khi Owner quét QR thành công:
 ## 🗓️ ĐỀ XUẤT THỨ TỰ TRIỂN KHAI
 
 ### Phase 1 — Nền tảng (Làm trước)
-1. **Module 1**: Multi-Image Gallery — đơn giản, UI impact lớn
-2. **Module 2**: Đình chỉ hội viên — business logic rõ ràng
-3. **Module 6**: Notification Center — hạ tầng cần cho các module khác
+1. [x] **Module 1**: Multi-Image Gallery — ✅ **Đã hoàn thành 100%**
+2. [ ] **Module 2**: Đình chỉ hội viên (Member Suspension) — ⏳ **Đang triển khai tiếp theo**
+3. [ ] **Module 6**: Notification Center — hạ tầng cần cho các module khác
 
 ### Phase 2 — Core V2 Features
 4. **Module 3**: VIP Loyalty System — phụ thuộc vào Purchase flow

@@ -272,21 +272,34 @@ namespace GymManagement.Controllers
                 .OrderByDescending(m => m.EndDate)
                 .ToListAsync();
 
-            var vmList = memberships.Select(m => new MyMembershipViewModel
+            var activeSuspensions = await _context.MemberSuspensions
+                .Where(s => s.MemberId == user.Id && s.Status == "Active" &&
+                            (s.SuspensionType == "Permanent" || s.EndDate == null || s.EndDate > VnTime.Now))
+                .ToListAsync();
+
+            var vmList = memberships.Select(m =>
             {
-                MembershipId     = m.Id,
-                GymId            = m.GymId,
-                GymName          = m.Gym?.Name ?? "—",
-                GymAddress       = m.Gym?.Address ?? "—",
-                GymImage         = m.Gym?.ImageUrl ?? string.Empty,
-                PackageId        = m.PackageId,
-                PackageName      = m.Package?.Name ?? "—",
-                PackageType      = m.Package?.PackageType ?? "Daily",
-                DurationInMonths = m.Package?.DurationInMonths,
-                StartDate        = m.StartDate,
-                EndDate          = m.EndDate,
-                PurchaseDate     = m.PurchaseDate,
-                PriceAtPurchase  = m.PriceAtPurchase
+                var susp = activeSuspensions.FirstOrDefault(s => s.GymId == m.GymId);
+                return new MyMembershipViewModel
+                {
+                    MembershipId       = m.Id,
+                    GymId              = m.GymId,
+                    GymName            = m.Gym?.Name ?? "—",
+                    GymAddress         = m.Gym?.Address ?? "—",
+                    GymImage           = m.Gym?.ImageUrl ?? string.Empty,
+                    PackageId          = m.PackageId,
+                    PackageName        = m.Package?.Name ?? "—",
+                    PackageType        = m.Package?.PackageType ?? "Daily",
+                    DurationInMonths   = m.Package?.DurationInMonths,
+                    StartDate          = m.StartDate,
+                    EndDate            = m.EndDate,
+                    PurchaseDate       = m.PurchaseDate,
+                    PriceAtPurchase    = m.PriceAtPurchase,
+                    IsSuspended        = susp != null,
+                    SuspensionType     = susp?.SuspensionType,
+                    SuspensionEndDate  = susp?.EndDate,
+                    SuspensionReason   = susp?.Reason
+                };
             }).ToList();
 
             return View(vmList);

@@ -15,6 +15,7 @@ namespace GymManagement.Models
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<GymImage> GymImages { get; set; }
+        public DbSet<MemberSuspension> MemberSuspensions { get; set; }
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
 
@@ -160,6 +161,31 @@ namespace GymManagement.Models
                       .HasForeignKey(l => l.UserId)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ===================== MEMBER SUSPENSION =====================
+            modelBuilder.Entity<MemberSuspension>(entity =>
+            {
+                entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("CK_MemberSuspensions_Type", "[SuspensionType] IN ('Temporary','Permanent')");
+                    tb.HasCheckConstraint("CK_MemberSuspensions_Status", "[Status] IN ('Active','Lifted')");
+                });
+
+                entity.HasOne(ms => ms.Gym)
+                      .WithMany(g => g.MemberSuspensions)
+                      .HasForeignKey(ms => ms.GymId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ms => ms.Member)
+                      .WithMany(u => u.Suspensions)
+                      .HasForeignKey(ms => ms.MemberId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ms => ms.SuspendedByUser)
+                      .WithMany(u => u.ExecutedSuspensions)
+                      .HasForeignKey(ms => ms.SuspendedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

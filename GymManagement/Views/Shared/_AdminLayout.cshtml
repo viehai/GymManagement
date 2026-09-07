@@ -381,6 +381,10 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminTransaction" ? "active" : "")">
                 <i class="bi bi-cash-stack"></i> Giao dịch toàn sàn
             </a>
+            <a asp-controller="AdminSuspension" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminSuspension" ? "active" : "")">
+                <i class="bi bi-slash-circle"></i> Giám sát đình chỉ
+            </a>
             <a asp-controller="AdminLog" asp-action="Index"
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminLog" ? "active" : "")">
                 <i class="bi bi-journal-text"></i> Nhật ký hệ thống

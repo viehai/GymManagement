@@ -17,45 +17,60 @@
         </p>
     </div>
 
-    <!-- Dropdown lọc theo phòng Gym -->
-    @if (Model.MyGyms.Any())
-    {
-        <form method="get" class="d-flex align-items-center gap-2">
-            <label style="font-size:0.8rem; font-weight:600; color:#555; white-space:nowrap;">Lọc theo Gym:</label>
-            <select name="gymId" class="form-select form-select-sm" style="border-radius:6px; min-width:200px;" onchange="this.form.submit()">
-                <option value="">-- Tất cả cơ sở (@Model.MyGyms.Count) --</option>
-                @foreach (var g in Model.MyGyms)
-                {
-                    <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
-                }
-            </select>
-        </form>
-    }
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Dropdown lọc theo phòng Gym -->
+        @if (Model.MyGyms.Any())
+        {
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label style="font-size:0.8rem; font-weight:600; color:#555; white-space:nowrap;">Lọc theo Gym:</label>
+                <select name="gymId" class="form-select form-select-sm" style="border-radius:6px; min-width:200px;" onchange="this.form.submit()">
+                    <option value="">-- Tất cả cơ sở (@Model.MyGyms.Count) --</option>
+                    @foreach (var g in Model.MyGyms)
+                    {
+                        <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
+                    }
+                </select>
+            </form>
+        }
+
+        <a asp-controller="OwnerMember" asp-action="Suspensions" asp-route-gymId="@Model.SelectedGymId"
+           class="btn-owner-secondary" style="border-color:#ef4444; color:#b91c1c;">
+            <i class="bi bi-slash-circle me-1"></i> DS Đình chỉ (@Model.SuspendedMembersCount)
+        </a>
+    </div>
 </div>
 
 <!-- Stat Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-12 col-sm-4">
-        <div class="content-card" style="padding:1.2rem; border-left:4px solid var(--accent);">
-            <div style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng hội viên</div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid var(--accent); margin-bottom:0;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng hội viên</div>
             <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#111; margin-top:4px;">
                 @Model.TotalMembers
             </div>
         </div>
     </div>
-    <div class="col-12 col-sm-4">
-        <div class="content-card" style="padding:1.2rem; border-left:4px solid #10b981;">
-            <div style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Đang tập (Active)</div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid #10b981; margin-bottom:0;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Đang tập (Active)</div>
             <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#10b981; margin-top:4px;">
                 @Model.ActiveMembersCount
             </div>
         </div>
     </div>
-    <div class="col-12 col-sm-4">
-        <div class="content-card" style="padding:1.2rem; border-left:4px solid #ef4444;">
-            <div style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Đã hết hạn</div>
-            <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#ef4444; margin-top:4px;">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid #f59e0b; margin-bottom:0;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Đã hết hạn</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#f59e0b; margin-top:4px;">
                 @Model.ExpiredMembersCount
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="content-card" style="padding:1.2rem; border-left:4px solid #ef4444; margin-bottom:0;">
+            <div style="font-size:0.72rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Đang bị đình chỉ</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#ef4444; margin-top:4px;">
+                @Model.SuspendedMembersCount
             </div>
         </div>
     </div>
@@ -91,9 +106,15 @@
                 <tbody>
                     @foreach (var m in Model.Members)
                     {
-                        <tr id="member-row-@m.MembershipId">
+                        <tr id="member-row-@m.MembershipId" style="@(m.IsSuspended ? "background: #fff8f8;" : "")">
                             <td>
-                                <div style="font-weight:700; color:#111;">@m.FullName</div>
+                                <div style="font-weight:700; color:#111;">
+                                    @m.FullName
+                                    @if (m.IsSuspended)
+                                    {
+                                        <span class="badge bg-danger text-white ms-1" style="font-size:0.65rem; vertical-align:middle;">ĐÌNH CHỈ</span>
+                                    }
+                                </div>
                                 <div style="font-size:0.78rem; color:#888;">
                                     <i class="bi bi-envelope me-1"></i>@m.Email
                                     @if (!string.IsNullOrEmpty(m.PhoneNumber) && m.PhoneNumber != "—")
@@ -119,16 +140,51 @@
                                 <span class="@m.StatusBadgeClass">
                                     @m.StatusLabel
                                 </span>
+                                @if (m.IsSuspended)
+                                {
+                                    <div class="mt-1">
+                                        <span class="badge" style="background:#fee2e2; color:#991b1b; border:1px solid #f87171; font-weight:700; font-size:0.7rem; padding:3px 6px; border-radius:4px;" title="Lý do: @m.SuspensionReason">
+                                            <i class="bi bi-slash-circle-fill me-1"></i>@m.SuspensionLabel
+                                        </span>
+                                    </div>
+                                }
                             </td>
                             <td class="text-end">
-                                <a id="btn-view-member-@m.MemberId"
-                                   asp-controller="OwnerMember"
-                                   asp-action="Details"
-                                   asp-route-memberId="@m.MemberId"
-                                   asp-route-gymId="@m.GymId"
-                                   class="btn-owner-secondary">
-                                    <i class="bi bi-eye me-1"></i> Chi tiết
-                                </a>
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <a id="btn-view-member-@m.MemberId"
+                                       asp-controller="OwnerMember"
+                                       asp-action="Details"
+                                       asp-route-memberId="@m.MemberId"
+                                       asp-route-gymId="@m.GymId"
+                                       class="btn-owner-secondary"
+                                       title="Xem chi tiết">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
+
+                                    @if (m.IsSuspended)
+                                    {
+                                        <button type="button"
+                                                class="btn-owner-secondary"
+                                                style="border-color:#10b981; color:#047857;"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#liftSuspensionModal"
+                                                data-suspension-id="@m.SuspensionId"
+                                                data-member-name="@m.FullName"
+                                                title="Gỡ đình chỉ">
+                                            <i class="bi bi-check-circle me-1"></i> Gỡ đình chỉ
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="OwnerMember"
+                                           asp-action="Suspend"
+                                           asp-route-membershipId="@m.MembershipId"
+                                           class="btn-owner-danger"
+                                           title="Đình chỉ hội viên này">
+                                            <i class="bi bi-slash-circle me-1"></i> Đình chỉ
+                                        </a>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
@@ -137,3 +193,57 @@
         </div>
     }
 </div>
+
+<!-- Modal Gỡ đình chỉ nhanh -->
+<div class="modal fade" id="liftSuspensionModal" tabindex="-1" aria-labelledby="liftSuspensionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px; border:none; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);">
+            <form asp-controller="OwnerMember" asp-action="LiftSuspension" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="suspensionId" id="modalSuspensionId" value="" />
+
+                <div class="modal-header" style="border-bottom:1px solid #f0f0f0; padding:1.2rem 1.5rem;">
+                    <h5 class="modal-title" id="liftSuspensionModalLabel" style="font-size:1rem; font-weight:700; color:#111;">
+                        <i class="bi bi-check2-circle text-success me-2"></i>Gỡ bỏ lệnh đình chỉ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body" style="padding:1.5rem;">
+                    <p style="font-size:0.9rem; color:#4b5563; margin-bottom:1rem;">
+                        Bạn đang thực hiện gỡ đình chỉ cho hội viên <strong id="modalMemberName" style="color:#111;">—</strong>.
+                        Sau khi gỡ, hội viên này sẽ được khôi phục quyền mua vé và gia hạn dịch vụ tại cơ sở.
+                    </p>
+
+                    <div class="owner-form-group">
+                        <label for="liftedReason" style="font-size:0.82rem; font-weight:600; color:#374151;">Lý do gỡ đình chỉ (tuỳ chọn):</label>
+                        <textarea name="liftedReason" id="liftedReason" class="form-control" rows="3" placeholder="Nhập lý do gỡ đình chỉ (ví dụ: Đã khắc phục vi phạm, cam kết không tái phạm...)"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="border-top:1px solid #f0f0f0; padding:1rem 1.5rem;">
+                    <button type="button" class="btn-owner-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-owner-primary" style="background:#10b981; border-color:#10b981;">
+                        <i class="bi bi-check-lg me-1"></i> Xác nhận gỡ đình chỉ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const liftModal = document.getElementById('liftSuspensionModal');
+        if (liftModal) {
+            liftModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const suspensionId = button.getAttribute('data-suspension-id');
+                const memberName = button.getAttribute('data-member-name');
+
+                document.getElementById('modalSuspensionId').value = suspensionId;
+                document.getElementById('modalMemberName').textContent = memberName;
+            });
+        }
+    </script>
+}

@@ -357,8 +357,12 @@
                 <i class="bi bi-card-list"></i> Gói dịch vụ
             </a>
             <a asp-controller="OwnerMember" asp-action="Index"
-               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerMember" ? "active" : "")">
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerMember" && ViewContext.RouteData.Values["action"]?.ToString() != "Suspensions" ? "active" : "")">
                 <i class="bi bi-people"></i> Quản lý hội viên
+            </a>
+            <a asp-controller="OwnerMember" asp-action="Suspensions"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerMember" && ViewContext.RouteData.Values["action"]?.ToString() == "Suspensions" ? "active" : "")">
+                <i class="bi bi-slash-circle"></i> DS Đình chỉ hội viên
             </a>
             <a asp-controller="OwnerTransaction" asp-action="Index"
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerTransaction" ? "active" : "")">

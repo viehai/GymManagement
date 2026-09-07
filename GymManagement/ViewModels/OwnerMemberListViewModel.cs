@@ -13,6 +13,7 @@ namespace GymManagement.ViewModels
         public int TotalMembers => Members.Select(m => m.MemberId).Distinct().Count();
         public int ActiveMembersCount => Members.Count(m => m.DaysRemaining >= 0);
         public int ExpiredMembersCount => Members.Count(m => m.DaysRemaining < 0);
+        public int SuspendedMembersCount => Members.Count(m => m.IsSuspended);
     }
 
     public class OwnerMemberItemViewModel
@@ -52,5 +53,16 @@ namespace GymManagement.ViewModels
             "ExpiringSoon" => "badge-pending",
             _              => "badge-approved"
         };
+
+        // ── Thông tin đình chỉ (V2) ──
+        public bool IsSuspended { get; set; }
+        public int? SuspensionId { get; set; }
+        public string? SuspensionType { get; set; }
+        public DateTime? SuspensionEndDate { get; set; }
+        public string? SuspensionReason { get; set; }
+
+        public string? SuspensionLabel => !IsSuspended ? null :
+            SuspensionType == "Permanent" ? "Cấm vĩnh viễn" :
+            $"Tạm đình chỉ (đến {SuspensionEndDate:dd/MM/yyyy})";
     }
 }

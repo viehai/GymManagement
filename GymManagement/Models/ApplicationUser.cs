@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace GymManagement.Models
@@ -14,5 +14,7 @@ namespace GymManagement.Models
         public ICollection<Gym> Gyms { get; set; }
         public ICollection<MemberMembership> MemberMemberships { get; set; }
         public ICollection<Transaction> Transactions { get; set; }
+        public ICollection<MemberSuspension> Suspensions { get; set; } = new List<MemberSuspension>();
+        public ICollection<MemberSuspension> ExecutedSuspensions { get; set; } = new List<MemberSuspension>();
     }
 }
