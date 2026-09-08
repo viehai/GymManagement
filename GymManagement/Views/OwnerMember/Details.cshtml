@@ -10,10 +10,31 @@
     <a asp-action="Index" asp-route-gymId="@Model.GymId" class="btn-owner-secondary mb-3">
         <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách hội viên
     </a>
-    <h2 style="font-family:'Montserrat',sans-serif; font-size:1.3rem; font-weight:800; color:#111; margin:0 0 4px;">
-        @Model.FullName
-    </h2>
-    <p style="margin:0; font-size:0.85rem; color:#888;">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <h2 style="font-family:'Montserrat',sans-serif; font-size:1.3rem; font-weight:800; color:#111; margin:0;">
+            @Model.FullName
+        </h2>
+        @if (Model.IsVip)
+        {
+            <span class="badge d-inline-flex align-items-center gap-1"
+                  style="background-color:@(Model.VipBadgeColor)18; color:@Model.VipBadgeColor; border:1.5px solid @Model.VipBadgeColor; font-size:0.85rem; font-weight:800; padding:6px 14px; border-radius:20px;">
+                <i class="bi bi-crown-fill text-warning"></i> VIP: @Model.VipTierName
+                @if (Model.VipDiscountPercent.HasValue && Model.VipDiscountPercent.Value > 0)
+                {
+                    <span class="ms-1" style="background:@Model.VipBadgeColor; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.72rem;">
+                        -@($"{Model.VipDiscountPercent:0.#}")%
+                    </span>
+                }
+            </span>
+        }
+        else
+        {
+            <span class="badge" style="background:#f3f4f6; color:#6b7280; font-size:0.8rem; font-weight:600; padding:5px 12px; border-radius:20px;">
+                Chưa có hạng VIP
+            </span>
+        }
+    </div>
+    <p style="margin:4px 0 0; font-size:0.85rem; color:#888;">
         Lịch sử đăng ký và sử dụng dịch vụ tại cơ sở: <strong>@Model.GymName</strong>
     </p>
 </div>
@@ -21,7 +42,7 @@
 <div class="row g-4 mb-4">
     <!-- Cột trái: Thông tin cá nhân -->
     <div class="col-12 col-md-4">
-        <div class="content-card h-100">
+        <div class="content-card h-100 mb-0">
             <div class="content-card-header">
                 <h5 class="content-card-title"><i class="bi bi-person me-2"></i>Thông tin cá nhân</h5>
             </div>
@@ -38,7 +59,7 @@
                     <span style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:600; display:block;">Số điện thoại</span>
                     <span style="font-size:0.88rem; color:#374151;">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</span>
                 </div>
-                <div style="margin-bottom:1rem;">
+                <div style="margin-bottom:0;">
                     <span style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:600; display:block;">Địa chỉ phòng tập</span>
                     <span style="font-size:0.82rem; color:#666;">@Model.GymAddress</span>
                 </div>
@@ -46,25 +67,83 @@
         </div>
     </div>
 
-    <!-- Cột phải: Tổng quan chi tiêu -->
+    <!-- Cột phải: Tổng quan chi tiêu & Thẻ VIP Loyalty -->
     <div class="col-12 col-md-8">
         <div class="row g-3 h-100">
             <div class="col-12 col-sm-6">
-                <div class="content-card h-100 d-flex flex-column justify-content-center" style="padding:1.8rem; border-left:4px solid #10b981;">
+                <div class="content-card h-100 d-flex flex-column justify-content-center mb-0" style="padding:1.5rem; border-left:4px solid #10b981;">
                     <span style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng tiền đã chi tiêu</span>
-                    <div style="font-family:'Montserrat',sans-serif; font-size:2rem; font-weight:900; color:#10b981; margin-top:6px;">
+                    <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#10b981; margin-top:4px;">
                         @Model.TotalSpent.ToString("N0") đ
                     </div>
                     <span style="font-size:0.78rem; color:#999; margin-top:4px;">Doanh thu từ hội viên này tại @Model.GymName</span>
                 </div>
             </div>
             <div class="col-12 col-sm-6">
-                <div class="content-card h-100 d-flex flex-column justify-content-center" style="padding:1.8rem; border-left:4px solid var(--accent);">
-                    <span style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng số lần đăng ký / gia hạn</span>
-                    <div style="font-family:'Montserrat',sans-serif; font-size:2rem; font-weight:900; color:#111; margin-top:6px;">
+                <div class="content-card h-100 d-flex flex-column justify-content-center mb-0" style="padding:1.5rem; border-left:4px solid var(--accent);">
+                    <span style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px;">Tổng lượt đăng ký / gia hạn</span>
+                    <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#111; margin-top:4px;">
                         @Model.TotalPurchases lượt
                     </div>
                     <span style="font-size:0.78rem; color:#999; margin-top:4px;">Bao gồm cả vé ngày và gói tháng</span>
+                </div>
+            </div>
+
+            <!-- VIP Loyalty Card -->
+            <div class="col-12">
+                <div class="content-card mb-0" style="padding:1.3rem; border-left:4px solid @(Model.IsVip ? Model.VipBadgeColor : "#9ca3af"); background: @(Model.IsVip ? "linear-gradient(135deg, #fff 0%, #fafafa 100%)" : "#fff");">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-crown text-warning" style="font-size:1.2rem;"></i>
+                            <span style="font-family:'Montserrat',sans-serif; font-size:0.9rem; font-weight:800; color:#111; text-transform:uppercase; letter-spacing:0.5px;">
+                                Trạng thái thành viên thân thiết (VIP)
+                            </span>
+                        </div>
+                        @if (Model.IsVip)
+                        {
+                            <span style="font-size:0.78rem; color:#666;">
+                                Thăng hạng lúc: <strong>@(Model.VipAchievedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</strong>
+                            </span>
+                        }
+                    </div>
+
+                    @if (Model.IsVip)
+                    {
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 col-sm-4">
+                                <div style="font-size:0.75rem; color:#888; font-weight:600;">Cấp bậc đạt được:</div>
+                                <div style="font-family:'Montserrat',sans-serif; font-size:1.05rem; font-weight:800; color:@Model.VipBadgeColor;">
+                                    @Model.VipTierName
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <div style="font-size:0.75rem; color:#888; font-weight:600;">Ưu đãi giảm giá:</div>
+                                <div style="font-family:'Montserrat',sans-serif; font-size:1.05rem; font-weight:800; color:#e11d48;">
+                                    @(Model.VipDiscountPercent.HasValue ? $"{Model.VipDiscountPercent:0.#}%" : "0%") mỗi hóa đơn
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <div style="font-size:0.75rem; color:#888; font-weight:600;">Lần mua tích lũy:</div>
+                                <div style="font-family:'Montserrat',sans-serif; font-size:1.05rem; font-weight:800; color:#111;">
+                                    @Model.VipTotalPurchaseCount lần
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.VipBenefitDescription))
+                            {
+                                <div class="col-12 mt-2 pt-2 border-top">
+                                    <div style="font-size:0.78rem; color:#555;">
+                                        <strong>Đặc quyền:</strong> @Model.VipBenefitDescription
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.85rem; color:#888; margin:0;">
+                            Hội viên đã có <strong>@Model.VipTotalPurchaseCount</strong> lần mua tích lũy tại cơ sở này, chưa đạt điều kiện thăng hạng VIP.
+                        </p>
+                    }
                 </div>
             </div>
         </div>

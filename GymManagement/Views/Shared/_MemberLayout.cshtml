@@ -206,6 +206,19 @@
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Gym" ? "active" : "")"
                                asp-controller="Gym" asp-action="Search">Tìm Phòng Gym</a>
                         </li>
+                        @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Admin") && !User.IsInRole("Owner"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" && ViewContext.RouteData.Values["action"]?.ToString() == "MyMemberships" ? "active" : "")"
+                                   asp-controller="Member" asp-action="MyMemberships">Gói Tập Của Tôi</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" && ViewContext.RouteData.Values["action"]?.ToString() == "MyVipStatus" ? "active" : "")"
+                                   asp-controller="Member" asp-action="MyVipStatus">
+                                    <i class="bi bi-crown text-warning me-1"></i>Hạng VIP
+                                </a>
+                            </li>
+                        }
                     </ul>
                     <ul class="navbar-nav ms-auto mb-2 mb-md-0 align-items-center gap-2">
                         @if (User.Identity?.IsAuthenticated == true)

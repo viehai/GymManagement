@@ -1,0 +1,287 @@
+@model GymManagement.ViewModels.OwnerVipTierListViewModel
+@{
+    ViewData["Title"] = "Cấu hình Hạng VIP";
+    Layout = "_OwnerAdminLayout";
+}
+
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h2 style="font-family:'Montserrat',sans-serif; font-size:1.35rem; font-weight:900; color:#111; margin:0 0 4px; letter-spacing:-0.5px;">
+            <i class="bi bi-crown text-warning me-2"></i>CẤU HÌNH HẠNG THÀNH VIÊN VIP
+        </h2>
+        <p style="margin:0; font-size:0.85rem; color:#666;">
+            Thiết lập các mốc tích lũy mua vé, tỷ lệ giảm giá và đặc quyền riêng biệt theo từng cơ sở phòng Gym.
+        </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Gym Selector -->
+        @if (Model.MyGyms.Count > 1)
+        {
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label style="font-size:0.8rem; font-weight:700; color:#555; white-space:nowrap;">Cơ sở:</label>
+                <select name="gymId" class="form-select form-select-sm" style="border-radius:6px; min-width:210px; font-weight:600;" onchange="this.form.submit()">
+                    @foreach (var g in Model.MyGyms)
+                    {
+                        <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
+                    }
+                </select>
+            </form>
+        }
+
+        <button type="button" class="btn-owner-primary" onclick="openCreateModal(@Model.SelectedGymId, '@Html.Raw(Model.SelectedGym?.Name)')">
+            <i class="bi bi-plus-lg me-1"></i> Thêm hạng VIP
+        </button>
+    </div>
+</div>
+
+<!-- Info Alert / Seed Default Button -->
+@if (!Model.Tiers.Any())
+{
+    <div class="content-card mb-4" style="background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border: 1.5px dashed #f59e0b; padding: 2rem;">
+        <div class="d-flex align-items-start gap-3">
+            <div style="width:48px; height:48px; border-radius:12px; background:#f59e0b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0;">
+                <i class="bi bi-stars"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 style="font-family:'Montserrat',sans-serif; font-weight:800; color:#92400e; margin:0 0 6px;">
+                    Chưa có hạng VIP nào tại "@Model.SelectedGym?.Name"
+                </h5>
+                <p style="font-size:0.88rem; color:#b45309; margin:0 0 14px; line-height:1.5;">
+                    Bạn có thể tự cấu hình các mốc hoặc nhấn vào nút bên dưới để hệ thống tự động khởi tạo bộ 3 hạng VIP tiêu chuẩn:
+                    <strong>Bạc (Silver - 3 lần, giảm 5%)</strong>, <strong>Vàng (Gold - 10 lần, giảm 10%)</strong> và <strong>Kim Cương (Platinum - 25 lần, giảm 15%)</strong>.
+                </p>
+                <form asp-action="InitDefaultTiers" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="gymId" value="@Model.SelectedGymId" />
+                    <button type="submit" class="btn" style="background:#111; color:#fff; font-weight:700; border-radius:6px; font-size:0.85rem; padding:8px 18px;">
+                        <i class="bi bi-magic me-1"></i> Khởi tạo 3 hạng mẫu ngay
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tiers List -->
+<div class="row g-3">
+    @foreach (var tier in Model.Tiers)
+    {
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="content-card h-100 d-flex flex-column" style="margin-bottom:0; border-top: 4px solid @tier.BadgeColor; position:relative;">
+                <!-- Header Card -->
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background-color:@tier.BadgeColor; border:1px solid rgba(0,0,0,0.2);"></span>
+                        <h4 style="font-family:'Montserrat',sans-serif; font-size:1.15rem; font-weight:800; color:#111; margin:0;">
+                            @tier.TierName
+                        </h4>
+                    </div>
+                    <div>
+                        @if (tier.IsActive)
+                        {
+                            <span class="badge" style="background:#ecfdf5; color:#065f46; font-weight:700; font-size:0.75rem; border:1px solid #a7f3d0;">Đang áp dụng</span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background:#f3f4f6; color:#4b5563; font-weight:700; font-size:0.75rem; border:1px solid #d1d5db;">Tạm dừng</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Metrics -->
+                <div class="p-3 mb-3" style="background:#f9fafb; border-radius:8px; border:1px solid #f3f4f6;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:0.82rem; color:#666; font-weight:600;"><i class="bi bi-bag-check me-1 text-primary"></i> Mốc tích lũy:</span>
+                        <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.95rem; color:#111;">
+                            ≥ @tier.MinPurchaseCount lần mua
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:0.82rem; color:#666; font-weight:600;"><i class="bi bi-percent me-1 text-danger"></i> Giảm giá thanh toán:</span>
+                        <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.05rem; color:#e11d48;">
+                            @(tier.DiscountPercent.HasValue ? $"{tier.DiscountPercent:0.#}%" : "0%")
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span style="font-size:0.82rem; color:#666; font-weight:600;"><i class="bi bi-sort-numeric-up me-1 text-muted"></i> Thứ tự ưu tiên:</span>
+                        <span style="font-weight:700; font-size:0.85rem; color:#4b5563;">
+                            Cấp độ #@tier.DisplayOrder
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-4 flex-grow-1">
+                    <div style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+                        Quyền lợi & Đặc quyền
+                    </div>
+                    <p style="font-size:0.85rem; color:#333; margin:0; line-height:1.5;">
+                        @(string.IsNullOrWhiteSpace(tier.BenefitDescription) ? "Không có mô tả đặc quyền riêng." : tier.BenefitDescription)
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                    <button type="button" class="btn btn-sm btn-outline-dark" style="font-weight:700; border-radius:6px; font-size:0.8rem;"
+                            onclick="openEditModal(@tier.Id, @tier.GymId, '@Html.Raw(tier.TierName)', @tier.MinPurchaseCount, @(tier.DiscountPercent ?? 0), '@Html.Raw(tier.BenefitDescription?.Replace("'", "\\'"))', '@tier.BadgeColor', @tier.DisplayOrder, @(tier.IsActive ? "true" : "false"))">
+                        <i class="bi bi-pencil me-1"></i> Sửa
+                    </button>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <form asp-action="ToggleTierStatus" asp-route-id="@tier.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm @(tier.IsActive ? "btn-outline-secondary" : "btn-outline-success")" style="font-size:0.8rem; border-radius:6px;" title="@(tier.IsActive ? "Tạm dừng áp dụng" : "Kích hoạt áp dụng")">
+                                <i class="bi @(tier.IsActive ? "bi-pause-fill" : "bi-play-fill")"></i>
+                            </button>
+                        </form>
+
+                        <form asp-action="DeleteTier" asp-route-id="@tier.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hạng VIP này? Các hội viên đang thuộc hạng này sẽ được chuyển về không phân hạng.');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:0.8rem; border-radius:6px;" title="Xóa hạng">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal Thêm / Chỉnh sửa Hạng VIP -->
+<div class="modal fade" id="tierModal" tabindex="-1" aria-labelledby="tierModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px; border:none; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+            <form asp-action="SaveTier" method="post" id="tierForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="tierId" value="0" />
+                <input type="hidden" name="GymId" id="tierGymId" value="@Model.SelectedGymId" />
+
+                <div class="modal-header" style="border-bottom:1px solid #f0f0f0; padding:1.25rem 1.5rem;">
+                    <h5 class="modal-title" id="tierModalLabel" style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.1rem; color:#111;">
+                        Thêm Hạng VIP Mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body" style="padding:1.5rem;">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:0.82rem; font-weight:700; color:#333;">Tên hạng VIP <span class="text-danger">*</span></label>
+                        <input type="text" name="TierName" id="tierName" class="form-control" required maxlength="50" placeholder="VD: Bạc, Vàng, Kim Cương, Black Diamond..." style="border-radius:6px;" />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label" style="font-size:0.82rem; font-weight:700; color:#333;">Số lần mua tối thiểu <span class="text-danger">*</span></label>
+                            <input type="number" name="MinPurchaseCount" id="minPurchaseCount" class="form-control" required min="1" max="10000" style="border-radius:6px;" />
+                            <small class="text-muted" style="font-size:0.75rem;">Số lần mua tích lũy để thăng hạng</small>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" style="font-size:0.82rem; font-weight:700; color:#333;">% Giảm giá</label>
+                            <div class="input-group">
+                                <input type="number" name="DiscountPercent" id="discountPercent" class="form-control" min="0" max="100" step="0.5" placeholder="0" style="border-radius:6px 0 0 6px;" />
+                                <span class="input-group-text" style="border-radius:0 6px 6px 0; font-weight:700;">%</span>
+                            </div>
+                            <small class="text-muted" style="font-size:0.75rem;">Giảm tự động khi mua / gia hạn</small>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label" style="font-size:0.82rem; font-weight:700; color:#333;">Màu sắc huy hiệu</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color" name="BadgeColor" id="badgeColorPicker" value="#C0C0C0" style="width:42px; height:38px; border:none; border-radius:6px; cursor:pointer;" onchange="document.getElementById('badgeColorText').value = this.value" />
+                                <input type="text" id="badgeColorText" class="form-control font-monospace" value="#C0C0C0" style="border-radius:6px; font-size:0.85rem;" oninput="document.getElementById('badgeColorPicker').value = this.value" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" style="font-size:0.82rem; font-weight:700; color:#333;">Thứ tự cấp bậc</label>
+                            <input type="number" name="DisplayOrder" id="displayOrder" class="form-control" required min="1" max="100" value="1" style="border-radius:6px;" />
+                            <small class="text-muted" style="font-size:0.75rem;">Số càng lớn cấp bậc càng cao</small>
+                        </div>
+                    </div>
+
+                    <!-- Preset Color Quick Buttons -->
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:0.78rem; font-weight:700; color:#666;">Bảng màu gợi ý:</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-light border d-flex align-items-center gap-1" style="font-size:0.75rem; border-radius:20px;" onclick="setColor('#9CA3AF')">
+                                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#9CA3AF;"></span> Bạc (#9CA3AF)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-light border d-flex align-items-center gap-1" style="font-size:0.75rem; border-radius:20px;" onclick="setColor('#F59E0B')">
+                                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#F59E0B;"></span> Vàng (#F59E0B)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-light border d-flex align-items-center gap-1" style="font-size:0.75rem; border-radius:20px;" onclick="setColor('#6366F1')">
+                                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#6366F1;"></span> Platinum (#6366F1)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-light border d-flex align-items-center gap-1" style="font-size:0.75rem; border-radius:20px;" onclick="setColor('#10B981')">
+                                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10B981;"></span> Emerald (#10B981)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:0.82rem; font-weight:700; color:#333;">Quyền lợi & Đặc quyền</label>
+                        <textarea name="BenefitDescription" id="benefitDescription" class="form-control" rows="3" maxlength="500" placeholder="VD: Miễn phí nước uống, tủ đồ riêng, ưu tiên đặt lịch PT..." style="border-radius:6px; font-size:0.85rem;"></textarea>
+                    </div>
+
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" name="IsActive" id="isActive" value="true" checked>
+                        <label class="form-check-label" for="isActive" style="font-size:0.85rem; font-weight:600; color:#333;">
+                            Kích hoạt áp dụng hạng này ngay lập tức
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="border-top:1px solid #f0f0f0; padding:1rem 1.5rem;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:600; border-radius:6px; font-size:0.85rem;">Hủy</button>
+                    <button type="submit" class="btn-owner-primary" style="padding:8px 22px; font-size:0.85rem;">
+                        <i class="bi bi-check-lg me-1"></i> Lưu cấu hình
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setColor(hex) {
+            document.getElementById('badgeColorPicker').value = hex;
+            document.getElementById('badgeColorText').value = hex;
+        }
+
+        function openCreateModal(gymId, gymName) {
+            document.getElementById('tierForm').reset();
+            document.getElementById('tierId').value = "0";
+            document.getElementById('tierGymId').value = gymId;
+            document.getElementById('tierModalLabel').innerText = "Thêm Hạng VIP Mới";
+            document.getElementById('minPurchaseCount').value = "5";
+            document.getElementById('discountPercent').value = "5";
+            document.getElementById('displayOrder').value = "1";
+            setColor('#9CA3AF');
+            document.getElementById('isActive').checked = true;
+
+            const modal = new bootstrap.Modal(document.getElementById('tierModal'));
+            modal.show();
+        }
+
+        function openEditModal(id, gymId, name, minPurchases, discount, benefit, color, order, isActive) {
+            document.getElementById('tierId').value = id;
+            document.getElementById('tierGymId').value = gymId;
+            document.getElementById('tierModalLabel').innerText = "Chỉnh sửa Hạng VIP: " + name;
+            document.getElementById('tierName').value = name;
+            document.getElementById('minPurchaseCount').value = minPurchases;
+            document.getElementById('discountPercent').value = discount;
+            document.getElementById('benefitDescription').value = benefit;
+            setColor(color || '#9CA3AF');
+            document.getElementById('displayOrder').value = order;
+            document.getElementById('isActive').checked = isActive;
+
+            const modal = new bootstrap.Modal(document.getElementById('tierModal'));
+            modal.show();
+        }
+    </script>
+}

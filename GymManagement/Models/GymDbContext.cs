@@ -16,6 +16,8 @@ namespace GymManagement.Models
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<GymImage> GymImages { get; set; }
         public DbSet<MemberSuspension> MemberSuspensions { get; set; }
+        public DbSet<VipTierSetting> VipTierSettings { get; set; }
+        public DbSet<MemberVipStatus> MemberVipStatuses { get; set; }
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
 
@@ -185,6 +187,42 @@ namespace GymManagement.Models
                 entity.HasOne(ms => ms.SuspendedByUser)
                       .WithMany(u => u.ExecutedSuspensions)
                       .HasForeignKey(ms => ms.SuspendedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ===================== VIP TIER SETTING =====================
+            modelBuilder.Entity<VipTierSetting>(entity =>
+            {
+                entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("CK_VipTierSettings_MinPurchaseCount", "[MinPurchaseCount] > 0");
+                    tb.HasCheckConstraint("CK_VipTierSettings_DiscountPercent", "[DiscountPercent] IS NULL OR ([DiscountPercent] >= 0 AND [DiscountPercent] <= 100)");
+                });
+
+                entity.HasOne(ts => ts.Gym)
+                      .WithMany(g => g.VipTierSettings)
+                      .HasForeignKey(ts => ts.GymId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===================== MEMBER VIP STATUS =====================
+            modelBuilder.Entity<MemberVipStatus>(entity =>
+            {
+                entity.HasIndex(s => new { s.MemberId, s.GymId }).IsUnique();
+
+                entity.HasOne(s => s.Gym)
+                      .WithMany(g => g.MemberVipStatuses)
+                      .HasForeignKey(s => s.GymId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.Member)
+                      .WithMany(u => u.MemberVipStatuses)
+                      .HasForeignKey(s => s.MemberId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.CurrentTier)
+                      .WithMany(t => t.MemberVipStatuses)
+                      .HasForeignKey(s => s.CurrentTierId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
         }

@@ -1,0 +1,165 @@
+@model GymManagement.ViewModels.OwnerVipMemberListViewModel
+@{
+    ViewData["Title"] = "Danh sách Hội viên VIP";
+    Layout = "_OwnerAdminLayout";
+}
+
+<!-- Header & Filters -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h2 style="font-family:'Montserrat',sans-serif; font-size:1.35rem; font-weight:900; color:#111; margin:0 0 4px; letter-spacing:-0.5px;">
+            <i class="bi bi-person-badge text-warning me-2"></i>DANH SÁCH HỘI VIÊN VIP
+        </h2>
+        <p style="margin:0; font-size:0.85rem; color:#666;">
+            Theo dõi tất cả thành viên thân thiết đã đạt các mốc tích lũy và hưởng chính sách ưu đãi VIP.
+        </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Filter Form -->
+        <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
+            @if (Model.MyGyms.Count > 1)
+            {
+                <select name="gymId" class="form-select form-select-sm" style="border-radius:6px; min-width:180px; font-weight:600;" onchange="this.form.submit()">
+                    <option value="">-- Tất cả cơ sở --</option>
+                    @foreach (var g in Model.MyGyms)
+                    {
+                        <option value="@g.Id" selected="@(Model.SelectedGymId == g.Id)">@g.Name</option>
+                    }
+                </select>
+            }
+
+            @if (Model.AvailableTiers.Any())
+            {
+                <select name="tierId" class="form-select form-select-sm" style="border-radius:6px; min-width:160px; font-weight:600;" onchange="this.form.submit()">
+                    <option value="">-- Tất cả hạng VIP --</option>
+                    @foreach (var t in Model.AvailableTiers)
+                    {
+                        <option value="@t.Id" selected="@(Model.SelectedTierId == t.Id)">@t.TierName</option>
+                    }
+                </select>
+            }
+        </form>
+
+        <a asp-action="Settings" asp-route-gymId="@Model.SelectedGymId" class="btn-owner-secondary">
+            <i class="bi bi-gear me-1"></i> Cấu hình hạng VIP
+        </a>
+    </div>
+</div>
+
+<!-- Stats Card -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="content-card mb-0" style="padding:1.2rem; border-left:4px solid #f59e0b;">
+            <div style="font-size:0.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:0.5px;">Tổng hội viên đạt VIP</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:1.8rem; font-weight:900; color:#111; margin-top:4px;">
+                @Model.TotalVipMembers <span style="font-size:0.9rem; font-weight:600; color:#666;">người</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VIP Members Table -->
+<div class="content-card">
+    <div class="content-card-header d-flex align-items-center justify-content-between">
+        <h5 class="content-card-title mb-0">
+            <i class="bi bi-trophy text-warning me-2"></i>Bảng vinh danh hội viên thân thiết (@Model.VipMembers.Count)
+        </h5>
+    </div>
+
+    @if (!Model.VipMembers.Any())
+    {
+        <div style="padding:4rem 1.5rem; text-align:center; color:#999;">
+            <i class="bi bi-award" style="font-size:3rem; color:#d1d5db; display:block; margin-bottom:0.8rem;"></i>
+            <h6 style="font-weight:700; color:#4b5563; margin-bottom:0.3rem;">Chưa có hội viên nào đạt cấp bậc VIP</h6>
+            <p style="font-size:0.85rem; color:#888; margin:0;">
+                Hệ thống sẽ tự động xét duyệt và thăng hạng khi các hội viên hoàn tất số lần mua tích lũy tương ứng.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888;">Hội viên</th>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888;">Cơ sở Gym</th>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888;">Cấp bậc VIP</th>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888; text-align:center;">Số lần mua</th>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888;">Ngày đạt hạng</th>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888;">Gần nhất</th>
+                        <th style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#888; text-align:right;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.VipMembers)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:#111; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem;">
+                                        @(string.IsNullOrEmpty(m.FullName) ? "U" : m.FullName.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700; color:#111; font-size:0.9rem;">@m.FullName</div>
+                                        <div style="font-size:0.78rem; color:#888;">
+                                            <i class="bi bi-envelope me-1"></i>@m.Email
+                                            @if (!string.IsNullOrEmpty(m.PhoneNumber) && m.PhoneNumber != "—")
+                                            {
+                                                <span class="ms-2"><i class="bi bi-telephone me-1"></i>@m.PhoneNumber</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-weight:600; font-size:0.85rem; color:#333;">@m.GymName</span>
+                            </td>
+                            <td>
+                                <span class="badge d-inline-flex align-items-center gap-1"
+                                      style="background-color:@(m.BadgeColor)15; color:@m.BadgeColor; border:1px solid @m.BadgeColor; font-size:0.8rem; font-weight:800; padding:5px 10px; border-radius:20px;">
+                                    <i class="bi bi-star-fill" style="font-size:0.7rem;"></i> @m.TierName
+                                    @if (m.DiscountPercent.HasValue && m.DiscountPercent.Value > 0)
+                                    {
+                                        <span class="ms-1" style="background:@m.BadgeColor; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.7rem;">
+                                            -@($"{m.DiscountPercent:0.#}")%
+                                        </span>
+                                    }
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.1rem; color:#111;">
+                                    @m.TotalPurchaseCount
+                                </span>
+                                <span style="font-size:0.75rem; color:#888; display:block;">lần mua</span>
+                            </td>
+                            <td>
+                                <div style="font-size:0.85rem; font-weight:600; color:#333;">
+                                    @(m.AchievedAt?.ToString("dd/MM/yyyy") ?? "—")
+                                </div>
+                                <div style="font-size:0.75rem; color:#888;">
+                                    @(m.AchievedAt?.ToString("HH:mm") ?? "")
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size:0.85rem; font-weight:600; color:#333;">
+                                    @(m.LastPurchaseAt?.ToString("dd/MM/yyyy") ?? "—")
+                                </div>
+                                <div style="font-size:0.75rem; color:#888;">
+                                    @(m.LastPurchaseAt?.ToString("HH:mm") ?? "")
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a asp-controller="OwnerMember" asp-action="Details" asp-route-memberId="@m.MemberId" asp-route-gymId="@m.GymId"
+                                   class="btn btn-sm btn-outline-dark" style="font-weight:700; border-radius:6px; font-size:0.8rem; padding:4px 10px;">
+                                    <i class="bi bi-eye me-1"></i> Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

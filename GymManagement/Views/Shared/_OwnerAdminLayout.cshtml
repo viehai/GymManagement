@@ -364,6 +364,14 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerMember" && ViewContext.RouteData.Values["action"]?.ToString() == "Suspensions" ? "active" : "")">
                 <i class="bi bi-slash-circle"></i> DS Đình chỉ hội viên
             </a>
+            <a asp-controller="OwnerVip" asp-action="Settings"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerVip" && ViewContext.RouteData.Values["action"]?.ToString() == "Settings" ? "active" : "")">
+                <i class="bi bi-crown text-warning"></i> Cấu hình hạng VIP
+            </a>
+            <a asp-controller="OwnerVip" asp-action="Members"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerVip" && ViewContext.RouteData.Values["action"]?.ToString() == "Members" ? "active" : "")">
+                <i class="bi bi-person-badge text-warning"></i> Hội viên VIP
+            </a>
             <a asp-controller="OwnerTransaction" asp-action="Index"
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerTransaction" ? "active" : "")">
                 <i class="bi bi-receipt"></i> Lịch sử giao dịch

@@ -344,6 +344,127 @@ namespace GymManagement.Controllers
 
             return View(vm);
         }
+
+        // ==================== MEM-18: TIẾ́N TRÌNH VIP CỦA HỘI VIÊN ====================
+        [HttpGet]
+        public async Task<IActionResult> MyVipStatus()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            // Tìm tất cả các phòng Gym mà hội viên đã từng mua vé (nguồn truth: MemberMemberships)
+            var gymIdsFromPurchases = await _context.MemberMemberships
+                .Where(m => m.MemberId == user.Id)
+                .Select(m => m.GymId)
+                .Distinct()
+                .ToListAsync();
+
+            if (!gymIdsFromPurchases.Any())
+            {
+                return View(new MyVipOverviewViewModel { GymVipList = new() });
+            }
+
+            var gyms = await _context.Gyms
+                .Where(g => gymIdsFromPurchases.Contains(g.Id))
+                .ToListAsync();
+
+            // Lấy tất cả VipTierSetting đang hoạt động của các Gym này (sắp xếp tăng dần)
+            var allTiers = await _context.VipTierSettings
+                .Where(t => gymIdsFromPurchases.Contains(t.GymId) && t.IsActive)
+                .OrderBy(t => t.GymId)
+                .ThenBy(t => t.MinPurchaseCount)
+                .ToListAsync();
+
+            // Đếm số lần mua thực tế từng gym (nguồn truth thay vì MemberVipStatus)
+            var purchaseCounts = await _context.MemberMemberships
+                .Where(m => m.MemberId == user.Id && gymIdsFromPurchases.Contains(m.GymId))
+                .GroupBy(m => m.GymId)
+                .Select(g => new { GymId = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // Lấy VipStatus để lấy AchievedAt (thời điểm thăng hạng)
+            var vipStatuses = await _context.MemberVipStatuses
+                .Where(v => v.MemberId == user.Id && gymIdsFromPurchases.Contains(v.GymId))
+                .ToListAsync();
+
+            var vmList = new List<MemberGymVipProgressViewModel>();
+
+            foreach (var gym in gyms)
+            {
+                var gymTiers = allTiers.Where(t => t.GymId == gym.Id).OrderBy(t => t.MinPurchaseCount).ToList();
+                if (!gymTiers.Any()) continue; // Gym chưa cấu hình VIP thì bỏ qua
+
+                // Đếm số gói thực tế
+                int currentPurchases = purchaseCounts.FirstOrDefault(p => p.GymId == gym.Id)?.Count ?? 0;
+
+                // Tính tier hiện tại dựa trên số lần mua thực tế
+                var currentTier = gymTiers
+                    .Where(t => t.MinPurchaseCount <= currentPurchases)
+                    .OrderByDescending(t => t.MinPurchaseCount)
+                    .FirstOrDefault();
+
+                // Tìm hạng kế tiếp
+                var nextTier = gymTiers
+                    .Where(t => t.MinPurchaseCount > currentPurchases)
+                    .OrderBy(t => t.MinPurchaseCount)
+                    .FirstOrDefault();
+
+                var vipStatus = vipStatuses.FirstOrDefault(v => v.GymId == gym.Id);
+
+                vmList.Add(new MemberGymVipProgressViewModel
+                {
+                    GymId = gym.Id,
+                    GymName = gym.Name,
+                    GymAddress = gym.Address,
+                    GymImage = gym.ImageUrl ?? string.Empty,
+                    CurrentTierId = currentTier?.Id,
+                    CurrentTierName = currentTier?.TierName ?? "Chưa có hạng",
+                    CurrentTierColor = currentTier?.BadgeColor ?? "#9CA3AF",
+                    CurrentDiscountPercent = currentTier?.DiscountPercent,
+                    CurrentBenefitDescription = currentTier?.BenefitDescription,
+                    TotalPurchases = currentPurchases,
+                    AchievedAt = vipStatus?.AchievedAt,
+                    NextTierName = nextTier?.TierName,
+                    NextTierColor = nextTier?.BadgeColor,
+                    NextTierMinPurchases = nextTier?.MinPurchaseCount,
+                    NextTierDiscountPercent = nextTier?.DiscountPercent,
+                    NextTierBenefit = nextTier?.BenefitDescription
+                });
+            }
+
+            var vm = new MyVipOverviewViewModel
+            {
+                GymVipList = vmList
+            };
+
+            return View(vm);
+        }
+
+
+        // ==================== MEM-19: BẢNG ĐẶC QUYỀN VIP CÔNG KHAI TẠI 1 PHÒNG GYM ====================
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> VipBenefits(int gymId)
+        {
+            var gym = await _context.Gyms.FirstOrDefaultAsync(g => g.Id == gymId);
+            if (gym == null) return NotFound("Không tìm thấy thông tin cơ sở phòng gym.");
+
+            var tiers = await _context.VipTierSettings
+                .Where(t => t.GymId == gymId && t.IsActive)
+                .OrderBy(t => t.MinPurchaseCount)
+                .ThenBy(t => t.DisplayOrder)
+                .ToListAsync();
+
+            var vm = new GymVipBenefitsViewModel
+            {
+                GymId = gym.Id,
+                GymName = gym.Name,
+                GymAddress = gym.Address,
+                GymImage = gym.ImageUrl ?? string.Empty,
+                Tiers = tiers
+            };
+
+            return View(vm);
+        }
     }
 }
-

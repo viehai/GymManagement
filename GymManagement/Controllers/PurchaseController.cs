@@ -19,12 +19,18 @@ namespace GymManagement.Controllers
         private readonly GymDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly EmailHelper _emailHelper;
 
-        public PurchaseController(GymDbContext context, UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        public PurchaseController(
+            GymDbContext context,
+            UserManager<ApplicationUser> userManager,
+            IConfiguration configuration,
+            EmailHelper emailHelper)
         {
             _context = context;
             _userManager = userManager;
             _configuration = configuration;
+            _emailHelper = emailHelper;
         }
 
         // ═══════════════════════════════════════════════
@@ -73,17 +79,22 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Details", "Gym", new { id = gymId });
             }
 
+            var vipTier = user != null ? await GetMemberVipTierAsync(gym.Id, user.Id) : null;
+
             var vm = new PurchaseCheckoutViewModel
             {
-                GymId            = gym.Id,
-                GymName          = gym.Name,
-                GymAddress       = gym.Address,
-                GymImage         = gym.ImageUrl,
-                PackageId        = dailyPackage.Id,
-                PackageName      = dailyPackage.Name,
-                PackageType      = "Daily",
-                DurationInMonths = null,
-                Price            = dailyPackage.Price
+                GymId              = gym.Id,
+                GymName            = gym.Name,
+                GymAddress         = gym.Address,
+                GymImage           = gym.ImageUrl,
+                PackageId          = dailyPackage.Id,
+                PackageName        = dailyPackage.Name,
+                PackageType        = "Daily",
+                DurationInMonths   = null,
+                Price              = dailyPackage.Price,
+                VipTierName        = vipTier?.TierName,
+                VipBadgeColor      = vipTier?.BadgeColor,
+                VipDiscountPercent = vipTier?.DiscountPercent
             };
 
             TempData["Checkout"] = JsonSerializer.Serialize(vm);
@@ -182,17 +193,22 @@ namespace GymManagement.Controllers
                 }
             }
 
+            var vipTier = user != null ? await GetMemberVipTierAsync(gym.Id, user.Id) : null;
+
             var vm = new PurchaseCheckoutViewModel
             {
-                GymId            = gym.Id,
-                GymName          = gym.Name,
-                GymAddress       = gym.Address,
-                GymImage         = gym.ImageUrl ?? string.Empty,
-                PackageId        = pkg.Id,
-                PackageName      = pkg.Name,
-                PackageType      = pkg.PackageType,
-                DurationInMonths = pkg.DurationInMonths,
-                Price            = pkg.Price
+                GymId              = gym.Id,
+                GymName            = gym.Name,
+                GymAddress         = gym.Address,
+                GymImage           = gym.ImageUrl ?? string.Empty,
+                PackageId          = pkg.Id,
+                PackageName        = pkg.Name,
+                PackageType        = pkg.PackageType,
+                DurationInMonths   = pkg.DurationInMonths,
+                Price              = pkg.Price,
+                VipTierName        = vipTier?.TierName,
+                VipBadgeColor      = vipTier?.BadgeColor,
+                VipDiscountPercent = vipTier?.DiscountPercent
             };
 
             TempData["Checkout"] = JsonSerializer.Serialize(vm);
@@ -251,11 +267,20 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Details", "Gym", new { id = vm.GymId });
             }
 
+            // Tính toán giá cuối cùng có áp dụng chiết khấu VIP (nếu có)
+            var vipTier = await GetMemberVipTierAsync(gym.Id, user.Id);
+            decimal finalPrice = pkg.Price;
+            if (vipTier != null && vipTier.DiscountPercent.HasValue && vipTier.DiscountPercent.Value > 0)
+            {
+                decimal discountAmount = Math.Round(pkg.Price * (vipTier.DiscountPercent.Value / 100m));
+                finalPrice = Math.Max(0, pkg.Price - discountAmount);
+            }
+
             // Tạo bản ghi Transaction ở trạng thái Pending kèm thông tin gói cần mua trong VnpTxnRef
             var transaction = new Transaction
             {
                 MemberId      = user.Id,
-                Amount        = pkg.Price,
+                Amount        = finalPrice,
                 Status        = "Pending",
                 VnpTxnRef     = $"BUY|{pkg.Id}|{gym.Id}",
                 PaymentMethod = "VietQR",
@@ -551,7 +576,7 @@ namespace GymManagement.Controllers
                         StartDate = startDate,
                         EndDate = endDate,
                         PurchaseDate = VnTime.Now,
-                        PriceAtPurchase = pkg.Price
+                        PriceAtPurchase = transaction.Amount
                     };
                     _context.MemberMemberships.Add(membership);
                     await _context.SaveChangesAsync();
@@ -577,11 +602,15 @@ namespace GymManagement.Controllers
                         Entity = "Transaction",
                         EntityId = transaction.Id.ToString(),
                         Level = "Info",
-                        Description = $"Hội viên {member?.FullName} ({member?.Email}) đã thanh toán thành công {pkg.Price:N0} VNĐ qua {paymentSource} cho gói \"{pkg.Name}\" tại \"{gym.Name}\".",
+                        Description = $"Hội viên {member?.FullName} ({member?.Email}) đã thanh toán thành công {transaction.Amount:N0} VNĐ qua {paymentSource} cho gói \"{pkg.Name}\" tại \"{gym.Name}\".",
                         CreatedAt = VnTime.Now
                     });
 
                     await _context.SaveChangesAsync();
+
+                    // Tự động thăng hạng VIP (Module 3)
+                    await ProcessVipPromotionAsync(gym.Id, transaction.MemberId);
+
                     return true;
                 }
             }
@@ -602,7 +631,7 @@ namespace GymManagement.Controllers
 
                     membership.EndDate = newEndDate;
                     membership.PackageId = pkg.Id;
-                    membership.PriceAtPurchase = pkg.Price;
+                    membership.PriceAtPurchase = transaction.Amount;
 
                     transaction.MembershipId = membership.Id;
                     transaction.Status = "Success";
@@ -625,11 +654,15 @@ namespace GymManagement.Controllers
                         Entity = "MemberMembership",
                         EntityId = membership.Id.ToString(),
                         Level = "Info",
-                        Description = $"Hội viên {member?.FullName} đã gia hạn gói \"{pkg.Name}\" ({pkg.Price:N0} VNĐ) qua {paymentSource} tại \"{membership.Gym?.Name}\". Hạn mới: {newEndDate:dd/MM/yyyy}.",
+                        Description = $"Hội viên {member?.FullName} đã gia hạn gói \"{pkg.Name}\" ({transaction.Amount:N0} VNĐ) qua {paymentSource} tại \"{membership.Gym?.Name}\". Hạn mới: {newEndDate:dd/MM/yyyy}.",
                         CreatedAt = VnTime.Now
                     });
 
                     await _context.SaveChangesAsync();
+
+                    // Tự động thăng hạng VIP (Module 3)
+                    await ProcessVipPromotionAsync(membership.GymId, transaction.MemberId);
+
                     return true;
                 }
             }
@@ -700,6 +733,8 @@ namespace GymManagement.Controllers
                 return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
             }
 
+            var vipTier = await GetMemberVipTierAsync(membership.GymId, user.Id);
+
             var vm = new RenewMembershipViewModel
             {
                 MembershipId       = membership.Id,
@@ -709,6 +744,9 @@ namespace GymManagement.Controllers
                 GymImage           = membership.Gym?.ImageUrl ?? string.Empty,
                 CurrentPackageName = membership.Package?.Name ?? "—",
                 CurrentEndDate     = membership.EndDate,
+                VipTierName        = vipTier?.TierName,
+                VipBadgeColor      = vipTier?.BadgeColor,
+                VipDiscountPercent = vipTier?.DiscountPercent,
                 SelectedPackageId  = activePackages.Any(p => p.Id == membership.PackageId)
                                         ? membership.PackageId
                                         : activePackages.First().Id,
@@ -719,6 +757,7 @@ namespace GymManagement.Controllers
                     PackageType           = p.PackageType,
                     DurationInMonths      = p.DurationInMonths,
                     Price                 = p.Price,
+                    DiscountPercent       = vipTier?.DiscountPercent,
                     CalculatedNewEndDate  = MembershipHelper.CalculateRenewEndDate(
                                                 membership.EndDate, p.PackageType, p.DurationInMonths)
                 }).ToList()
@@ -757,12 +796,21 @@ namespace GymManagement.Controllers
                 return RedirectToAction("Renew", new { membershipId });
             }
 
+            // Tính toán giá gia hạn có áp dụng chiết khấu VIP (nếu có)
+            var vipTier = await GetMemberVipTierAsync(membership.GymId, user.Id);
+            decimal finalPrice = pkg.Price;
+            if (vipTier != null && vipTier.DiscountPercent.HasValue && vipTier.DiscountPercent.Value > 0)
+            {
+                decimal discountAmount = Math.Round(pkg.Price * (vipTier.DiscountPercent.Value / 100m));
+                finalPrice = Math.Max(0, pkg.Price - discountAmount);
+            }
+
             // Tạo Transaction gia hạn ở trạng thái Pending (MembershipId = null khi đang chờ thanh toán)
             var transaction = new Transaction
             {
                 MemberId      = user.Id,
                 MembershipId  = null,
-                Amount        = pkg.Price,
+                Amount        = finalPrice,
                 Status        = "Pending",
                 VnpTxnRef     = $"RENEW|{membership.Id}|{pkg.Id}",
                 PaymentMethod = "VietQR",
@@ -772,6 +820,117 @@ namespace GymManagement.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction("QrPayment", new { transactionId = transaction.Id });
+        }
+
+        /// <summary>
+        /// Tính hạng VIP hiện tại dựa trên số MemberMembership thực tế (không phụ thuộc vào webhook).
+        /// </summary>
+        private async Task<VipTierSetting?> GetMemberVipTierAsync(int gymId, string memberId)
+        {
+            // Đếm số gói đã mua thực tế của hội viên tại gym này
+            int purchaseCount = await _context.MemberMemberships
+                .Where(m => m.MemberId == memberId && m.GymId == gymId)
+                .CountAsync();
+
+            if (purchaseCount == 0) return null;
+
+            // Lấy tier phù hợp cao nhất (MinPurchaseCount <= purchaseCount)
+            var tier = await _context.VipTierSettings
+                .Where(t => t.GymId == gymId && t.IsActive && t.MinPurchaseCount <= purchaseCount)
+                .OrderByDescending(t => t.MinPurchaseCount)
+                .ThenByDescending(t => t.DisplayOrder)
+                .FirstOrDefaultAsync();
+
+            return tier;
+        }
+
+        /// <summary>
+        /// Đồng bộ hạng VIP vào MemberVipStatus (để lưu lịch sử, gửi email thăng hạng).
+        /// Dùng MemberMemberships count làm nguồn truth thay vì TotalPurchaseCount cộng dồn.
+        /// </summary>
+        private async Task ProcessVipPromotionAsync(int gymId, string memberId)
+        {
+            try
+            {
+                // Đếm số gói đã mua thực tế từ DB
+                int actualCount = await _context.MemberMemberships
+                    .Where(m => m.MemberId == memberId && m.GymId == gymId)
+                    .CountAsync();
+
+                var vipStatus = await _context.MemberVipStatuses
+                    .Include(s => s.CurrentTier)
+                    .FirstOrDefaultAsync(s => s.GymId == gymId && s.MemberId == memberId);
+
+                if (vipStatus == null)
+                {
+                    vipStatus = new MemberVipStatus
+                    {
+                        GymId = gymId,
+                        MemberId = memberId,
+                        TotalPurchaseCount = actualCount,
+                        LastPurchaseAt = VnTime.Now,
+                        CreatedAt = VnTime.Now
+                    };
+                    _context.MemberVipStatuses.Add(vipStatus);
+                }
+                else
+                {
+                    // Sync count thực tế (tránh lệch do lỗi cũ)
+                    vipStatus.TotalPurchaseCount = actualCount;
+                    vipStatus.LastPurchaseAt = VnTime.Now;
+                }
+
+                // Lấy tier phù hợp cao nhất
+                var activeTiers = await _context.VipTierSettings
+                    .Where(t => t.GymId == gymId && t.IsActive)
+                    .OrderByDescending(t => t.MinPurchaseCount)
+                    .ThenByDescending(t => t.DisplayOrder)
+                    .ToListAsync();
+
+                var eligibleTier = activeTiers
+                    .FirstOrDefault(t => actualCount >= t.MinPurchaseCount);
+
+                // Thăng hạng nếu tier mới cao hơn tier hiện tại
+                int currentMin = vipStatus.CurrentTier?.MinPurchaseCount ?? 0;
+                if (eligibleTier != null && eligibleTier.MinPurchaseCount > currentMin)
+                {
+                    vipStatus.CurrentTierId = eligibleTier.Id;
+                    vipStatus.AchievedAt = VnTime.Now;
+
+                    var member = await _userManager.FindByIdAsync(memberId);
+                    var gym = await _context.Gyms.FindAsync(gymId);
+
+                    // Ghi SystemLog
+                    _context.SystemLogs.Add(new SystemLog
+                    {
+                        UserId = memberId,
+                        Action = "VipPromotion",
+                        Entity = "MemberVipStatus",
+                        EntityId = vipStatus.Id.ToString(),
+                        Level = "Info",
+                        Description = $"Hội viên {member?.FullName} ({member?.Email}) đã đạt hạng VIP \"{eligibleTier.TierName}\" tại \"{gym?.Name}\" sau {actualCount} lần mua.",
+                        CreatedAt = VnTime.Now
+                    });
+
+                    // Gửi email chúc mừng thăng hạng
+                    if (member != null && !string.IsNullOrEmpty(member.Email))
+                    {
+                        await _emailHelper.SendVipPromotionEmailAsync(
+                            member.Email,
+                            member.FullName ?? member.UserName ?? "Hội viên",
+                            gym?.Name ?? "Phòng Gym",
+                            eligibleTier.TierName,
+                            eligibleTier.DiscountPercent,
+                            eligibleTier.BenefitDescription);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                // Tránh lỗi VIP làm đứt gãy luồng thanh toán chính
+            }
         }
 
         private async Task<MemberSuspension?> GetActiveSuspensionAsync(int gymId, string userId)

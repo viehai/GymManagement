@@ -23,6 +23,12 @@ namespace GymManagement.ViewModels
 
         // ── Gói được chọn ──
         public int SelectedPackageId { get; set; }
+
+        // ── VIP Discount (Module 3) ──
+        public bool HasVipDiscount => VipDiscountPercent.HasValue && VipDiscountPercent.Value > 0;
+        public string? VipTierName { get; set; }
+        public string? VipBadgeColor { get; set; }
+        public decimal? VipDiscountPercent { get; set; }
     }
 
     public class PackageOptionViewModel
@@ -36,5 +42,13 @@ namespace GymManagement.ViewModels
 
         public string TypeLabel =>
             PackageType == "Daily" ? "Vé ngày (+1 ngày)" : $"Gói {DurationInMonths} tháng (+{DurationInMonths} tháng)";
+
+        // VIP Discount
+        public decimal OriginalPrice => Price;
+        public decimal? DiscountPercent { get; set; }
+        public decimal FinalPrice => (DiscountPercent.HasValue && DiscountPercent.Value > 0)
+            ? Price - Math.Round(Price * (DiscountPercent.Value / 100m))
+            : Price;
+        public decimal DiscountAmount => OriginalPrice - FinalPrice;
     }
 }

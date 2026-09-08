@@ -141,6 +141,12 @@ namespace GymManagement.Controllers
             if (!history.Any()) return NotFound();
 
             var firstGym = history.First().Gym;
+            var targetGymId = gymId ?? firstGym.Id;
+
+            // Module 3: VIP Loyalty Status tại Gym này
+            var vipStatus = await _context.MemberVipStatuses
+                .Include(v => v.CurrentTier)
+                .FirstOrDefaultAsync(v => v.GymId == targetGymId && v.MemberId == memberId);
 
             var vm = new OwnerMemberDetailsViewModel
             {
@@ -148,11 +154,18 @@ namespace GymManagement.Controllers
                 FullName       = member.FullName ?? member.UserName ?? "—",
                 Email          = member.Email ?? "—",
                 PhoneNumber    = member.PhoneNumber ?? "—",
-                GymId          = gymId ?? firstGym.Id,
+                GymId          = targetGymId,
                 GymName        = firstGym?.Name ?? "—",
                 GymAddress     = firstGym?.Address ?? "—",
                 TotalSpent     = history.Sum(h => h.PriceAtPurchase),
                 TotalPurchases = history.Count,
+                CurrentTierId         = vipStatus?.CurrentTierId,
+                VipTierName           = vipStatus?.CurrentTier?.TierName,
+                VipBadgeColor         = vipStatus?.CurrentTier?.BadgeColor,
+                VipDiscountPercent    = vipStatus?.CurrentTier?.DiscountPercent,
+                VipBenefitDescription = vipStatus?.CurrentTier?.BenefitDescription,
+                VipTotalPurchaseCount = vipStatus?.TotalPurchaseCount ?? 0,
+                VipAchievedAt         = vipStatus?.AchievedAt,
                 PurchaseHistory = history.Select(h => new OwnerMemberPurchaseHistoryItem
                 {
                     MembershipId     = h.Id,

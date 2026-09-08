@@ -40,5 +40,7 @@ namespace GymManagement.Models
         public ICollection<MemberMembership> MemberMemberships { get; set; }
         public ICollection<GymImage> GymImages { get; set; }
         public ICollection<MemberSuspension> MemberSuspensions { get; set; } = new List<MemberSuspension>();
+        public ICollection<VipTierSetting> VipTierSettings { get; set; } = new List<VipTierSetting>();
+        public ICollection<MemberVipStatus> MemberVipStatuses { get; set; } = new List<MemberVipStatus>();
     }
 }

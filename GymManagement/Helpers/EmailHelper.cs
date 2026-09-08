@@ -117,5 +117,49 @@ namespace GymManagement.Helpers
 
             await SendEmailAsync(toEmail, subject, body);
         }
+
+        public async Task SendVipPromotionEmailAsync(string toEmail, string memberName, string gymName, string tierName, decimal? discountPercent, string? benefitDescription)
+        {
+            string subject = $"👑 [GymPro] Chúc mừng bạn đã thăng hạng VIP {tierName} tại {gymName}!";
+            string discountText = discountPercent.HasValue && discountPercent.Value > 0
+                ? $"<p style='margin: 6px 0;'><strong>Ưu đãi giảm giá:</strong> Giảm ngay <span style='color: #dc2626; font-weight: 700;'>{discountPercent:0.#}%</span> cho mọi lượt mua vé & gia hạn tiếp theo!</p>"
+                : "";
+
+            string benefitText = !string.IsNullOrWhiteSpace(benefitDescription)
+                ? $"<p style='margin: 6px 0;'><strong>Đặc quyền bổ sung:</strong> {benefitDescription}</p>"
+                : "";
+
+            string body = $@"
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <span style='font-size: 40px;'>👑</span>
+                        <h2 style='color: #111827; margin: 8px 0 4px; font-family: Montserrat, Arial, sans-serif;'>CHÚC MỪNG THĂNG HẠNG VIP!</h2>
+                        <p style='color: #6b7280; font-size: 14px; margin: 0;'>Chương trình Khách Hàng Thân Thiết GymPro</p>
+                    </div>
+
+                    <p>Xin chào <strong>{memberName}</strong>,</p>
+                    <p>Ban quản lý cơ sở <strong>{gymName}</strong> xin trân trọng chúc mừng bạn đã chính thức đạt danh hiệu:</p>
+
+                    <div style='background: linear-gradient(135deg, #111827, #374151); color: #ffffff; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0;'>
+                        <div style='font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af;'>Hạng Thành Viên</div>
+                        <div style='font-size: 24px; font-weight: 900; color: #fbbf24; margin: 6px 0; letter-spacing: 1px;'>{tierName.ToUpper()}</div>
+                        <div style='font-size: 13px; color: #e5e7eb;'>Áp dụng tại: <strong>{gymName}</strong></div>
+                    </div>
+
+                    <div style='background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;'>
+                        <h4 style='margin: 0 0 10px; color: #111827; font-size: 14px;'>ĐẶC QUYỀN VIP CỦA BẠN:</h4>
+                        {discountText}
+                        {benefitText}
+                        <p style='margin: 6px 0; font-size: 13px; color: #4b5563;'>Hệ thống sẽ tự động áp dụng ưu đãi này mỗi khi bạn đăng ký hoặc gia hạn gói tập tại {gymName}.</p>
+                    </div>
+
+                    <p style='font-size: 14px; color: #374151;'>Cảm ơn bạn đã luôn đồng hành và tập luyện chăm chỉ cùng chúng tôi. Chúc bạn luôn tràn đầy năng lượng và đạt được những mục tiêu thể hình tuyệt vời!</p>
+
+                    <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;' />
+                    <p style='font-size: 12px; color: #9ca3af; text-align: center; margin: 0;'>GymPro Management System • Thông báo tự động từ cơ sở đối tác</p>
+                </div>";
+
+            await SendEmailAsync(toEmail, subject, body);
+        }
     }
 }

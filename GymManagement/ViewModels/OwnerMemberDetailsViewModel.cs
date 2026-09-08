@@ -20,6 +20,16 @@ namespace GymManagement.ViewModels
         public decimal TotalSpent { get; set; }
         public int TotalPurchases { get; set; }
 
+        // ── VIP Loyalty Status (Module 3) ──
+        public bool IsVip => CurrentTierId.HasValue;
+        public int? CurrentTierId { get; set; }
+        public string? VipTierName { get; set; }
+        public string? VipBadgeColor { get; set; }
+        public decimal? VipDiscountPercent { get; set; }
+        public string? VipBenefitDescription { get; set; }
+        public int VipTotalPurchaseCount { get; set; }
+        public DateTime? VipAchievedAt { get; set; }
+
         // ── Lịch sử mua gói / vé tại Gym này ──
         public List<OwnerMemberPurchaseHistoryItem> PurchaseHistory { get; set; } = new();
     }

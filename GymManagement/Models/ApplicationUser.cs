@@ -16,5 +16,6 @@ namespace GymManagement.Models
         public ICollection<Transaction> Transactions { get; set; }
         public ICollection<MemberSuspension> Suspensions { get; set; } = new List<MemberSuspension>();
         public ICollection<MemberSuspension> ExecutedSuspensions { get; set; } = new List<MemberSuspension>();
+        public ICollection<MemberVipStatus> MemberVipStatuses { get; set; } = new List<MemberVipStatus>();
     }
 }

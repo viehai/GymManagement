@@ -11,8 +11,8 @@
 |---|--------|--------|-------------|------------|
 | 1 | 🖼️ Multi-Image Gallery | ⭐⭐ | Owner upload nhiều ảnh cho Gym, kéo thả sắp xếp, gallery carousel | ✅ **Hoàn thành** |
 | 2 | 🚫 Đình Chỉ Hội Viên | ⭐⭐ | Owner tạm đình chỉ / cấm vĩnh viễn Member vi phạm tại gym | ✅ **Hoàn thành** |
-| 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng | ⏳ Tiếp theo |
-| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên | ⏸️ Chưa làm |
+| 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng | ✅ **Hoàn thành** |
+| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên | ⏳ Tiếp theo |
 | 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập | ⏸️ Chưa làm |
 | 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) | ⏸️ Chưa làm |
 | 7 | 📊 Nâng cấp Dashboard & Báo cáo | ⭐⭐ | Biểu đồ nâng cao, thống kê VIP, xuất báo cáo Excel/PDF | ⏸️ Chưa làm |
@@ -101,16 +101,16 @@
 
 ---
 
-## MODULE 3: 👑 VIP LOYALTY SYSTEM
+## MODULE 3: 👑 VIP LOYALTY SYSTEM — ✅ [ĐÃ HOÀN THÀNH]
 
 ### 3.1 Ý tưởng
 - Hội viên mua vé đạt ngưỡng do Owner cài đặt → tự động được **thăng hạng VIP** tại gym đó
 - VIP là **theo từng Gym** (1 Member có thể là VIP tại gym A nhưng thường ở gym B)
 - Owner tự quyết ngưỡng, phần thưởng, và chính sách VIP
 
-### 3.2 Giải pháp V2
+### 3.2 Giải pháp V2 (Đã triển khai)
 
-#### Database — Entities mới
+#### Database — Entities mới (Đã áp dụng Migration `AddVipLoyaltySystem`)
 
 **`VipTierSetting.cs`** — Owner cấu hình các mức VIP
 
@@ -138,15 +138,16 @@
 | `AchievedAt` | DateTime? | Thời điểm đạt hạng hiện tại |
 | `LastPurchaseAt` | DateTime? | Lần mua gần nhất |
 
-#### Functions mới
+#### Functions đã hoàn thành
 
-| Mã | Function | Screen | Mô tả |
-|----|----------|--------|-------|
-| OWN-26 | Cấu hình VIP Tiers | `OwnerVip/Settings/{gymId}` | Tạo/sửa/xóa các mức VIP, set ngưỡng mua, giảm giá, quyền lợi |
-| OWN-27 | Xem danh sách VIP Members | `OwnerVip/Members/{gymId}` | Danh sách hội viên VIP, lọc theo tier, tổng mua |
-| OWN-28 | Xem chi tiết VIP 1 hội viên | `OwnerMember/Details/{id}` (nâng cấp) | Thêm badge VIP, lịch sử thăng hạng, quyền lợi hiện tại |
-| MEM-18 | Xem hạng VIP của tôi | `Member/MyVipStatus` | Danh sách gym đang có VIP, hạng, tiến trình đến hạng kế tiếp |
-| MEM-19 | Xem quyền lợi VIP | `Member/VipBenefits/{gymId}` | Chi tiết quyền lợi: % giảm giá, ưu tiên... |
+| Mã | Function | Screen | Trạng thái | Mô tả |
+|----|----------|--------|------------|-------|
+| OWN-26 | Cấu hình VIP Tiers | `OwnerVip/Settings` | [x] Hoàn thành | Tạo/sửa/xóa các mức VIP, set ngưỡng mua, giảm giá, quyền lợi, khởi tạo mẫu 3 hạng Bạc/Vàng/Kim Cương |
+| OWN-27 | Xem danh sách VIP Members | `OwnerVip/Members` | [x] Hoàn thành | Danh sách hội viên VIP, lọc theo gym và tier, tổng lượt mua, ngày đạt hạng |
+| OWN-28 | Xem chi tiết VIP 1 hội viên | `OwnerMember/Details` | [x] Hoàn thành | Huy hiệu VIP cạnh tên, card tóm tắt hạng VIP, % giảm giá áp dụng, lịch sử mua |
+| MEM-18 | Xem hạng VIP của tôi | `Member/MyVipStatus` | [x] Hoàn thành | Danh sách gym có VIP, hạng hiện tại, thanh tiến trình % và số lượt mua cần thêm để thăng hạng kế tiếp |
+| MEM-19 | Xem quyền lợi VIP | `Member/VipBenefits/{gymId}` | [x] Hoàn thành | Bảng đặc quyền công khai theo từng cơ sở, danh sách mức chiết khấu và quyền lợi |
+| PUR-VIP | Tự động giảm giá & thăng hạng | `PurchaseController` | [x] Hoàn thành | Tự động tính chiết khấu khi mua/gia hạn vé, thăng hạng tự động khi nhận webhook thanh toán, gửi email chúc mừng và ghi SystemLog |
 
 #### Business Rules & Logic thăng hạng
 ```
