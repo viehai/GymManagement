@@ -1,133 +1,583 @@
+@model GymManagement.ViewModels.AdminDashboardViewModel
+
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Dashboard Quản trị";
     Layout = "_AdminLayout";
-    var recentGyms = ViewBag.RecentGyms as List<GymManagement.Models.Gym> ?? new List<GymManagement.Models.Gym>();
 }
 
+<style>
+    /* ═══════════════════════════════════════════════
+       ADMIN DASHBOARD — NIKE BRUTAL MINIMALISM
+    ═══════════════════════════════════════════════ */
+    .admin-kpi-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 1.25rem 1.4rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .admin-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -4px rgba(0,0,0,0.06);
+    }
+    .admin-kpi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.35rem;
+    }
+    .admin-kpi-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+    .admin-kpi-val {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.65rem;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        line-height: 1.15;
+        color: #111;
+        margin-bottom: 0.35rem;
+    }
+    .admin-kpi-sub {
+        font-size: 0.74rem;
+        color: #9ca3af;
+        margin: 0;
+    }
+
+    .trend-badge {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+    .trend-badge.up { background: #d1fae5; color: #065f46; }
+    .trend-badge.down { background: #fee2e2; color: #991b1b; }
+    .trend-badge.neutral { background: #f3f4f6; color: #4b5563; }
+
+    .btn-admin-export {
+        background: #10b981;
+        color: #fff;
+        border: 1px solid #10b981;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .btn-admin-export:hover {
+        background: #059669;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+</style>
+
+<!-- ═══════════════════════════════════════════════
+     HEADER & ACTIONS
+═══════════════════════════════════════════════ -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h1 style="font-family:'Montserrat',sans-serif; font-size:1.35rem; font-weight:900; color:#111; margin:0 0 4px; letter-spacing:-0.5px;">
+            DASHBOARD QUẢN TRỊ HỆ THỐNG
+        </h1>
+        <p style="margin:0; font-size:0.82rem; color:#6b7280;">
+            Báo cáo tổng quan toàn sàn GymPro: tài chính, phòng gym, hội viên VIP, kỷ luật và xuất báo cáo Excel (.xlsx).
+        </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a asp-action="ExportSystemReportExcel" class="btn-admin-export" title="Xuất báo cáo hệ thống Excel">
+            <i class="bi bi-file-earmark-spreadsheet-fill"></i> Xuất Báo Cáo Hệ Thống (.xlsx)
+        </a>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     6 THẺ CHỈ SỐ TOÀN SÀN (KPIS)
+═══════════════════════════════════════════════ -->
 <div class="row g-3 mb-4">
-    <!-- Stat: Tổng Gym -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(99,102,241,0.1);color:#6366f1;">
-                <i class="bi bi-building"></i>
+    <!-- KPI 1: Tổng GMV Sàn -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="admin-kpi-card" style="border-left:4px solid #10b981;">
+            <div>
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">Tổng GMV toàn hệ thống</span>
+                    <i class="bi bi-cash-coin text-success fs-5"></i>
+                </div>
+                <div class="admin-kpi-val text-success">
+                    @Model.TotalGMV.ToString("N0") <span style="font-size:0.9rem; font-weight:700;">VNĐ</span>
+                </div>
             </div>
-            <div class="stat-value">@ViewBag.TotalGyms</div>
-            <div class="stat-label">Tổng phòng Gym</div>
+            <p class="admin-kpi-sub d-flex align-items-center justify-content-between">
+                <span>Tháng này: <strong>@Model.ThisMonthGMV.ToString("N0") VNĐ</strong></span>
+                @if (Model.GrowthRateMoM > 0)
+                {
+                    <span class="trend-badge up"><i class="bi bi-arrow-up-right"></i> +@Model.GrowthRateMoM%</span>
+                }
+                else if (Model.GrowthRateMoM < 0)
+                {
+                    <span class="trend-badge down"><i class="bi bi-arrow-down-right"></i> @Model.GrowthRateMoM%</span>
+                }
+                else
+                {
+                    <span class="trend-badge neutral">0.0%</span>
+                }
+            </p>
         </div>
     </div>
-    <!-- Stat: Chờ duyệt -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b;">
-                <i class="bi bi-hourglass-split"></i>
+
+    <!-- KPI 2: Cơ sở Phòng Gym -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="admin-kpi-card" style="border-left:4px solid #6366f1;">
+            <div>
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">Cơ sở Phòng Gym</span>
+                    <i class="bi bi-building text-indigo fs-5"></i>
+                </div>
+                <div class="admin-kpi-val">
+                    @Model.TotalGyms <span style="font-size:0.85rem; font-weight:600; color:#6b7280;">cơ sở</span>
+                </div>
             </div>
-            <div class="stat-value">@ViewBag.PendingGyms</div>
-            <div class="stat-label">Chờ phê duyệt</div>
+            <p class="admin-kpi-sub">
+                <span class="text-success fw-bold">@Model.ApprovedGyms</span> Đã duyệt &bull;
+                <span class="text-warning fw-bold">@Model.PendingGyms</span> Chờ duyệt &bull;
+                <span class="text-danger fw-bold">@Model.RejectedGyms</span> Từ chối
+            </p>
         </div>
     </div>
-    <!-- Stat: Đã duyệt -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(16,185,129,0.1);color:#10b981;">
-                <i class="bi bi-check-circle"></i>
+
+    <!-- KPI 3: Người dùng hệ thống -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="admin-kpi-card" style="border-left:4px solid #3b82f6;">
+            <div>
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">Tổng người dùng</span>
+                    <i class="bi bi-people text-primary fs-5"></i>
+                </div>
+                <div class="admin-kpi-val">
+                    @Model.TotalUsers <span style="font-size:0.85rem; font-weight:600; color:#6b7280;">tài khoản</span>
+                </div>
             </div>
-            <div class="stat-value">@ViewBag.ApprovedGyms</div>
-            <div class="stat-label">Đã phê duyệt</div>
+            <p class="admin-kpi-sub">
+                <strong>@Model.TotalMembers</strong> Hội viên &bull; <strong>@Model.TotalOwners</strong> Chủ phòng Gym
+            </p>
         </div>
     </div>
-    <!-- Stat: Tổng User -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
-                <i class="bi bi-people"></i>
+
+    <!-- KPI 4: Giao dịch thành công -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="admin-kpi-card" style="border-left:4px solid #8b5cf6;">
+            <div>
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">Giao dịch thành công</span>
+                    <i class="bi bi-receipt-cutoff text-purple fs-5"></i>
+                </div>
+                <div class="admin-kpi-val">
+                    @Model.TotalTransactions <span style="font-size:0.85rem; font-weight:600; color:#6b7280;">lượt mua</span>
+                </div>
             </div>
-            <div class="stat-value">@ViewBag.TotalUsers</div>
-            <div class="stat-label">Tổng người dùng</div>
+            <p class="admin-kpi-sub">
+                Đơn hàng mua vé & gói tập toàn sàn
+            </p>
+        </div>
+    </div>
+
+    <!-- KPI 5: Hội viên VIP Loyalty -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="admin-kpi-card" style="border-left:4px solid #f59e0b;">
+            <div>
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">Hội viên VIP toàn sàn</span>
+                    <i class="bi bi-crown text-warning fs-5"></i>
+                </div>
+                <div class="admin-kpi-val text-warning">
+                    @Model.TotalVipMembers <span style="font-size:0.85rem; font-weight:600; color:#6b7280;">thành viên</span>
+                </div>
+            </div>
+            <p class="admin-kpi-sub">
+                Silver: <strong>@Model.SilverVipCount</strong> &bull; Gold: <strong>@Model.GoldVipCount</strong> &bull; Platinum: <strong>@Model.PlatinumVipCount</strong>
+            </p>
+        </div>
+    </div>
+
+    <!-- KPI 6: Kỷ luật & Đình chỉ -->
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="admin-kpi-card" style="border-left:4px solid #ef4444;">
+            <div>
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">Lệnh đình chỉ / Kỷ luật</span>
+                    <i class="bi bi-slash-circle text-danger fs-5"></i>
+                </div>
+                <div class="admin-kpi-val text-danger">
+                    @Model.TotalActiveSuspensions <span style="font-size:0.85rem; font-weight:600; color:#6b7280;">đang hiệu lực</span>
+                </div>
+            </div>
+            <p class="admin-kpi-sub">
+                Đã gỡ bỏ: <strong>@Model.TotalLiftedSuspensions</strong> trường hợp
+            </p>
         </div>
     </div>
 </div>
 
-<!-- Quick actions -->
-<div class="row g-3 mb-4">
-    <div class="col-12">
-        <div class="content-card">
-            <div class="content-card-header">
-                <h5><i class="bi bi-lightning-charge me-2"></i>Thao tác nhanh</h5>
+<!-- ═══════════════════════════════════════════════
+     BIỂU ĐỒ HỆ THỐNG (CHART.JS)
+═══════════════════════════════════════════════ -->
+<div class="row g-4 mb-4">
+    <!-- Biểu đồ Doanh thu toàn sàn 6 tháng -->
+    <div class="col-12 col-lg-8">
+        <div class="content-card h-100">
+            <div class="content-card-header d-flex justify-content-between align-items-center">
+                <h5 class="content-card-title">
+                    <i class="bi bi-graph-up-arrow me-2"></i>Doanh thu Toàn sàn (6 tháng gần nhất)
+                </h5>
+                <span style="font-size:0.72rem; color:#6b7280; font-weight:600;">(Đơn vị: VNĐ)</span>
             </div>
-            <div class="content-card-body" style="padding:1.2rem 1.5rem;">
-                <div class="d-flex flex-wrap gap-2">
-                    <a asp-action="PendingGyms" class="btn-admin-primary">
-                        <i class="bi bi-hourglass-split"></i>
-                        Xem Gym chờ duyệt
-                        @if (ViewBag.PendingGyms > 0)
-                        {
-                            <span class="badge rounded-pill ms-1" style="background:#ff3e3e;font-size:0.65rem;">@ViewBag.PendingGyms</span>
-                        }
-                    </a>
-                    <a asp-action="AllGyms" style="background:#fff;color:#111;border:1px solid #d1d5db;padding:0.55rem 1.2rem;border-radius:6px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.78rem;letter-spacing:0.8px;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                        <i class="bi bi-building"></i> Tất cả Gym
-                    </a>
+            <div class="content-card-body" style="padding:1.4rem;">
+                <div style="height:270px; position:relative;">
+                    <canvas id="adminRevenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ Donut: Trạng thái duyệt phòng Gym -->
+    <div class="col-12 col-lg-4">
+        <div class="content-card h-100">
+            <div class="content-card-header">
+                <h5 class="content-card-title">
+                    <i class="bi bi-pie-chart-fill me-2"></i>Cơ cấu Trạng thái Gym
+                </h5>
+            </div>
+            <div class="content-card-body" style="padding:1.2rem;">
+                <div style="height:210px; position:relative;" class="mb-3">
+                    <canvas id="gymStatusChart"></canvas>
+                </div>
+                <div class="d-flex flex-column gap-2 border-top pt-2" style="font-size:0.78rem;">
+                    <div class="d-flex justify-content-between">
+                        <span><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981;" class="me-2"></span>Đã phê duyệt</span>
+                        <strong>@Model.ApprovedGyms cơ sở</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#f59e0b;" class="me-2"></span>Chờ phê duyệt</span>
+                        <strong>@Model.PendingGyms cơ sở</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ef4444;" class="me-2"></span>Từ chối</span>
+                        <strong>@Model.RejectedGyms cơ sở</strong>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Recent gyms -->
-<div class="content-card">
-    <div class="content-card-header">
-        <h5><i class="bi bi-clock-history me-2"></i>Phòng Gym đăng ký gần đây</h5>
-        <a asp-action="AllGyms" style="font-size:0.78rem;color:#6366f1;text-decoration:none;font-weight:600;">Xem tất cả</a>
-    </div>
-    <div class="content-card-body">
-        @if (!recentGyms.Any())
-        {
-            <div class="text-center py-5" style="color:#bbb;">
-                <i class="bi bi-inbox" style="font-size:2.5rem;"></i>
-                <p class="mt-2" style="font-size:0.85rem;">Chưa có dữ liệu.</p>
+<!-- ═══════════════════════════════════════════════
+     BẢNG TOP PHÒNG GYM & CẢNH BÁO RỦI RO ĐÌNH CHỈ
+═══════════════════════════════════════════════ -->
+<div class="row g-4 mb-4">
+    <!-- Top 5 Phòng Gym doanh thu cao nhất -->
+    <div class="col-12 col-lg-7">
+        <div class="content-card h-100">
+            <div class="content-card-header d-flex justify-content-between align-items-center">
+                <h5 class="content-card-title">
+                    <i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Phòng Gym Doanh thu cao nhất
+                </h5>
+                <a asp-action="AllGyms" style="font-size:0.78rem; font-weight:700; color:#111; text-decoration:none;">
+                    Tất cả Gym &rarr;
+                </a>
             </div>
+            <div class="content-card-body p-0">
+                @if (!Model.TopGymsByRevenue.Any())
+                {
+                    <div class="text-center py-4 text-muted small">Chưa có dữ liệu phòng gym.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="font-size:0.82rem;">
+                            <thead>
+                                <tr style="font-size:0.75rem; color:#6b7280; background:#f9fafb;">
+                                    <th style="width:36px;">#</th>
+                                    <th>Cơ sở Gym</th>
+                                    <th>Chủ phòng</th>
+                                    <th>Hội viên</th>
+                                    <th class="text-end">Doanh thu sàn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var (gym, idx) in Model.TopGymsByRevenue.Select((g, i) => (g, i + 1)))
+                                {
+                                    <tr>
+                                        <td>
+                                            <span style="font-family:'Montserrat',sans-serif; font-weight:800; color:#888;">#@idx</span>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight:700; color:#111;">@gym.GymName</div>
+                                            <div style="font-size:0.7rem; color:#6b7280; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                @gym.Address
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span style="color:#374151;">@gym.OwnerName</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@gym.TotalMembers HV</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div style="font-family:'Montserrat',sans-serif; font-weight:900; color:#10b981; font-size:0.88rem;">
+                                                @gym.TotalRevenue.ToString("N0") đ
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Cảnh báo vi phạm & Đình chỉ nhiều nhất -->
+    <div class="col-12 col-lg-5">
+        <div class="content-card h-100">
+            <div class="content-card-header d-flex justify-content-between align-items-center">
+                <h5 class="content-card-title">
+                    <i class="bi bi-shield-exclamation text-danger me-2"></i>Cơ sở có Vi phạm / Đình chỉ
+                </h5>
+                <a asp-controller="AdminSuspension" asp-action="Index" style="font-size:0.78rem; font-weight:700; color:#ef4444; text-decoration:none;">
+                    Quản lý đình chỉ &rarr;
+                </a>
+            </div>
+            <div class="content-card-body p-0">
+                @if (!Model.TopGymsBySuspensions.Any())
+                {
+                    <div class="text-center py-4 text-muted small">
+                        <i class="bi bi-check-circle text-success fs-4 d-block mb-1"></i>
+                        Hệ thống hoạt động tốt, chưa có cơ sở nào phát sinh vi phạm.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="font-size:0.82rem;">
+                            <thead>
+                                <tr style="font-size:0.75rem; color:#6b7280; background:#f9fafb;">
+                                    <th>Cơ sở</th>
+                                    <th class="text-center">Đang hiệu lực</th>
+                                    <th class="text-end">Tổng số ca</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var susp in Model.TopGymsBySuspensions)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:700; color:#111;">@susp.GymName</div>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (susp.ActiveSuspensionsCount > 0)
+                                            {
+                                                <span class="badge bg-danger">@susp.ActiveSuspensionsCount lệnh</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-muted border">0</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <span style="font-weight:600; color:#6b7280;">@susp.TotalSuspensionsCount ca</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CƠ SỞ PHÒNG GYM ĐĂNG KÝ GẦN ĐÂY
+═══════════════════════════════════════════════ -->
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <h5 class="content-card-title"><i class="bi bi-clock-history me-2"></i>Phòng Gym đăng ký gần đây</h5>
+        <a asp-action="PendingGyms" style="font-size:0.78rem; font-weight:700; color:#6366f1; text-decoration:none;">
+            Duyệt đơn chờ (@Model.PendingGyms) &rarr;
+        </a>
+    </div>
+    <div class="content-card-body p-0">
+        @if (!Model.RecentGyms.Any())
+        {
+            <div class="text-center py-4 text-muted small">Chưa có cơ sở nào đăng ký.</div>
         }
         else
         {
-            <table class="data-table w-100">
-                <thead>
-                    <tr>
-                        <th>Tên Gym</th>
-                        <th>Chủ sở hữu</th>
-                        <th>Địa chỉ</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày đăng ký</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var gym in recentGyms)
-                    {
-                        string badgeCls = gym.Status switch {
-                            "Approved" => "badge-approved",
-                            "Rejected" => "badge-rejected",
-                            "Pending"  => "badge-pending",
-                            _          => "badge-pending"
-                        };
-                        string statusText = gym.Status switch {
-                            "Approved" => "Đã duyệt",
-                            "Rejected" => "Từ chối",
-                            "Pending"  => "Chờ duyệt",
-                            _          => gym.Status
-                        };
-                        <tr>
-                            <td>
-                                <div style="font-weight:600;color:#111;">@gym.Name</div>
-                            </td>
-                            <td>@(gym.Owner?.FullName ?? "—")</td>
-                            <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@gym.Address</td>
-                            <td>
-                                <span class="badge-status @badgeCls">@statusText</span>
-                            </td>
-                            <td style="font-size:0.8rem;color:#888;">@gym.CreatedAt.ToString("dd/MM/yyyy")</td>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" style="font-size:0.82rem;">
+                    <thead>
+                        <tr style="font-size:0.75rem; color:#6b7280; background:#f9fafb;">
+                            <th>Tên Phòng Gym</th>
+                            <th>Chủ sở hữu</th>
+                            <th>Địa chỉ</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày đăng ký</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var gym in Model.RecentGyms)
+                        {
+                            string badgeCls = gym.Status switch {
+                                "Approved" => "bg-success",
+                                "Rejected" => "bg-danger",
+                                "Pending"  => "bg-warning text-dark",
+                                _          => "bg-secondary"
+                            };
+                            string statusText = gym.Status switch {
+                                "Approved" => "Đã duyệt",
+                                "Rejected" => "Từ chối",
+                                "Pending"  => "Chờ duyệt",
+                                _          => gym.Status
+                            };
+                            <tr>
+                                <td>
+                                    <div style="font-weight:700; color:#111;">@gym.Name</div>
+                                </td>
+                                <td>@(gym.Owner?.FullName ?? gym.Owner?.UserName ?? "—")</td>
+                                <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#6b7280;">
+                                    @gym.Address
+                                </td>
+                                <td>
+                                    <span class="badge @badgeCls" style="font-size:0.7rem;">@statusText</span>
+                                </td>
+                                <td style="color:#888; font-size:0.78rem;">@gym.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════
+     CHART.JS SCRIPTS
+═══════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ── 1. Biểu đồ Doanh thu toàn sàn 6 tháng ──
+        var adminMonths = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenueChart.Select(m => m.MonthLabel)));
+        var adminRevs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenueChart.Select(m => m.Revenue)));
+
+        var ctxAdminRev = document.getElementById('adminRevenueChart');
+        if (ctxAdminRev) {
+            new Chart(ctxAdminRev, {
+                type: 'line',
+                data: {
+                    labels: adminMonths,
+                    datasets: [{
+                        label: 'Doanh thu sàn (VNĐ)',
+                        data: adminRevs,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Tổng GMV: ' + Number(context.raw).toLocaleString('vi-VN') + ' VNĐ';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#f3f4f6' },
+                            ticks: {
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + ' tr';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + ' k';
+                                    return val;
+                                },
+                                font: { family: 'Inter', size: 10 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Montserrat', size: 10, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── 2. Biểu đồ Donut: Trạng thái duyệt phòng Gym ──
+        var ctxGymStatus = document.getElementById('gymStatusChart');
+        if (ctxGymStatus) {
+            new Chart(ctxGymStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Đã duyệt', 'Chờ duyệt', 'Từ chối'],
+                    datasets: [{
+                        data: [@Model.ApprovedGyms, @Model.PendingGyms, @Model.RejectedGyms],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + ' cơ sở';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>

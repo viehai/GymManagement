@@ -1,6 +1,7 @@
 using GymManagement.Helpers;
 using GymManagement.Hubs;
 using GymManagement.Models;
+using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -29,23 +30,232 @@ namespace GymManagement.Controllers
             _hub = hub;
         }
 
-        // ==================== DASHBOARD ====================
+        // ==================== DASHBOARD TOÀN SÀN ====================
         public async Task<IActionResult> Dashboard()
         {
-            ViewBag.TotalGyms = await _context.Gyms.CountAsync();
-            ViewBag.PendingGyms = await _context.Gyms.CountAsync(g => g.Status == "Pending");
-            ViewBag.ApprovedGyms = await _context.Gyms.CountAsync(g => g.Status == "Approved");
-            ViewBag.RejectedGyms = await _context.Gyms.CountAsync(g => g.Status == "Rejected");
-            ViewBag.TotalUsers = await _userManager.Users.CountAsync();
+            var now = VnTime.Now;
+            var startOfThisMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfLastMonth = startOfThisMonth.AddMonths(-1);
+            var endOfLastMonth   = startOfThisMonth.AddTicks(-1);
 
-            var recentGyms = await _context.Gyms
-                .Include(g => g.Owner)
-                .OrderByDescending(g => g.CreatedAt)
-                .Take(5)
+            // 1. Thống kê Gym
+            int totalGyms    = await _context.Gyms.CountAsync();
+            int pendingGyms  = await _context.Gyms.CountAsync(g => g.Status == "Pending");
+            int approvedGyms = await _context.Gyms.CountAsync(g => g.Status == "Approved");
+            int rejectedGyms = await _context.Gyms.CountAsync(g => g.Status == "Rejected");
+
+            // 2. Thống kê User
+            int totalUsers   = await _userManager.Users.CountAsync();
+            int totalOwners  = await _context.Gyms.Select(g => g.OwnerId).Distinct().CountAsync();
+            int totalMembers = Math.Max(0, totalUsers - totalOwners - 1); // Trừ owner và admin
+
+            // 3. Tài chính toàn sàn
+            var successTxs = await _context.Transactions
+                .Where(t => t.Status == "Success")
+                .Select(t => new { t.Amount, t.CreatedAt, GymId = t.Membership != null ? t.Membership.GymId : 0 })
                 .ToListAsync();
 
-            ViewBag.RecentGyms = recentGyms;
-            return View();
+            decimal totalGMV = successTxs.Sum(t => t.Amount);
+            decimal thisMonthGMV = successTxs.Where(t => t.CreatedAt >= startOfThisMonth).Sum(t => t.Amount);
+            decimal lastMonthGMV = successTxs.Where(t => t.CreatedAt >= startOfLastMonth && t.CreatedAt <= endOfLastMonth).Sum(t => t.Amount);
+
+            double growthMoM = 0.0;
+            if (lastMonthGMV > 0)
+            {
+                growthMoM = (double)((thisMonthGMV - lastMonthGMV) / lastMonthGMV) * 100.0;
+            }
+            else if (thisMonthGMV > 0)
+            {
+                growthMoM = 100.0;
+            }
+
+            // 4. VIP toàn sàn
+            var vipStatuses = await _context.MemberVipStatuses
+                .Include(v => v.CurrentTier)
+                .ToListAsync();
+            int silverCount = vipStatuses.Count(v => v.CurrentTier?.TierName?.ToLower().Contains("silver") == true || v.CurrentTier?.TierName?.ToLower().Contains("bạc") == true);
+            int goldCount = vipStatuses.Count(v => v.CurrentTier?.TierName?.ToLower().Contains("gold") == true || v.CurrentTier?.TierName?.ToLower().Contains("vàng") == true);
+            int platinumCount = vipStatuses.Count(v => v.CurrentTier?.TierName?.ToLower().Contains("platinum") == true || v.CurrentTier?.TierName?.ToLower().Contains("bạch kim") == true || v.CurrentTier?.TierName?.ToLower().Contains("kim cương") == true);
+            int totalVip = vipStatuses.Count(v => v.CurrentTier != null);
+
+            // 5. Kỷ luật & Đình chỉ
+            int activeSuspensions = await _context.MemberSuspensions.CountAsync(s => s.Status == "Active");
+            int liftedSuspensions = await _context.MemberSuspensions.CountAsync(s => s.Status == "Lifted");
+
+            // 6. Biểu đồ Doanh thu toàn sàn 6 tháng gần nhất
+            var monthlyChart = new List<MonthlyRevenueItem>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var mStart = startOfThisMonth.AddMonths(-i);
+                var mEnd   = mStart.AddMonths(1).AddTicks(-1);
+
+                var monthTxs = successTxs.Where(t => t.CreatedAt >= mStart && t.CreatedAt <= mEnd).ToList();
+                monthlyChart.Add(new MonthlyRevenueItem
+                {
+                    MonthLabel       = $"T{mStart.Month}/{mStart.Year}",
+                    Revenue          = monthTxs.Sum(t => t.Amount),
+                    TransactionCount = monthTxs.Count
+                });
+            }
+
+            // 7. Top 5 Phòng Gym doanh thu cao nhất
+            var gyms = await _context.Gyms
+                .Include(g => g.Owner)
+                .Include(g => g.MembershipPackages)
+                .Include(g => g.MemberMemberships)
+                .ToListAsync();
+
+            var topGymsByRevenue = gyms
+                .Select(g =>
+                {
+                    decimal rev = successTxs.Where(t => t.GymId == g.Id).Sum(t => t.Amount);
+                    int members = g.MemberMemberships?.Select(m => m.MemberId).Distinct().Count() ?? 0;
+                    return new AdminTopGymItemViewModel
+                    {
+                        GymId         = g.Id,
+                        GymName       = g.Name,
+                        OwnerName     = g.Owner?.FullName ?? g.Owner?.UserName ?? "—",
+                        Address       = g.Address,
+                        TotalRevenue  = rev,
+                        TotalMembers  = members,
+                        TotalPackages = g.MembershipPackages?.Count ?? 0
+                    };
+                })
+                .OrderByDescending(g => g.TotalRevenue)
+                .Take(5)
+                .ToList();
+
+            // 8. Top 5 Cơ sở có nhiều ca đình chỉ nhất (Cảnh báo rủi ro)
+            var suspensions = await _context.MemberSuspensions.ToListAsync();
+            var topSuspensionGyms = suspensions
+                .GroupBy(s => s.GymId)
+                .Select(grp =>
+                {
+                    var gymObj = gyms.FirstOrDefault(g => g.Id == grp.Key);
+                    return new AdminGymSuspensionItemViewModel
+                    {
+                        GymId                  = grp.Key,
+                        GymName                = gymObj?.Name ?? $"Gym #{grp.Key}",
+                        ActiveSuspensionsCount = grp.Count(s => s.Status == "Active"),
+                        TotalSuspensionsCount  = grp.Count()
+                    };
+                })
+                .OrderByDescending(g => g.ActiveSuspensionsCount)
+                .ThenByDescending(g => g.TotalSuspensionsCount)
+                .Take(5)
+                .ToList();
+
+            // 9. Cơ sở đăng ký gần nhất
+            var recentGyms = gyms.OrderByDescending(g => g.CreatedAt).Take(5).ToList();
+
+            // Đồng bộ ViewBag cho layout/sidebar
+            ViewBag.TotalGyms    = totalGyms;
+            ViewBag.PendingGyms  = pendingGyms;
+            ViewBag.ApprovedGyms = approvedGyms;
+            ViewBag.RejectedGyms = rejectedGyms;
+            ViewBag.TotalUsers   = totalUsers;
+            ViewBag.RecentGyms   = recentGyms;
+            ViewBag.PendingBadge = pendingGyms;
+
+            var vm = new AdminDashboardViewModel
+            {
+                TotalGMV                 = totalGMV,
+                ThisMonthGMV             = thisMonthGMV,
+                LastMonthGMV             = lastMonthGMV,
+                GrowthRateMoM            = Math.Round(growthMoM, 1),
+                TotalTransactions        = successTxs.Count,
+                TotalGyms                = totalGyms,
+                ApprovedGyms             = approvedGyms,
+                PendingGyms              = pendingGyms,
+                RejectedGyms             = rejectedGyms,
+                TotalUsers               = totalUsers,
+                TotalMembers             = totalMembers,
+                TotalOwners              = totalOwners,
+                TotalVipMembers          = totalVip,
+                SilverVipCount           = silverCount,
+                GoldVipCount             = goldCount,
+                PlatinumVipCount         = platinumCount,
+                TotalActiveSuspensions   = activeSuspensions,
+                TotalLiftedSuspensions   = liftedSuspensions,
+                MonthlyRevenueChart      = monthlyChart,
+                TopGymsByRevenue         = topGymsByRevenue,
+                TopGymsBySuspensions     = topSuspensionGyms,
+                RecentGyms               = recentGyms
+            };
+
+            return View(vm);
+        }
+
+        // ==================== XUẤT EXCEL BÁO CÁO HỆ THỐNG TOÀN DIỆN ====================
+        [HttpGet]
+        public async Task<IActionResult> ExportSystemReportExcel()
+        {
+            var now = VnTime.Now;
+            var startOfThisMonth = new DateTime(now.Year, now.Month, 1);
+
+            var successTxs = await _context.Transactions
+                .Where(t => t.Status == "Success")
+                .Select(t => new { t.Amount, t.CreatedAt, GymId = t.Membership != null ? t.Membership.GymId : 0 })
+                .ToListAsync();
+
+            var gyms = await _context.Gyms
+                .Include(g => g.Owner)
+                .Include(g => g.MembershipPackages)
+                .ToListAsync();
+
+            var users = await _userManager.Users.ToListAsync();
+            int totalOwners = gyms.Select(g => g.OwnerId).Distinct().Count();
+            int totalMembers = Math.Max(0, users.Count - totalOwners - 1);
+
+            var suspensions = await _context.MemberSuspensions
+                .Include(s => s.Member)
+                .Include(s => s.Gym)
+                .ToListAsync();
+
+            var exportData = new AdminSystemExportData
+            {
+                TotalGMV                = successTxs.Sum(t => t.Amount),
+                ThisMonthGMV            = successTxs.Where(t => t.CreatedAt >= startOfThisMonth).Sum(t => t.Amount),
+                TotalTransactions       = successTxs.Count,
+                TotalGyms               = gyms.Count,
+                ApprovedGyms            = gyms.Count(g => g.Status == "Approved"),
+                PendingGyms             = gyms.Count(g => g.Status == "Pending"),
+                RejectedGyms            = gyms.Count(g => g.Status == "Rejected"),
+                TotalUsers              = users.Count,
+                TotalMembers            = totalMembers,
+                TotalOwners             = totalOwners,
+                TotalVipMembers         = await _context.MemberVipStatuses.CountAsync(),
+                TotalActiveSuspensions  = suspensions.Count(s => s.Status == "Active"),
+                Gyms = gyms.Select(g => new AdminGymExportRow
+                {
+                    Id            = g.Id,
+                    Name          = g.Name,
+                    OwnerName     = g.Owner?.FullName ?? g.Owner?.UserName ?? "—",
+                    OwnerEmail    = g.Owner?.Email ?? "—",
+                    Address       = g.Address,
+                    Status        = g.Status,
+                    CreatedAt     = g.CreatedAt,
+                    TotalRevenue  = successTxs.Where(t => t.GymId == g.Id).Sum(t => t.Amount),
+                    TotalPackages = g.MembershipPackages?.Count ?? 0
+                }).ToList(),
+                Suspensions = suspensions.Select(s => new AdminSuspensionExportRow
+                {
+                    Id             = s.Id,
+                    MemberName     = s.Member?.FullName ?? s.Member?.UserName ?? "—",
+                    MemberEmail    = s.Member?.Email ?? "—",
+                    GymName        = s.Gym?.Name ?? "—",
+                    SuspensionType = s.SuspensionType,
+                    StartDate      = s.StartDate,
+                    EndDate        = s.EndDate,
+                    Reason         = s.Reason,
+                    Status         = s.Status
+                }).ToList()
+            };
+
+            byte[] fileBytes = ExcelExportHelper.ExportAdminSystemReport(exportData);
+            string fileName = $"BaoCaoHeThong_GymPro_{VnTime.Now:yyyyMMdd_HHmm}.xlsx";
+
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
         // ==================== DANH SÁCH PHÒNG GYM CHỜ DUYỆT ====================
