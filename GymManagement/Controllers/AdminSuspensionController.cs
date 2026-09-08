@@ -1,9 +1,11 @@
 using GymManagement.Helpers;
+using GymManagement.Hubs;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Controllers
@@ -17,15 +19,18 @@ namespace GymManagement.Controllers
         private readonly GymDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly EmailHelper _emailHelper;
+        private readonly IHubContext<NotificationHub> _hub;
 
         public AdminSuspensionController(
             GymDbContext context,
             UserManager<ApplicationUser> userManager,
-            EmailHelper emailHelper)
+            EmailHelper emailHelper,
+            IHubContext<NotificationHub> hub)
         {
             _context = context;
             _userManager = userManager;
             _emailHelper = emailHelper;
+            _hub = hub;
         }
 
         // ==================== ADM-17: GIÁM SÁT ĐÌNH CHỈ TOÀN HỆ THỐNG ====================
@@ -160,6 +165,21 @@ namespace GymManagement.Controllers
                     suspension.Gym?.Name ?? "Phòng Gym",
                     suspension.LiftedReason);
             }
+
+            // Gửi thông báo hệ thống cho hội viên
+            try
+            {
+                await NotificationHelper.CreateAsync(
+                    _context,
+                    suspension.MemberId,
+                    "Đình chỉ đã được gỡ bỏ",
+                    $"Quản trị viên đã gỡ bỏ lệnh đình chỉ của bạn tại cơ sở \"{suspension.Gym?.Name ?? "phòng Gym"}\". Bạn có thể tiếp tục tập luyện và mua vé.",
+                    "Success",
+                    "Suspension",
+                    "/Member/MyMemberships",
+                    _hub);
+            }
+            catch { /* Không ngắt luồng */ }
 
             TempData["Success"] = $"Quản trị viên đã gỡ bỏ lệnh đình chỉ cho hội viên {mName} thành công.";
             return RedirectToAction("Index");

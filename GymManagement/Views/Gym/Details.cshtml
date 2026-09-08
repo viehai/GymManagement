@@ -193,18 +193,45 @@
     }
 
     /* ── Package cards ── */
+    .package-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        margin-bottom: 0.75rem;
+    }
+    .package-card-link:last-child { margin-bottom: 0; }
+    .package-card-link:hover { color: inherit; }
+
     .package-card {
         border: 1px solid #CFCFCF;
         background: #FFFFFF;
         padding: 1.2rem 1.4rem;
-        margin-bottom: 0.75rem;
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
-        transition: border-color 0.2s;
+        transition: all 0.2s ease;
+        position: relative;
     }
-    .package-card:hover { border-color: #545454; }
-    .package-card:last-child { margin-bottom: 0; }
+    .package-card:hover {
+        border-color: #252525;
+        background-color: #FAFAFA;
+        transform: translateY(-1px);
+    }
+    .package-card-action {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: color 0.15s ease;
+    }
+    .package-card:hover .package-card-action {
+        color: #252525;
+    }
 
     .package-type-badge {
         font-family: 'Montserrat', sans-serif;
@@ -643,23 +670,34 @@ else
                     <div class="mb-3">
                         @foreach (var pkg in Model.Packages)
                         {
-                            <div class="package-card" id="pkg-@pkg.Id">
-                                <span class="package-type-badge @(pkg.PackageType == "Daily" ? "daily" : "")">
-                                    @pkg.TypeLabel
-                                </span>
-                                <p class="package-name">@pkg.Name</p>
-                                <p class="package-price">
-                                    @pkg.Price.ToString("N0") đ
-                                    @if (pkg.PackageType == "Monthly")
-                                    {
-                                        <span>&nbsp;/ @pkg.DurationInMonths tháng</span>
-                                    }
-                                    else
-                                    {
-                                        <span>&nbsp;/ lượt</span>
-                                    }
-                                </p>
-                            </div>
+                            var targetUrl = pkg.PackageType == "Daily"
+                                ? Url.Action("DailyPass", "Purchase", new { gymId = Model.Id })
+                                : Url.Action("Package", "Purchase", new { gymId = Model.Id, packageId = pkg.Id });
+
+                            <a href="@targetUrl" class="package-card-link" title="Chọn mua gói @pkg.Name">
+                                <div class="package-card" id="pkg-@pkg.Id">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="package-type-badge @(pkg.PackageType == "Daily" ? "daily" : "")">
+                                            @pkg.TypeLabel
+                                        </span>
+                                        <span class="package-card-action">
+                                            Chọn mua <i class="bi bi-arrow-right"></i>
+                                        </span>
+                                    </div>
+                                    <p class="package-name">@pkg.Name</p>
+                                    <p class="package-price">
+                                        @pkg.Price.ToString("N0") đ
+                                        @if (pkg.PackageType == "Monthly")
+                                        {
+                                            <span>&nbsp;/ @pkg.DurationInMonths tháng</span>
+                                        }
+                                        else
+                                        {
+                                            <span>&nbsp;/ lượt</span>
+                                        }
+                                    </p>
+                                </div>
+                            </a>
                         }
                     </div>
 

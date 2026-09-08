@@ -1,9 +1,11 @@
 using GymManagement.Helpers;
+using GymManagement.Hubs;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Controllers
@@ -17,15 +19,18 @@ namespace GymManagement.Controllers
         private readonly GymDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly EmailHelper _emailHelper;
+        private readonly IHubContext<NotificationHub> _hub;
 
         public OwnerMemberController(
             GymDbContext context,
             UserManager<ApplicationUser> userManager,
-            EmailHelper emailHelper)
+            EmailHelper emailHelper,
+            IHubContext<NotificationHub> hub)
         {
             _context = context;
             _userManager = userManager;
             _emailHelper = emailHelper;
+            _hub = hub;
         }
 
         private async Task<string> GetCurrentUserIdAsync()
@@ -362,6 +367,21 @@ namespace GymManagement.Controllers
                     suspension.Reason);
             }
 
+            // Gửi thông báo hệ thống cho hội viên
+            try
+            {
+                await NotificationHelper.CreateAsync(
+                    _context,
+                    model.MemberId,
+                    "Thông báo đình chỉ hoạt động",
+                    $"Bạn đã bị đình chỉ {(suspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"tạm thời đến {calculatedEndDate:dd/MM/yyyy}")} tại cơ sở \"{gym.Name}\". Lý do: \"{suspension.Reason}\".",
+                    "Danger",
+                    "Suspension",
+                    "/Member/MyMemberships",
+                    _hub);
+            }
+            catch { /* Không ngắt luồng */ }
+
             TempData["Success"] = $"Đã áp dụng lệnh đình chỉ đối với hội viên {mName} ({typeLabel}) thành công.";
             return RedirectToAction("Index", new { gymId = model.GymId });
         }
@@ -418,6 +438,21 @@ namespace GymManagement.Controllers
                     suspension.Gym?.Name ?? "Phòng Gym",
                     suspension.LiftedReason);
             }
+
+            // Gửi thông báo hệ thống cho hội viên
+            try
+            {
+                await NotificationHelper.CreateAsync(
+                    _context,
+                    suspension.MemberId,
+                    "Đình chỉ đã được gỡ bỏ",
+                    $"Lệnh đình chỉ của bạn tại cơ sở \"{suspension.Gym?.Name ?? "phòng Gym"}\" đã được gỡ bỏ. Bạn có thể tiếp tục tập luyện và mua vé.",
+                    "Success",
+                    "Suspension",
+                    "/Member/MyMemberships",
+                    _hub);
+            }
+            catch { /* Không ngắt luồng */ }
 
             TempData["Success"] = $"Đã gỡ bỏ đình chỉ thành công cho hội viên {mName}.";
 

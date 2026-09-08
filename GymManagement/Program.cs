@@ -1,4 +1,5 @@
 using GymManagement.Helpers;
+using GymManagement.Hubs;
 using GymManagement.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 // B1: Thêm MVC Service
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<EmailHelper>();
+
+// B1b: Thêm SignalR (real-time notifications)
+builder.Services.AddSignalR();
 
 // B2: Thêm Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -170,5 +174,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Map SignalR Hub
+app.MapHub<NotificationHub>("/hubs/notification");
 
 app.Run();

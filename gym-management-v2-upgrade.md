@@ -14,7 +14,7 @@
 | 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng | ✅ **Hoàn thành** |
 | 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên | ⏳ Tiếp theo |
 | 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập | ⏸️ Chưa làm |
-| 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) | ⏸️ Chưa làm |
+| 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) | ✅ **Hoàn thành** |
 | 7 | 📊 Nâng cấp Dashboard & Báo cáo | ⭐⭐ | Biểu đồ nâng cao, thống kê VIP, xuất báo cáo Excel/PDF | ⏸️ Chưa làm |
 
 > ⭐ = Đơn giản &nbsp; ⭐⭐ = Trung bình &nbsp; ⭐⭐⭐ = Phức tạp
@@ -332,15 +332,15 @@ Khi Owner quét QR thành công:
 
 ---
 
-## MODULE 6: 🔔 NOTIFICATION CENTER
+## MODULE 6: 🔔 NOTIFICATION CENTER — ✅ [ĐÃ HOÀN THÀNH]
 
 ### 6.1 Ý tưởng
 - Thay thế / bổ sung hệ thống banner cảnh báo V1 bằng **trung tâm thông báo** đầy đủ
 - Cả Member, Owner, Admin đều có inbox thông báo riêng
 
-### 6.2 Giải pháp V2
+### 6.2 Giải pháp V2 (Đã triển khai)
 
-#### Database — Entity mới: `Notification.cs`
+#### Database — Entity mới: `Notification.cs` (Đã áp dụng Migration `AddNotificationCenter`)
 
 | Field | Type | Mô tả |
 |-------|------|-------|
@@ -349,18 +349,18 @@ Khi Owner quét QR thành công:
 | `Title` | string | Tiêu đề thông báo |
 | `Message` | string | Nội dung chi tiết |
 | `Type` | enum | `Info` / `Warning` / `Success` / `Danger` |
-| `Category` | enum | `Membership` / `Suspension` / `VipUpgrade` / `Payment` / `System` / `Review` |
+| `Category` | enum | `Membership` / `Suspension` / `VipUpgrade` / `Payment` / `System` / `GymApproval` / `Review` |
 | `LinkUrl` | string? | URL liên kết (VD: `/Member/MembershipDetails/5`) |
 | `IsRead` | bool | Đã đọc chưa |
 | `CreatedAt` | DateTime | Thời điểm tạo |
 
-#### Functions mới
+#### Functions đã hoàn thành
 
-| Mã | Function | Screen | Mô tả |
-|----|----------|--------|-------|
-| MEM-24 | Xem danh sách thông báo | `Notification/Index` | Inbox thông báo, lọc đã đọc/chưa đọc, phân trang |
-| MEM-25 | Đánh dấu đã đọc | Action (AJAX) | Đánh dấu 1 hoặc tất cả là đã đọc |
-| ALL | Badge số thông báo chưa đọc | `_Layout` (nâng cấp) | Biểu tượng 🔔 trên thanh nav với badge đếm |
+| Mã | Function | Screen | Trạng thái | Mô tả |
+|----|----------|--------|------------|-------|
+| MEM-24 | Xem danh sách thông báo | `Notification/Index` | [x] Hoàn thành | Inbox thông báo cá nhân, lọc đã đọc/chưa đọc, lọc phân loại, phân trang |
+| MEM-25 | Đánh dấu đã đọc | Action (AJAX) | [x] Hoàn thành | Đánh dấu 1 hoặc tất cả là đã đọc, dọn dẹp thông báo cũ |
+| ALL | Badge số thông báo chưa đọc & Dropdown | `_NotificationBellPartial` | [x] Hoàn thành | Biểu tượng 🔔 trên thanh nav với badge đếm và popup xổ 5 thông báo mới nhất trên cả 4 layouts |
 
 #### Các sự kiện tự động tạo thông báo
 
@@ -443,12 +443,12 @@ Khi Owner quét QR thành công:
 
 ### Phase 1 — Nền tảng (Làm trước)
 1. [x] **Module 1**: Multi-Image Gallery — ✅ **Đã hoàn thành 100%**
-2. [ ] **Module 2**: Đình chỉ hội viên (Member Suspension) — ⏳ **Đang triển khai tiếp theo**
-3. [ ] **Module 6**: Notification Center — hạ tầng cần cho các module khác
+2. [x] **Module 2**: Đình chỉ hội viên (Member Suspension) — ✅ **Đã hoàn thành 100%**
+3. [x] **Module 6**: Notification Center — ✅ **Đã hoàn thành 100%**
 
 ### Phase 2 — Core V2 Features
-4. **Module 3**: VIP Loyalty System — phụ thuộc vào Purchase flow
-5. **Module 4**: QR Check-in — tích hợp VIP + Suspension info
+4. [x] **Module 3**: VIP Loyalty System — ✅ **Đã hoàn thành 100%**
+5. [ ] **Module 4**: QR Check-in — ⏳ **Tiếp theo** (tích hợp VIP + Suspension info)
 
 ### Phase 3 — Polish & Analytics
 6. **Module 5**: Rating & Review — tăng tương tác cộng đồng

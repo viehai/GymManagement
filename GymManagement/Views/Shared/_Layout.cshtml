@@ -224,6 +224,7 @@
                                     </a>
                                 </li>
                             }
+                            @await Html.PartialAsync("_NotificationBellPartial")
                             <li class="nav-item">
                                 <a class="nav-link nav-user-name @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" && ViewContext.RouteData.Values["action"]?.ToString() == "Profile" ? "active" : "")"
                                    asp-controller="Member" asp-action="Profile" title="Xem trang cá nhân">
@@ -256,6 +257,37 @@
     </header>
 
     <main>
+        @if (TempData["Error"] != null)
+        {
+            <div class="container pt-3">
+                <div class="alert alert-danger alert-dismissible fade show rounded-0 d-flex align-items-center gap-3 border-0 shadow-sm mb-3" role="alert" style="background-color: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444 !important;">
+                    <i class="bi bi-exclamation-octagon-fill fs-5 text-danger flex-shrink-0"></i>
+                    <div class="flex-grow-1" style="font-size: 0.88rem; font-weight: 500;">@TempData["Error"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        }
+        @if (TempData["Warning"] != null)
+        {
+            <div class="container pt-3">
+                <div class="alert alert-warning alert-dismissible fade show rounded-0 d-flex align-items-center gap-3 border-0 shadow-sm mb-3" role="alert" style="background-color: #fffbeb; color: #92400e; border-left: 4px solid #f59e0b !important;">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+                    <div class="flex-grow-1" style="font-size: 0.88rem; font-weight: 500;">@TempData["Warning"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="container pt-3">
+                <div class="alert alert-success alert-dismissible fade show rounded-0 d-flex align-items-center gap-3 border-0 shadow-sm mb-3" role="alert" style="background-color: #f0fdf4; color: #166534; border-left: 4px solid #22c55e !important;">
+                    <i class="bi bi-check-circle-fill fs-5 text-success flex-shrink-0"></i>
+                    <div class="flex-grow-1" style="font-size: 0.88rem; font-weight: 500;">@TempData["Success"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        }
+
         @RenderBody()
     </main>
 

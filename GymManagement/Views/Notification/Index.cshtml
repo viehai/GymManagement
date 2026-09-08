@@ -1,0 +1,467 @@
+@model GymManagement.ViewModels.NotificationIndexViewModel
+@{
+    if (User.IsInRole("Admin"))
+    {
+        Layout = "_AdminLayout";
+    }
+    else if (User.IsInRole("Owner"))
+    {
+        Layout = "_OwnerAdminLayout";
+    }
+    else
+    {
+        Layout = "_MemberLayout";
+    }
+    ViewData["Title"] = "Trung tâm thông báo";
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       NOTIFICATION CENTER — NIKE BRUTAL MINIMALISM
+    ═══════════════════════════════════════════════ */
+    .notif-hero {
+        background: #111;
+        padding: 2.8rem 0 2.2rem;
+        color: #fff;
+        margin-bottom: 2rem;
+    }
+    .notif-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #ef4444;
+        margin-bottom: 0.35rem;
+    }
+    .notif-hero-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        line-height: 1.15;
+        margin-bottom: 0.5rem;
+    }
+    .notif-hero-sub {
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.65);
+        max-width: 600px;
+        margin-bottom: 0;
+    }
+
+    /* ── Metrics Cards ── */
+    .notif-stat-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 1.2rem 1.5rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .notif-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .notif-stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    .notif-stat-val {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 3px;
+    }
+    .notif-stat-lbl {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+
+    /* ── Toolbar & Filters ── */
+    .notif-toolbar {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 1rem 1.4rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+    .filter-tab-btn {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 0.45rem 1rem;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        border-radius: 2px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+    }
+    .filter-tab-btn:hover {
+        border-color: #111;
+        color: #111;
+    }
+    .filter-tab-btn.active {
+        background: #111;
+        border-color: #111;
+        color: #fff;
+    }
+
+    /* ── Notification Card ── */
+    .notif-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #9ca3af;
+        border-radius: 4px;
+        padding: 1.25rem 1.4rem;
+        margin-bottom: 0.85rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .notif-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .notif-card.unread {
+        background: #fdfdfd;
+        border-color: #d1d5db;
+    }
+    .notif-card.type-success { border-left-color: #10b981; }
+    .notif-card.type-warning { border-left-color: #f59e0b; }
+    .notif-card.type-danger  { border-left-color: #ef4444; }
+    .notif-card.type-info    { border-left-color: #6366f1; }
+
+    .notif-icon-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .notif-icon-avatar.Success { background: #d1fae5; color: #065f46; }
+    .notif-icon-avatar.Warning { background: #fef3c7; color: #92400e; }
+    .notif-icon-avatar.Danger  { background: #fee2e2; color: #991b1b; }
+    .notif-icon-avatar.Info    { background: #e0e7ff; color: #3730a3; }
+
+    .notif-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+    }
+    .notif-card-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #111;
+        margin: 0;
+    }
+    .notif-badge-cat {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 2px;
+        background: #f3f4f6;
+        color: #4b5563;
+        border: 1px solid #e5e7eb;
+    }
+    .notif-card-msg {
+        font-size: 0.85rem;
+        color: #4b5563;
+        line-height: 1.45;
+        margin-bottom: 8px;
+    }
+    .notif-card-time {
+        font-size: 0.72rem;
+        color: #9ca3af;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* ── Action Buttons ── */
+    .btn-notif-action {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 0.4rem 0.8rem;
+        border-radius: 2px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-notif-primary {
+        background: #111;
+        color: #fff;
+        border: 1px solid #111;
+    }
+    .btn-notif-primary:hover {
+        background: #333;
+        color: #fff;
+    }
+    .btn-notif-secondary {
+        background: #fff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    .btn-notif-secondary:hover {
+        border-color: #111;
+        color: #111;
+    }
+    .btn-notif-delete {
+        background: transparent;
+        color: #9ca3af;
+        border: 1px solid transparent;
+        padding: 0.35rem 0.6rem;
+    }
+    .btn-notif-delete:hover {
+        color: #ef4444;
+        background: #fee2e2;
+    }
+
+    .unread-pill {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+</style>
+
+<!-- Hero Section -->
+<section class="notif-hero">
+    <div class="container">
+        <div class="notif-hero-label">Trung Tâm Quản Trị Thông Báo</div>
+        <h1 class="notif-hero-title">HỘP THƯ THÔNG BÁO</h1>
+        <p class="notif-hero-sub">Theo dõi toàn bộ biến động gói vé, cảnh báo hết hạn, cập nhật thanh toán và đặc quyền VIP.</p>
+    </div>
+</section>
+
+<div class="container pb-5">
+    <!-- Quick Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon bg-light text-dark">
+                    <i class="bi bi-inbox"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-val">@Model.TotalCount</div>
+                    <div class="notif-stat-lbl">Tổng số thông báo</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-bell-fill"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-val text-danger">@Model.UnreadCount</div>
+                    <div class="notif-stat-lbl">Chưa đọc</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-val text-success">@Model.ReadCount</div>
+                    <div class="notif-stat-lbl">Đã xem</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar & Filters -->
+    <div class="notif-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <!-- Tabs -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a asp-action="Index" asp-route-filter="all" asp-route-category="@Model.CurrentCategory"
+               class="filter-tab-btn @(Model.CurrentFilter == "all" ? "active" : "")">
+                <i class="bi bi-list-ul"></i> Tất cả (@Model.TotalCount)
+            </a>
+            <a asp-action="Index" asp-route-filter="unread" asp-route-category="@Model.CurrentCategory"
+               class="filter-tab-btn @(Model.CurrentFilter == "unread" ? "active" : "")">
+                <i class="bi bi-envelope"></i> Chưa đọc (@Model.UnreadCount)
+            </a>
+            <a asp-action="Index" asp-route-filter="read" asp-route-category="@Model.CurrentCategory"
+               class="filter-tab-btn @(Model.CurrentFilter == "read" ? "active" : "")">
+                <i class="bi bi-envelope-open"></i> Đã đọc (@Model.ReadCount)
+            </a>
+        </div>
+
+        <!-- Filter by Category & Global Actions -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form method="get" asp-action="Index" class="d-inline-flex align-items-center gap-2">
+                <input type="hidden" name="filter" value="@Model.CurrentFilter" />
+                <select name="category" class="form-select form-select-sm" style="font-size:0.75rem; border-radius:2px; height:34px;" onchange="this.form.submit()">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.CurrentCategory))">Tất cả phân loại</option>
+                    <option value="Membership" selected="@(Model.CurrentCategory == "Membership")">Gói tập & Vé</option>
+                    <option value="Payment" selected="@(Model.CurrentCategory == "Payment")">Thanh toán</option>
+                    <option value="VipUpgrade" selected="@(Model.CurrentCategory == "VipUpgrade")">Hạng VIP Loyalty</option>
+                    <option value="Suspension" selected="@(Model.CurrentCategory == "Suspension")">Kỷ luật & Đình chỉ</option>
+                    <option value="GymApproval" selected="@(Model.CurrentCategory == "GymApproval")">Phê duyệt Gym</option>
+                    <option value="System" selected="@(Model.CurrentCategory == "System")">Hệ thống</option>
+                </select>
+            </form>
+
+            @if (Model.UnreadCount > 0)
+            {
+                <form method="post" asp-action="MarkAllAsRead" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-notif-action btn-notif-secondary" title="Đánh dấu tất cả là đã đọc">
+                        <i class="bi bi-check2-all"></i> Đọc tất cả
+                    </button>
+                </form>
+            }
+
+            @if (Model.ReadCount > 0)
+            {
+                <form method="post" asp-action="ClearRead" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa tất cả thông báo đã đọc?')">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-notif-action btn-notif-secondary text-danger border-danger border-opacity-25" title="Xóa thông báo đã đọc">
+                        <i class="bi bi-trash"></i> Dọn dẹp
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- Notification List -->
+    @if (!Model.Notifications.Any())
+    {
+        <div class="bg-white border rounded p-5 text-center my-4">
+            <div class="text-muted mb-3">
+                <i class="bi bi-bell-slash" style="font-size:3.5rem;"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">Không có thông báo nào</h5>
+            <p class="text-muted small mb-0">
+                @(Model.CurrentFilter == "unread"
+                    ? "Tuyệt vời! Bạn đã đọc hết tất cả thông báo."
+                    : "Hộp thư thông báo của bạn hiện đang trống.")
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="notif-items-wrapper">
+            @foreach (var item in Model.Notifications)
+            {
+                <div class="notif-card type-@item.Type.ToLower() @(!item.IsRead ? "unread" : "")">
+                    <!-- Icon -->
+                    <div class="notif-icon-avatar @item.Type">
+                        <i class="bi @item.CategoryIcon"></i>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex-grow-1">
+                        <div class="notif-title-row">
+                            @if (!item.IsRead)
+                            {
+                                <span class="unread-pill" title="Chưa đọc"></span>
+                            }
+                            <h2 class="notif-card-title">@item.Title</h2>
+                            <span class="notif-badge-cat">@item.CategoryDisplayName</span>
+                        </div>
+
+                        <div class="notif-card-msg">
+                            @item.Message
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-1">
+                            <span class="notif-card-time">
+                                <i class="bi bi-clock"></i> @item.TimeAgo &bull; @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+
+                            <div class="d-flex align-items-center gap-2">
+                                @if (!string.IsNullOrEmpty(item.LinkUrl))
+                                {
+                                    <a href="@item.LinkUrl" class="btn-notif-action btn-notif-primary">
+                                        Xem chi tiết <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                }
+
+                                @if (!item.IsRead)
+                                {
+                                    <form method="post" asp-action="MarkAsRead" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn-notif-action btn-notif-secondary" title="Đánh dấu đã đọc">
+                                            <i class="bi bi-check2"></i> Đã đọc
+                                        </button>
+                                    </form>
+                                }
+
+                                <form method="post" asp-action="Delete" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa thông báo này?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn-notif-action btn-notif-delete" title="Xóa thông báo">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="d-flex justify-content-center align-items-center gap-2 mt-4">
+                @if (Model.HasPreviousPage)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)" asp-route-filter="@Model.CurrentFilter" asp-route-category="@Model.CurrentCategory"
+                       class="btn btn-sm btn-outline-dark" style="border-radius:2px;">
+                        &larr; Trang trước
+                    </a>
+                }
+
+                <span class="small text-muted px-2">
+                    Trang <strong>@Model.CurrentPage</strong> / @Model.TotalPages
+                </span>
+
+                @if (Model.HasNextPage)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)" asp-route-filter="@Model.CurrentFilter" asp-route-category="@Model.CurrentCategory"
+                       class="btn btn-sm btn-outline-dark" style="border-radius:2px;">
+                        Trang sau &rarr;
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>

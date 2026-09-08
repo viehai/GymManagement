@@ -1,8 +1,10 @@
 using GymManagement.Helpers;
+using GymManagement.Hubs;
 using GymManagement.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Controllers
@@ -13,15 +15,18 @@ namespace GymManagement.Controllers
         private readonly GymDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly EmailHelper _emailHelper;
+        private readonly IHubContext<NotificationHub> _hub;
 
         public AdminController(
             GymDbContext context,
             UserManager<ApplicationUser> userManager,
-            EmailHelper emailHelper)
+            EmailHelper emailHelper,
+            IHubContext<NotificationHub> hub)
         {
             _context = context;
             _userManager = userManager;
             _emailHelper = emailHelper;
+            _hub = hub;
         }
 
         // ==================== DASHBOARD ====================
@@ -93,6 +98,21 @@ namespace GymManagement.Controllers
                 string approveSubject = "Phong Gym cua ban da duoc phe duyet! - GymPro";
                 string approveBody = BuildApproveEmail(owner.FullName, gym.Name, gym.Address);
                 await _emailHelper.SendEmailAsync(owner.Email!, approveSubject, approveBody);
+
+                // Gửi thông báo hệ thống cho Chủ phòng
+                try
+                {
+                    await NotificationHelper.CreateAsync(
+                        _context,
+                        owner.Id,
+                        "Phòng Gym đã được phê duyệt!",
+                        $"Cơ sở phòng Gym \"{gym.Name}\" ({gym.Address}) của bạn đã được quản trị viên phê duyệt chính thức.",
+                        "Success",
+                        "GymApproval",
+                        $"/OwnerGym/Details/{gym.Id}",
+                        _hub);
+                }
+                catch { /* Không ngắt luồng */ }
             }
 
             var currentAdmin = await _userManager.GetUserAsync(User);
@@ -145,6 +165,21 @@ namespace GymManagement.Controllers
                 string rejectSubject = "Thong bao ve don dang ky phong Gym - GymPro";
                 string rejectBody = BuildRejectEmail(owner.FullName, gym.Name, reason);
                 await _emailHelper.SendEmailAsync(owner.Email!, rejectSubject, rejectBody);
+
+                // Gửi thông báo hệ thống cho Chủ phòng
+                try
+                {
+                    await NotificationHelper.CreateAsync(
+                        _context,
+                        owner.Id,
+                        "Yêu cầu phòng Gym bị từ chối",
+                        $"Cơ sở phòng Gym \"{gym.Name}\" của bạn đã bị từ chối phê duyệt. Lý do: {(string.IsNullOrWhiteSpace(reason) ? "Không đạt yêu cầu" : reason)}.",
+                        "Danger",
+                        "GymApproval",
+                        "/OwnerGym/Index",
+                        _hub);
+                }
+                catch { /* Không ngắt luồng */ }
             }
 
             TempData["Warning"] = "Da tu choi phong Gym.";

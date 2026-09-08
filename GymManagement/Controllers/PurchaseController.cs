@@ -1,9 +1,11 @@
 using GymManagement.Helpers;
+using GymManagement.Hubs;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
@@ -20,17 +22,20 @@ namespace GymManagement.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly EmailHelper _emailHelper;
+        private readonly IHubContext<NotificationHub> _hub;
 
         public PurchaseController(
             GymDbContext context,
             UserManager<ApplicationUser> userManager,
             IConfiguration configuration,
-            EmailHelper emailHelper)
+            EmailHelper emailHelper,
+            IHubContext<NotificationHub> hub)
         {
             _context = context;
             _userManager = userManager;
             _configuration = configuration;
             _emailHelper = emailHelper;
+            _hub = hub;
         }
 
         // ═══════════════════════════════════════════════
@@ -108,7 +113,7 @@ namespace GymManagement.Controllers
         // ═══════════════════════════════════════════════
 
         [HttpGet]
-        public async Task<IActionResult> Package(int gymId)
+        public async Task<IActionResult> Package(int gymId, int? packageId = null)
         {
             var gym = await _context.Gyms
                 .Include(g => g.MembershipPackages)
@@ -133,6 +138,34 @@ namespace GymManagement.Controllers
                     string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
                     TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {gym.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể đăng ký gói tập tại cơ sở này.";
                     return RedirectToAction("Details", "Gym", new { id = gymId });
+                }
+            }
+
+            // Nếu người dùng chọn gói cụ thể (ví dụ bấm trực tiếp vào thẻ gói tập từ trang Details), nhảy thẳng tới Checkout
+            if (packageId.HasValue && packageId.Value > 0)
+            {
+                var targetPkg = gym.MembershipPackages.FirstOrDefault(p => p.Id == packageId.Value && p.IsActive);
+                if (targetPkg != null)
+                {
+                    var vipTier = user != null ? await GetMemberVipTierAsync(gym.Id, user.Id) : null;
+                    var checkoutVm = new PurchaseCheckoutViewModel
+                    {
+                        GymId              = gym.Id,
+                        GymName            = gym.Name,
+                        GymAddress         = gym.Address,
+                        GymImage           = gym.ImageUrl ?? string.Empty,
+                        PackageId          = targetPkg.Id,
+                        PackageName        = targetPkg.Name,
+                        PackageType        = targetPkg.PackageType,
+                        DurationInMonths   = targetPkg.DurationInMonths,
+                        Price              = targetPkg.Price,
+                        VipTierName        = vipTier?.TierName,
+                        VipBadgeColor      = vipTier?.BadgeColor,
+                        VipDiscountPercent = vipTier?.DiscountPercent
+                    };
+
+                    TempData["Checkout"] = JsonSerializer.Serialize(checkoutVm);
+                    return RedirectToAction("Checkout");
                 }
             }
 
@@ -608,6 +641,34 @@ namespace GymManagement.Controllers
 
                     await _context.SaveChangesAsync();
 
+                    // Gửi thông báo hệ thống cho Member & Owner
+                    try
+                    {
+                        await NotificationHelper.CreateAsync(
+                            _context,
+                            transaction.MemberId,
+                            "Thanh toán thành công",
+                            $"Bạn đã thanh toán thành công {transaction.Amount:N0} VNĐ cho gói \"{pkg.Name}\" tại {gym.Name}.",
+                            "Success",
+                            "Payment",
+                            $"/Member/MembershipDetails/{membership.Id}",
+                            _hub);
+
+                        if (!string.IsNullOrEmpty(gym.OwnerId))
+                        {
+                            await NotificationHelper.CreateAsync(
+                                _context,
+                                gym.OwnerId,
+                                "Giao dịch mới",
+                                $"Hội viên {member?.FullName ?? "Hội viên"} đã thanh toán {transaction.Amount:N0} VNĐ cho gói \"{pkg.Name}\" tại {gym.Name}.",
+                                "Info",
+                                "Payment",
+                                $"/OwnerMember/Details?memberId={transaction.MemberId}&gymId={gym.Id}",
+                                _hub);
+                        }
+                    }
+                    catch { /* Không ngắt luồng chính */ }
+
                     // Tự động thăng hạng VIP (Module 3)
                     await ProcessVipPromotionAsync(gym.Id, transaction.MemberId);
 
@@ -660,6 +721,34 @@ namespace GymManagement.Controllers
 
                     await _context.SaveChangesAsync();
 
+                    // Gửi thông báo hệ thống cho Member & Owner
+                    try
+                    {
+                        await NotificationHelper.CreateAsync(
+                            _context,
+                            transaction.MemberId,
+                            "Gia hạn vé thành công",
+                            $"Bạn đã gia hạn thành công gói \"{pkg.Name}\" tại {membership.Gym?.Name}. Hạn mới đến ngày {newEndDate:dd/MM/yyyy}.",
+                            "Success",
+                            "Payment",
+                            $"/Member/MembershipDetails/{membership.Id}",
+                            _hub);
+
+                        if (membership.Gym != null && !string.IsNullOrEmpty(membership.Gym.OwnerId))
+                        {
+                            await NotificationHelper.CreateAsync(
+                                _context,
+                                membership.Gym.OwnerId,
+                                "Giao dịch gia hạn vé",
+                                $"Hội viên {member?.FullName ?? "Hội viên"} đã gia hạn gói \"{pkg.Name}\" ({transaction.Amount:N0} VNĐ) tại {membership.Gym.Name}.",
+                                "Info",
+                                "Payment",
+                                $"/OwnerMember/Details?memberId={transaction.MemberId}&gymId={membership.GymId}",
+                                _hub);
+                        }
+                    }
+                    catch { /* Không ngắt luồng chính */ }
+
                     // Tự động thăng hạng VIP (Module 3)
                     await ProcessVipPromotionAsync(membership.GymId, transaction.MemberId);
 
@@ -701,15 +790,17 @@ namespace GymManagement.Controllers
         // ═══════════════════════════════════════════════
 
         [HttpGet]
-        public async Task<IActionResult> Renew(int membershipId)
+        public async Task<IActionResult> Renew(int? membershipId, int? id)
         {
+            int targetId = (membershipId.HasValue && membershipId.Value > 0) ? membershipId.Value : (id ?? 0);
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
             var membership = await _context.MemberMemberships
                 .Include(m => m.Gym)
                 .Include(m => m.Package)
-                .FirstOrDefaultAsync(m => m.Id == membershipId && m.MemberId == user.Id);
+                .FirstOrDefaultAsync(m => m.Id == targetId && m.MemberId == user.Id);
 
             if (membership == null) return NotFound();
 
@@ -718,7 +809,7 @@ namespace GymManagement.Controllers
             {
                 string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
                 TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {membership.Gym?.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể gia hạn vé tại cơ sở này.";
-                return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
+                return RedirectToAction("MembershipDetails", "Member", new { id = targetId });
             }
 
             var activePackages = await _context.MembershipPackages
@@ -730,7 +821,7 @@ namespace GymManagement.Controllers
             if (!activePackages.Any())
             {
                 TempData["Error"] = "Phòng Gym này hiện không có gói tập nào khả dụng để gia hạn.";
-                return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
+                return RedirectToAction("MembershipDetails", "Member", new { id = targetId });
             }
 
             var vipTier = await GetMemberVipTierAsync(membership.GymId, user.Id);
@@ -768,14 +859,16 @@ namespace GymManagement.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Renew(int membershipId, int selectedPackageId)
+        public async Task<IActionResult> Renew(int? membershipId, int? id, int selectedPackageId)
         {
+            int targetId = (membershipId.HasValue && membershipId.Value > 0) ? membershipId.Value : (id ?? 0);
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
             var membership = await _context.MemberMemberships
                 .Include(m => m.Gym)
-                .FirstOrDefaultAsync(m => m.Id == membershipId && m.MemberId == user.Id);
+                .FirstOrDefaultAsync(m => m.Id == targetId && m.MemberId == user.Id);
 
             if (membership == null) return NotFound();
 
@@ -784,7 +877,7 @@ namespace GymManagement.Controllers
             {
                 string dur = activeSuspension.SuspensionType == "Permanent" ? "vĩnh viễn" : $"đến ngày {activeSuspension.EndDate:dd/MM/yyyy}";
                 TempData["Error"] = $"Tài khoản của bạn đang bị đình chỉ ({dur}) tại cơ sở {membership.Gym?.Name}. Lý do: \"{activeSuspension.Reason}\". Bạn không thể gia hạn vé tại cơ sở này.";
-                return RedirectToAction("MembershipDetails", "Member", new { id = membershipId });
+                return RedirectToAction("MembershipDetails", "Member", new { id = targetId });
             }
 
             var pkg = await _context.MembershipPackages
@@ -793,7 +886,7 @@ namespace GymManagement.Controllers
             if (pkg == null)
             {
                 TempData["Error"] = "Gói tập được chọn không hợp lệ.";
-                return RedirectToAction("Renew", new { membershipId });
+                return RedirectToAction("Renew", new { membershipId = targetId });
             }
 
             // Tính toán giá gia hạn có áp dụng chiết khấu VIP (nếu có)
@@ -923,6 +1016,17 @@ namespace GymManagement.Controllers
                             eligibleTier.DiscountPercent,
                             eligibleTier.BenefitDescription);
                     }
+
+                    // Gửi thông báo thăng hạng VIP trong hệ thống
+                    await NotificationHelper.CreateAsync(
+                        _context,
+                        memberId,
+                        "Thăng hạng VIP thành công!",
+                        $"Chúc mừng bạn đã đạt hạng VIP \"{eligibleTier.TierName}\" tại {gym?.Name ?? "phòng Gym"}! Ưu đãi giảm giá {eligibleTier.DiscountPercent:0.#}% cho các lần mua vé tiếp theo.",
+                        "Success",
+                        "VipUpgrade",
+                        "/Member/MyVipStatus",
+                        _hub);
                 }
 
                 await _context.SaveChangesAsync();

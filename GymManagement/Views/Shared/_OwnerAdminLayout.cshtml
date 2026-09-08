@@ -378,6 +378,10 @@
             </a>
 
             <p class="nav-section-label" style="margin-top:1rem;">Hệ thống</p>
+            <a asp-controller="Notification" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notification" ? "active" : "")">
+                <i class="bi bi-bell"></i> Thông báo
+            </a>
             <a asp-controller="Member" asp-action="Profile" class="sidebar-link">
                 <i class="bi bi-person-circle"></i> Trang cá nhân
             </a>
@@ -408,6 +412,9 @@
             <div>
                 <h1 class="topbar-title">@(ViewData["Title"] ?? "Owner Dashboard")</h1>
                 <p class="topbar-breadcrumb">GymPro &rsaquo; Owner</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                @await Html.PartialAsync("_NotificationBellPartial")
             </div>
         </div>
 

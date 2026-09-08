@@ -20,6 +20,7 @@ namespace GymManagement.Models
         public DbSet<MemberVipStatus> MemberVipStatuses { get; set; }
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -224,6 +225,18 @@ namespace GymManagement.Models
                       .WithMany(t => t.MemberVipStatuses)
                       .HasForeignKey(s => s.CurrentTierId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ===================== NOTIFICATION =====================
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasIndex(n => new { n.UserId, n.IsRead });
+                entity.HasIndex(n => new { n.UserId, n.CreatedAt });
+
+                entity.HasOne(n => n.User)
+                      .WithMany(u => u.Notifications)
+                      .HasForeignKey(n => n.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

@@ -2,10 +2,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using GymManagement.Helpers;
+using GymManagement.Hubs;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Controllers
@@ -14,10 +16,12 @@ namespace GymManagement.Controllers
     public class AdminTransactionController : Controller
     {
         private readonly GymDbContext _context;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public AdminTransactionController(GymDbContext context)
+        public AdminTransactionController(GymDbContext context, IHubContext<NotificationHub> hub)
         {
             _context = context;
+            _hub = hub;
         }
 
         // ==================== ADM-16: DANH SÁCH GIAO DỊCH TOÀN HỆ THỐNG ====================
@@ -207,7 +211,7 @@ namespace GymManagement.Controllers
                         StartDate = VnTime.Today,
                         EndDate = MembershipHelper.CalculateEndDate(pkg.PackageType, pkg.DurationInMonths),
                         PurchaseDate = VnTime.Now,
-                        PriceAtPurchase = pkg.Price
+                        PriceAtPurchase = transaction.Amount
                     };
                     _context.MemberMemberships.Add(membership);
                     await _context.SaveChangesAsync();
@@ -236,6 +240,35 @@ namespace GymManagement.Controllers
                     });
 
                     await _context.SaveChangesAsync();
+
+                    // Gửi thông báo hệ thống & Real-time SignalR cho Member & Owner
+                    try
+                    {
+                        await NotificationHelper.CreateAsync(
+                            _context,
+                            transaction.MemberId,
+                            "Thanh toán thành công",
+                            $"Giao dịch #{transaction.Id} ({transaction.Amount:N0} VNĐ) cho gói \"{pkg.Name}\" tại {gym.Name} đã được xác nhận thành công.",
+                            "Success",
+                            "Payment",
+                            $"/Member/MembershipDetails/{membership.Id}",
+                            _hub);
+
+                        if (!string.IsNullOrEmpty(gym.OwnerId))
+                        {
+                            await NotificationHelper.CreateAsync(
+                                _context,
+                                gym.OwnerId,
+                                "Giao dịch mới",
+                                $"Hội viên {transaction.Member?.FullName ?? "Hội viên"} đã thanh toán {transaction.Amount:N0} VNĐ cho gói \"{pkg.Name}\" tại {gym.Name} (Admin đã duyệt).",
+                                "Info",
+                                "Payment",
+                                $"/OwnerMember/Details?memberId={transaction.MemberId}&gymId={gym.Id}",
+                                _hub);
+                        }
+                    }
+                    catch { /* Không ngắt luồng chính */ }
+
                     TempData["Success"] = $"Đã duyệt thành công giao dịch #{transaction.Id} và kích hoạt gói tập cho Hội viên!";
                 }
             }
@@ -251,7 +284,7 @@ namespace GymManagement.Controllers
                     var newEndDate = MembershipHelper.CalculateRenewEndDate(mem.EndDate, pkg.PackageType, pkg.DurationInMonths);
                     mem.EndDate = newEndDate;
                     mem.PackageId = pkg.Id;
-                    mem.PriceAtPurchase = pkg.Price;
+                    mem.PriceAtPurchase = transaction.Amount;
 
                     transaction.MembershipId = mem.Id;
                     transaction.Status = "Success";
@@ -277,6 +310,35 @@ namespace GymManagement.Controllers
                     });
 
                     await _context.SaveChangesAsync();
+
+                    // Gửi thông báo hệ thống & Real-time SignalR cho Member & Owner
+                    try
+                    {
+                        await NotificationHelper.CreateAsync(
+                            _context,
+                            transaction.MemberId,
+                            "Gia hạn vé thành công",
+                            $"Giao dịch gia hạn #{transaction.Id} cho gói \"{pkg.Name}\" tại {mem.Gym?.Name} đã được xác nhận thành công. Hạn mới đến {newEndDate:dd/MM/yyyy}.",
+                            "Success",
+                            "Payment",
+                            $"/Member/MembershipDetails/{mem.Id}",
+                            _hub);
+
+                        if (mem.Gym != null && !string.IsNullOrEmpty(mem.Gym.OwnerId))
+                        {
+                            await NotificationHelper.CreateAsync(
+                                _context,
+                                mem.Gym.OwnerId,
+                                "Giao dịch gia hạn vé",
+                                $"Hội viên {transaction.Member?.FullName ?? "Hội viên"} đã gia hạn gói \"{pkg.Name}\" ({transaction.Amount:N0} VNĐ) tại {mem.Gym.Name} (Admin đã duyệt).",
+                                "Info",
+                                "Payment",
+                                $"/OwnerMember/Details?memberId={transaction.MemberId}&gymId={mem.GymId}",
+                                _hub);
+                        }
+                    }
+                    catch { /* Không ngắt luồng chính */ }
+
                     TempData["Success"] = $"Đã duyệt gia hạn thành công giao dịch #{transaction.Id}!";
                 }
             }
