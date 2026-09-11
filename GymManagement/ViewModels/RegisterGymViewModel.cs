@@ -28,5 +28,10 @@ namespace GymManagement.ViewModels
 
         /// <summary>Danh sách ảnh hiện tại (dùng trong form Edit để hiển thị).</summary>
         public List<GymImageViewModel> ExistingImages { get; set; } = new();
+
+        /// <summary>Sức chứa tối đa cùng lúc của phòng gym (phục vụ tính năng Crowd Meter).</summary>
+        [Display(Name = "Sức chứa tối đa (người)")]
+        [Range(5, 2000, ErrorMessage = "Sức chứa phải từ 5 đến 2000 người.")]
+        public int MaxCapacity { get; set; } = 50;
     }
 }

@@ -377,6 +377,16 @@
                 <i class="bi bi-receipt"></i> Lịch sử giao dịch
             </a>
 
+            <p class="nav-section-label" style="margin-top:1rem;">Điểm danh & Ra vào</p>
+            <a asp-controller="OwnerCheckin" asp-action="Scan"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerCheckin" && ViewContext.RouteData.Values["action"]?.ToString() == "Scan" ? "active" : "")">
+                <i class="bi bi-qr-code-scan text-info"></i> Quầy Check-in
+            </a>
+            <a asp-controller="OwnerCheckin" asp-action="History"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerCheckin" && ViewContext.RouteData.Values["action"]?.ToString() == "History" ? "active" : "")">
+                <i class="bi bi-clock-history"></i> Lịch sử Check-in
+            </a>
+
             <p class="nav-section-label" style="margin-top:1rem;">Hệ thống</p>
             <a asp-controller="Notification" asp-action="Index"
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notification" ? "active" : "")">

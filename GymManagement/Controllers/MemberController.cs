@@ -466,5 +466,104 @@ namespace GymManagement.Controllers
 
             return View(vm);
         }
+
+        // ==================== MEM-20: MÃ QR CÁ NHÂN VÀO TẬP (DIGITAL MEMBER CARD) ====================
+        [HttpGet]
+        public async Task<IActionResult> MyQrCode()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            string qrPayload = QrCodeHelper.GenerateMemberQrPayload(user);
+            var today = VnTime.Today;
+
+            var activeMemberships = await _context.MemberMemberships
+                .Include(m => m.Gym)
+                .Include(m => m.Package)
+                .Where(m => m.MemberId == user.Id && m.EndDate >= today)
+                .OrderByDescending(m => m.EndDate)
+                .Select(m => new ActiveMemberCardItem
+                {
+                    MembershipId  = m.Id,
+                    GymId         = m.GymId,
+                    GymName       = m.Gym.Name,
+                    GymAddress    = m.Gym.Address,
+                    PackageName   = m.Package.Name,
+                    PackageType   = m.Package.PackageType == "Daily" ? "Vé ngày" : $"Gói {m.Package.DurationInMonths} tháng",
+                    StartDate     = m.StartDate,
+                    EndDate       = m.EndDate,
+                    DaysRemaining = Math.Max(0, (int)(m.EndDate.Date - today).TotalDays)
+                })
+                .ToListAsync();
+
+            foreach (var item in activeMemberships)
+            {
+                item.PackageQrPayload = QrCodeHelper.GenerateMemberQrPayload(user, item.MembershipId);
+            }
+
+            // Tìm hạng VIP cao nhất (nếu có)
+            var highestVip = await _context.MemberVipStatuses
+                .Include(v => v.CurrentTier)
+                .Where(v => v.MemberId == user.Id && v.CurrentTier != null)
+                .OrderByDescending(v => v.CurrentTier!.DisplayOrder)
+                .FirstOrDefaultAsync();
+
+            var vm = new MemberQrViewModel
+            {
+                MemberId          = user.Id,
+                FullName          = user.FullName ?? user.UserName ?? "Hội viên",
+                Email             = user.Email ?? "—",
+                PhoneNumber       = user.PhoneNumber ?? "—",
+                QrPayload         = qrPayload,
+                VipTierName       = highestVip?.CurrentTier?.TierName ?? "Standard",
+                VipBadgeColor     = highestVip?.CurrentTier?.BadgeColor ?? "#64748b",
+                ActiveMemberships = activeMemberships
+            };
+
+            return View(vm);
+        }
+
+        // ==================== MEM-21: LỊCH SỬ ĐIỂM DANH CHECK-IN ====================
+        [HttpGet]
+        public async Task<IActionResult> CheckinHistory()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var logs = await _context.CheckinLogs
+                .Include(c => c.Gym)
+                .Include(c => c.Membership).ThenInclude(m => m!.Package)
+                .Include(c => c.CheckedByUser)
+                .Where(c => c.MemberId == user.Id)
+                .OrderByDescending(c => c.CheckinTime)
+                .ToListAsync();
+
+            var startOfMonth = new DateTime(VnTime.Now.Year, VnTime.Now.Month, 1);
+            int thisMonthCount = logs.Count(l => l.CheckinTime >= startOfMonth);
+
+            var vm = new MemberPersonalCheckinHistoryViewModel
+            {
+                MemberName       = user.FullName ?? user.UserName ?? "Hội viên",
+                TotalVisits      = logs.Count,
+                ThisMonthVisits  = thisMonthCount,
+                Visits = logs.Select(l => new CheckinHistoryRowItem
+                {
+                    Id            = l.Id,
+                    MemberId      = l.MemberId,
+                    MemberName    = user.FullName ?? user.UserName ?? "Hội viên",
+                    MemberEmail   = user.Email ?? "—",
+                    MemberPhone   = user.PhoneNumber ?? "—",
+                    GymName       = l.Gym?.Name ?? "—",
+                    PackageName   = l.Membership?.Package?.Name ?? "Vé vào tập",
+                    CheckinTime   = l.CheckinTime,
+                    CheckoutTime  = l.CheckoutTime,
+                    Status        = l.Status,
+                    CheckinMethod = l.CheckinMethod,
+                    StaffName     = l.CheckedByUser?.FullName ?? l.CheckedByUser?.UserName ?? "Hệ thống"
+                }).ToList()
+            };
+
+            return View(vm);
+        }
     }
 }

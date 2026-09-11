@@ -21,6 +21,7 @@ namespace GymManagement.Models
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<CheckinLog> CheckinLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -237,6 +238,33 @@ namespace GymManagement.Models
                       .WithMany(u => u.Notifications)
                       .HasForeignKey(n => n.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===================== CHECKIN LOG =====================
+            modelBuilder.Entity<CheckinLog>(entity =>
+            {
+                entity.HasIndex(c => new { c.GymId, c.CheckinTime });
+                entity.HasIndex(c => new { c.MemberId, c.CheckinTime });
+
+                entity.HasOne(c => c.Gym)
+                      .WithMany(g => g.CheckinLogs)
+                      .HasForeignKey(c => c.GymId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Member)
+                      .WithMany(u => u.CheckinLogs)
+                      .HasForeignKey(c => c.MemberId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.CheckedByUser)
+                      .WithMany(u => u.ConfirmedCheckins)
+                      .HasForeignKey(c => c.CheckedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(c => c.Membership)
+                      .WithMany()
+                      .HasForeignKey(c => c.MembershipId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

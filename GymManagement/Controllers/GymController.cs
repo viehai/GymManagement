@@ -1,3 +1,4 @@
+using GymManagement.Helpers;
 using GymManagement.Models;
 using GymManagement.ViewModels;
 using Microsoft.AspNetCore.Identity;
@@ -122,18 +123,39 @@ namespace GymManagement.Controllers
                 })
                 .ToList();
 
+            // ── Tính toán Thước đo độ đông đúc (Live Crowd Meter - V2) ──
+            int maxCapacity = gym.MaxCapacity > 0 ? gym.MaxCapacity : 50;
+            var twoHoursAgo = VnTime.Now.AddHours(-2);
+            int activeCheckins = await _context.CheckinLogs
+                .CountAsync(c => c.GymId == gym.Id && c.CheckinTime >= twoHoursAgo && c.CheckoutTime == null && c.Status == "Success");
+
+            int crowdPct = Math.Min(100, (int)Math.Round((double)activeCheckins / maxCapacity * 100));
+            var (cText, cColor, cIcon, cRec) = crowdPct switch
+            {
+                < 35 => ("Đang vắng", "#10b981", "bi-emoji-smile", "Phòng tập đang vắng, máy tập thoáng đãng — Thời điểm lý tưởng để tập luyện!"),
+                <= 70 => ("Khá đông", "#f59e0b", "bi-people", "Phòng tập có lượng khách vừa phải, có thể cần chia sẻ máy tạ hoặc đổi bài linh hoạt."),
+                _ => ("Rất đông / Giờ cao điểm", "#ef4444", "bi-exclamation-octagon", "Phòng tập đang trong giờ cao điểm — Nên cân nhắc đến vào khung giờ khác.")
+            };
+
             var vm = new GymDetailsViewModel
             {
-                Id               = gym.Id,
-                Name             = gym.Name,
-                Address          = gym.Address,
-                Description      = gym.Description ?? string.Empty,
-                ImageUrl         = gym.ImageUrl ?? string.Empty,
-                OwnerId          = gym.OwnerId,
-                IsOwnerOfThisGym = isOwnerOfThisGym,
-                Equipments       = equipments,
-                Packages         = packages,
-                GalleryImages    = galleryImages
+                Id                    = gym.Id,
+                Name                  = gym.Name,
+                Address               = gym.Address,
+                Description           = gym.Description ?? string.Empty,
+                ImageUrl              = gym.ImageUrl ?? string.Empty,
+                OwnerId               = gym.OwnerId,
+                IsOwnerOfThisGym      = isOwnerOfThisGym,
+                Equipments            = equipments,
+                Packages              = packages,
+                GalleryImages         = galleryImages,
+                MaxCapacity           = maxCapacity,
+                CurrentActiveMembers  = activeCheckins,
+                CrowdPercentage       = crowdPct,
+                CrowdStatusText       = cText,
+                CrowdStatusColor      = cColor,
+                CrowdStatusIcon       = cIcon,
+                CrowdRecommendation   = cRec
             };
 
             return View(vm);

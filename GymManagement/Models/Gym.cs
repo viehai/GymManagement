@@ -29,6 +29,12 @@ namespace GymManagement.Models
         [StringLength(20)]
         public string Status { get; set; } = "Pending";
 
+        /// <summary>
+        /// Sức chứa tối đa của phòng gym cùng lúc (phục vụ tính năng Crowd Meter / Heatmap).
+        /// </summary>
+        [Range(5, 2000, ErrorMessage = "Sức chứa phòng gym từ 5 đến 2000 người.")]
+        public int MaxCapacity { get; set; } = 50;
+
         public DateTime CreatedAt { get; set; } = VnTime.Now;
 
         // Navigation properties
@@ -42,5 +48,6 @@ namespace GymManagement.Models
         public ICollection<MemberSuspension> MemberSuspensions { get; set; } = new List<MemberSuspension>();
         public ICollection<VipTierSetting> VipTierSettings { get; set; } = new List<VipTierSetting>();
         public ICollection<MemberVipStatus> MemberVipStatuses { get; set; } = new List<MemberVipStatus>();
+        public ICollection<CheckinLog> CheckinLogs { get; set; } = new List<CheckinLog>();
     }
 }

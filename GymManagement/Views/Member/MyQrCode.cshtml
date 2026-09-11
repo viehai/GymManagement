@@ -1,0 +1,444 @@
+@model GymManagement.ViewModels.MemberQrViewModel
+
+@{
+    ViewData["Title"] = "Thẻ Hội Viên & Mã QR Điểm Danh";
+    Layout = "_MemberLayout";
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       DIGITAL MEMBER CARD — NIKE BRUTAL MINIMALISM
+    ═══════════════════════════════════════════════ */
+    .member-card-wrapper {
+        background: #0f172a;
+        background: linear-gradient(145deg, #111827 0%, #030712 100%);
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+        color: #f9fafb;
+        overflow: hidden;
+        position: relative;
+    }
+    .member-card-header {
+        padding: 1.5rem 1.75rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .gympro-brand-logo {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: 1.25rem;
+        letter-spacing: 1.5px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .gympro-brand-logo span {
+        color: #10b981;
+    }
+    .vip-badge-pill {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .qr-center-box {
+        background: #ffffff;
+        padding: 16px;
+        border-radius: 10px;
+        display: inline-block;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        position: relative;
+    }
+    .qr-center-box canvas, .qr-center-box img {
+        display: block;
+        margin: 0 auto;
+    }
+
+    .active-pkg-card {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .active-pkg-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 8px 16px -4px rgba(0,0,0,0.06);
+    }
+    .active-pkg-card.selected {
+        border-color: #10b981 !important;
+        background: #f0fdf4 !important;
+        box-shadow: 0 0 0 1px #10b981, 0 8px 20px -4px rgba(16, 185, 129, 0.15) !important;
+    }
+
+    .smart-pass-card {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .smart-pass-card:hover {
+        border-color: #cbd5e1;
+    }
+    .smart-pass-card.selected {
+        border-color: #3b82f6 !important;
+        background: #eff6ff !important;
+        box-shadow: 0 0 0 1px #3b82f6, 0 8px 20px -4px rgba(59, 130, 246, 0.15) !important;
+    }
+
+    .current-qr-target-banner {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #6ee7b7;
+        font-size: 0.78rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        max-width: 100%;
+    }
+    .current-qr-target-banner.universal {
+        background: rgba(59, 130, 246, 0.15);
+        border-color: rgba(59, 130, 246, 0.3);
+        color: #93c5fd;
+    }
+</style>
+
+<div class="container-fluid py-2">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
+            <h1 style="font-family:'Montserrat',sans-serif; font-size:1.35rem; font-weight:900; color:#111; margin:0 0 4px; letter-spacing:-0.5px;">
+                THẺ HỘI VIÊN & MÃ QR ĐIỂM DANH
+            </h1>
+            <p style="margin:0; font-size:0.85rem; color:#6b7280;">
+                Xuất trình mã QR tại quầy lễ tân để check-in vào tập nhanh chóng trong 1 giây.
+            </p>
+        </div>
+        <a asp-action="CheckinHistory" class="btn btn-outline-dark btn-sm" style="font-weight:700; border-radius:6px;">
+            <i class="bi bi-clock-history me-1"></i> Xem lịch sử tập
+        </a>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Cột trái: Thẻ hội viên điện tử & Mã QR -->
+        <div class="col-12 col-lg-5 col-xl-4">
+            <div class="member-card-wrapper" id="digitalMemberCard">
+                <!-- Card Header -->
+                <div class="member-card-header">
+                    <div class="gympro-brand-logo">
+                        <i class="bi bi-lightning-charge-fill text-success"></i> GYM<span>PRO</span> PASS
+                    </div>
+                    <span class="vip-badge-pill" style="background:@Model.VipBadgeColor; color:#fff;">
+                        <i class="bi bi-star-fill"></i> @Model.VipTierName
+                    </span>
+                </div>
+
+                <!-- Card Body: QR Code -->
+                <div class="p-4 text-center">
+                    <!-- Target Badge Display -->
+                    <div class="mb-3">
+                        <div id="qrTargetBanner" class="current-qr-target-banner universal text-truncate">
+                            <i id="qrTargetIcon" class="bi bi-stars"></i>
+                            <span id="qrTargetText" class="fw-semibold">Mã QR Đa Năng (Tự nhận diện phòng tập)</span>
+                        </div>
+                    </div>
+
+                    <div class="qr-center-box mb-3">
+                        <div id="qrcodeCanvas"></div>
+                    </div>
+
+                    <div style="font-family:'Montserrat',sans-serif; font-size:1.2rem; font-weight:900; color:#fff; letter-spacing:-0.3px;">
+                        @Model.FullName
+                    </div>
+                    <div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">
+                        <i class="bi bi-telephone-fill me-1"></i> @(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Chưa cập nhật SĐT" : Model.PhoneNumber)
+                    </div>
+                    <div style="font-size:0.75rem; color:#64748b; font-family:monospace; margin-top:4px;">
+                        ID: @Model.MemberId.Substring(0, Math.Min(8, Model.MemberId.Length)).ToUpper()...
+                    </div>
+
+                    <div class="mt-3 pt-3 border-top border-secondary border-opacity-25" style="font-size:0.74rem; color:#94a3b8;">
+                        <i class="bi bi-shield-check text-success me-1"></i> Mã QR chứa chữ ký bảo mật xác thực danh tính hội viên.
+                    </div>
+                </div>
+
+                <!-- Card Footer Actions -->
+                <div class="p-3 bg-black bg-opacity-40 d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm w-100 fw-bold" id="btnDownloadQr" style="border-radius:6px; font-size:0.8rem;">
+                        <i class="bi bi-download me-1"></i> Tải ảnh thẻ QR về máy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mẹo sử dụng -->
+            <div class="alert alert-light border mt-3 p-3 small text-muted" style="border-radius:8px;">
+                <div class="fw-bold text-dark mb-1"><i class="bi bi-lightbulb-fill text-warning me-1"></i> Mẹo tiện lợi:</div>
+                Chụp ảnh màn hình mã QR hoặc bấm nút <strong>"Tải ảnh thẻ QR"</strong> để lưu vào thư viện ảnh trên điện thoại. Bạn có thể xuất trình ảnh này để quét ngay cả khi phòng gym không có sóng 4G/Wi-Fi!
+            </div>
+        </div>
+
+        <!-- Cột phải: Danh sách gói tập đang sở hữu -->
+        <div class="col-12 col-lg-7 col-xl-6">
+            <div class="content-card h-100 p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h5 style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.05rem; margin:0; color:#111;">
+                            <i class="bi bi-ticket-perforated-fill text-primary me-2"></i>Chọn Gói Tập Check-in (@Model.ActiveMemberships.Count gói)
+                        </h5>
+                        <div class="small text-muted mt-1" style="font-size:0.78rem;">
+                            Bấm vào từng gói để đổi mã QR đích danh, hoặc chọn Mã Đa Năng để hệ thống tự nhận diện.
+                        </div>
+                    </div>
+                    <a asp-action="MyMemberships" style="font-size:0.78rem; font-weight:700; color:#111; text-decoration:none;">
+                        Tất cả gói &rarr;
+                    </a>
+                </div>
+
+                @if (!Model.ActiveMemberships.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-exclamation-circle fs-1 d-block mb-2 text-secondary"></i>
+                        <h6 class="fw-bold text-dark">Bạn chưa có gói tập nào còn hạn</h6>
+                        <p class="small text-muted mb-3">Vui lòng đăng ký gói vé tập tại phòng gym yêu thích để kích hoạt quyền check-in vào tập.</p>
+                        <a asp-controller="Gym" asp-action="Search" class="btn btn-dark btn-sm fw-bold px-3">
+                            <i class="bi bi-search me-1"></i> Khám phá phòng Gym
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Tùy chọn 1: Mã QR Đa Năng Thông Minh (Mặc định) -->
+                        <div class="smart-pass-card selected" id="cardUniversalPass" onclick="selectUniversalPass()">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-3 fs-5">
+                                        <i class="bi bi-stars"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size:0.95rem;">
+                                            Mã QR Đa Năng (Toàn hệ thống GymPro)
+                                        </div>
+                                        <div class="small text-muted" style="font-size:0.76rem;">
+                                            Tự động nhận diện đúng gói tập theo cơ sở bạn đang đứng
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="badge bg-primary px-2 py-1" id="badgeUniversalCheck" style="font-size:0.72rem;">
+                                    <i class="bi bi-check-lg me-1"></i>Đang bật
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Danh sách các gói cụ thể -->
+                        @foreach (var m in Model.ActiveMemberships)
+                        {
+                            <div class="active-pkg-card" id="cardPkg-@m.MembershipId" onclick="selectPackage(@m.MembershipId, '@m.PackageQrPayload', '@Html.Raw(m.PackageName.Replace("'", "\\'"))', '@Html.Raw(m.GymName.Replace("'", "\\'"))')">
+                                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <div style="font-weight:800; color:#111; font-size:0.95rem;">
+                                            @m.PackageName
+                                        </div>
+                                        <div style="font-size:0.8rem; color:#4b5563; margin-top:2px;">
+                                            <i class="bi bi-building me-1 text-primary"></i> <strong>@m.GymName</strong>
+                                        </div>
+                                        <div style="font-size:0.74rem; color:#6b7280;">
+                                            <i class="bi bi-geo-alt me-1"></i> @m.GymAddress
+                                        </div>
+                                    </div>
+
+                                    <div class="text-end">
+                                        @if (m.IsExpiringSoon)
+                                        {
+                                            <span class="badge bg-warning text-dark border border-warning" style="font-size:0.72rem;">
+                                                <i class="bi bi-clock-history me-1"></i> Còn @m.DaysRemaining ngày
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success" style="font-size:0.72rem;">
+                                                <i class="bi bi-check-circle me-1"></i> Còn @m.DaysRemaining ngày
+                                            </span>
+                                        }
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-secondary border select-indicator" id="indicator-@m.MembershipId" style="font-size:0.7rem;">
+                                                <i class="bi bi-qr-code me-1"></i>Bấm để chọn
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center justify-content-between mt-3 pt-2 border-top border-light-subtle flex-wrap gap-2" style="font-size:0.78rem;">
+                                    <span class="text-muted">
+                                        Hạn sử dụng: <strong>@m.StartDate.ToString("dd/MM/yyyy") &rarr; @m.EndDate.ToString("dd/MM/yyyy")</strong>
+                                    </span>
+                                    @if (m.IsExpiringSoon)
+                                    {
+                                        <a asp-controller="Purchase" asp-action="Renew" asp-route-id="@m.MembershipId" class="btn btn-warning btn-sm py-0 px-2 fw-bold" style="font-size:0.72rem;" onclick="event.stopPropagation();">
+                                            Gia hạn ngay &rarr;
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Library via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+    var universalPayload = "@Html.Raw(Model.QrPayload)";
+    var currentPayload = universalPayload;
+    var currentDownloadName = "TheHoiVien_GymPro_@(Model.MemberId.Substring(0, Math.Min(6, Model.MemberId.Length)))_Universal";
+    var qrcode = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var qrContainer = document.getElementById('qrcodeCanvas');
+
+        // Tạo QR Code khởi tạo với mã Đa Năng
+        qrcode = new QRCode(qrContainer, {
+            text: universalPayload,
+            width: 190,
+            height: 190,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        // Tải ảnh QR Code về máy (Tự động thêm lề trắng Quiet Zone chuẩn ISO để máy quét nào cũng đọc được 100%)
+        document.getElementById('btnDownloadQr').addEventListener('click', function() {
+            var srcCanvas = qrContainer.querySelector('canvas');
+            if (srcCanvas) {
+                var padding = 28; // Lề trắng chuẩn 4 modules
+                var outCanvas = document.createElement('canvas');
+                outCanvas.width = srcCanvas.width + (padding * 2);
+                outCanvas.height = srcCanvas.height + (padding * 2);
+                var ctx = outCanvas.getContext('2d');
+
+                // Đổ nền trắng tinh khiết
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+
+                // Vẽ mã QR vào chính giữa
+                ctx.drawImage(srcCanvas, padding, padding);
+
+                var a = document.createElement('a');
+                a.href = outCanvas.toDataURL('image/png');
+                a.download = currentDownloadName + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                var img = qrContainer.querySelector('img');
+                if (img) {
+                    var a = document.createElement('a');
+                    a.href = img.src;
+                    a.download = currentDownloadName + '.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            }
+        });
+    });
+
+    // ── Hàm chọn Mã QR Đa Năng ──
+    function selectUniversalPass() {
+        currentPayload = universalPayload;
+        currentDownloadName = "TheHoiVien_GymPro_Universal";
+
+        if (qrcode) {
+            qrcode.clear();
+            qrcode.makeCode(universalPayload);
+        }
+
+        // Cập nhật Banner trên thẻ số
+        var banner = document.getElementById('qrTargetBanner');
+        banner.className = 'current-qr-target-banner universal text-truncate';
+        document.getElementById('qrTargetIcon').className = 'bi bi-stars';
+        document.getElementById('qrTargetText').innerText = 'Mã QR Đa Năng (Tự nhận diện phòng tập)';
+
+        // Cập nhật thẻ bên phải
+        document.getElementById('cardUniversalPass').classList.add('selected');
+        document.getElementById('badgeUniversalCheck').className = 'badge bg-primary px-2 py-1';
+        document.getElementById('badgeUniversalCheck').innerHTML = '<i class="bi bi-check-lg me-1"></i>Đang bật';
+
+        // Bỏ chọn tất cả gói cụ thể
+        var cards = document.querySelectorAll('.active-pkg-card');
+        cards.forEach(function(c) {
+            c.classList.remove('selected');
+        });
+        var indicators = document.querySelectorAll('.select-indicator');
+        indicators.forEach(function(ind) {
+            ind.className = 'badge bg-light text-secondary border select-indicator';
+            ind.innerHTML = '<i class="bi bi-qr-code me-1"></i>Bấm để chọn';
+        });
+    }
+
+    // ── Hàm chọn Mã QR của một Gói Cụ Thể ──
+    function selectPackage(membershipId, payload, pkgName, gymName) {
+        if (!payload) return;
+        currentPayload = payload;
+        currentDownloadName = "TheHoiVien_Goi_" + membershipId;
+
+        if (qrcode) {
+            qrcode.clear();
+            qrcode.makeCode(payload);
+        }
+
+        // Cập nhật Banner trên thẻ số
+        var banner = document.getElementById('qrTargetBanner');
+        banner.className = 'current-qr-target-banner text-truncate';
+        document.getElementById('qrTargetIcon').className = 'bi bi-bullseye';
+        document.getElementById('qrTargetText').innerText = 'Gói: ' + pkgName + ' — ' + gymName;
+
+        // Bỏ chọn card Universal
+        document.getElementById('cardUniversalPass').classList.remove('selected');
+        document.getElementById('badgeUniversalCheck').className = 'badge bg-light text-secondary border';
+        document.getElementById('badgeUniversalCheck').innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Bấm để bật';
+
+        // Đổi trạng thái chọn cho card tương ứng
+        var cards = document.querySelectorAll('.active-pkg-card');
+        cards.forEach(function(c) {
+            c.classList.remove('selected');
+        });
+        var indicators = document.querySelectorAll('.select-indicator');
+        indicators.forEach(function(ind) {
+            ind.className = 'badge bg-light text-secondary border select-indicator';
+            ind.innerHTML = '<i class="bi bi-qr-code me-1"></i>Bấm để chọn';
+        });
+
+        var targetCard = document.getElementById('cardPkg-' + membershipId);
+        if (targetCard) {
+            targetCard.classList.add('selected');
+        }
+        var targetIndicator = document.getElementById('indicator-' + membershipId);
+        if (targetIndicator) {
+            targetIndicator.className = 'badge bg-success text-white select-indicator';
+            targetIndicator.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Đang hiển thị QR';
+        }
+    }
+</script>

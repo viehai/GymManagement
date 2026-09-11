@@ -83,5 +83,14 @@ namespace GymManagement.ViewModels
 
         /// <summary>Có gói tháng không (để hiện nút "Đăng ký gói tháng").</summary>
         public bool HasMonthlyPackage => Packages.Any(p => p.PackageType == "Monthly");
+
+        // ── Thước đo độ đông đúc (Live Crowd Meter - V2) ──
+        public int MaxCapacity { get; set; } = 50;
+        public int CurrentActiveMembers { get; set; }
+        public int CrowdPercentage { get; set; }
+        public string CrowdStatusText { get; set; } = "Đang vắng";
+        public string CrowdStatusColor { get; set; } = "#10b981";
+        public string CrowdStatusIcon { get; set; } = "bi-emoji-smile";
+        public string CrowdRecommendation { get; set; } = "Phòng tập đang vắng, máy tập thoáng đãng — Thời điểm lý tưởng!";
     }
 }

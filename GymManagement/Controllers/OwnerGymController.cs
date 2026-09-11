@@ -83,6 +83,7 @@ namespace GymManagement.Controllers
                 Address = model.Address,
                 Description = model.Description,
                 ImageUrl = imageUrl,
+                MaxCapacity = model.MaxCapacity > 0 ? model.MaxCapacity : 50,
                 Status = "Pending",
                 CreatedAt = VnTime.Now
             };
@@ -158,6 +159,7 @@ namespace GymManagement.Controllers
                 Name           = gym.Name,
                 Address        = gym.Address,
                 Description    = gym.Description,
+                MaxCapacity    = gym.MaxCapacity > 0 ? gym.MaxCapacity : 50,
                 ExistingImages = gym.GymImages
                     .OrderBy(i => i.DisplayOrder)
                     .Select(i => new GymImageViewModel
@@ -221,6 +223,7 @@ namespace GymManagement.Controllers
             gym.Name        = model.Name;
             gym.Address     = model.Address;
             gym.Description = model.Description;
+            gym.MaxCapacity = model.MaxCapacity > 0 ? model.MaxCapacity : 50;
 
             // Đồng bộ gym.ImageUrl luôn theo ảnh bìa IsCover
             var coverImage = await _context.GymImages

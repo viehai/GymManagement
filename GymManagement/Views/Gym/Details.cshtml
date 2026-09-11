@@ -192,6 +192,55 @@
         top: 80px;
     }
 
+    /* ── Live Crowd Meter Widget ── */
+    .crowd-meter-widget {
+        border: 1px solid #252525;
+        background: #FFFFFF;
+        padding: 1.25rem 1.4rem;
+        margin-bottom: 2rem;
+    }
+    .crowd-widget-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 0.68rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #252525;
+    }
+    .crowd-status-pill {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border: 1px solid;
+    }
+    .crowd-widget-bar-track {
+        height: 8px;
+        background: #F0F0F0;
+        overflow: hidden;
+        margin-top: 0.75rem;
+    }
+    .crowd-widget-bar-fill {
+        height: 100%;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .crowd-recommendation-note {
+        font-size: 0.76rem;
+        color: #64748b;
+        line-height: 1.4;
+        border-top: 1px dashed #E2E8F0;
+        padding-top: 0.5rem;
+    }
+    .live-pulse-dot {
+        animation: livePulse 1.8s infinite;
+    }
+    @@keyframes livePulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
     /* ── Package cards ── */
     .package-card-link {
         text-decoration: none;
@@ -661,6 +710,35 @@ else
         <!-- ── RIGHT: Sidebar / Đặt vé ── -->
         <div class="col-12 col-lg-4">
             <aside class="gym-sidebar" aria-label="Đặt vé tập Gym">
+
+                <!-- ── WIDGET THƯỚC ĐO ĐỘ ĐÔNG ĐÚC REALTIME (CROWD METER) ── -->
+                <div class="crowd-meter-widget" id="liveCrowdWidget">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="crowd-widget-title">
+                            <i class="bi bi-broadcast me-1 text-danger live-pulse-dot"></i> Trực tiếp tại phòng tập
+                        </span>
+                        <span class="crowd-status-pill" style="color: @Model.CrowdStatusColor; border-color: @Model.CrowdStatusColor; background-color: @(Model.CrowdStatusColor)15;">
+                            <i class="bi @Model.CrowdStatusIcon me-1"></i>@Model.CrowdStatusText
+                        </span>
+                    </div>
+
+                    <div class="crowd-widget-bar-track">
+                        <div class="crowd-widget-bar-fill" style="width: @Model.CrowdPercentage%; background-color: @Model.CrowdStatusColor;"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-2" style="font-size: 0.8rem;">
+                        <span class="text-muted fw-semibold">
+                            <strong class="text-dark">@Model.CurrentActiveMembers</strong> / @Model.MaxCapacity người tập
+                        </span>
+                        <span class="fw-bold" style="color: @Model.CrowdStatusColor;">
+                            @Model.CrowdPercentage% công suất
+                        </span>
+                    </div>
+
+                    <p class="crowd-recommendation-note mb-0 mt-2">
+                        <i class="bi bi-info-circle me-1"></i>@Model.CrowdRecommendation
+                    </p>
+                </div>
 
                 <p class="section-heading">Gói vé & Đặt chỗ</p>
 

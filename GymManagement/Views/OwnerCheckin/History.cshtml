@@ -1,0 +1,329 @@
+@model GymManagement.ViewModels.CheckinHistoryViewModel
+
+@{
+    ViewData["Title"] = "Lịch sử điểm danh & Check-in";
+    Layout = "_OwnerAdminLayout";
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       OWNER CHECK-IN HISTORY — NIKE BRUTAL MINIMALISM
+    ═══════════════════════════════════════════════ */
+    .history-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.08);
+    }
+
+    .method-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .method-qr {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+    }
+    .method-phone {
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+    }
+    .method-usb {
+        background: #f5f3ff;
+        color: #7c3aed;
+        border: 1px solid #ddd6fe;
+    }
+
+    .table-history th {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        color: #475569;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 0.85rem 1rem;
+    }
+    .table-history td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .table-history tr:hover td {
+        background: #f8fafc;
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="h3 fw-bold mb-0 text-dark">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Lịch sử Điểm danh & Check-in
+                </h2>
+                <span class="badge bg-dark text-white px-2 py-1 fs-7">Module 4</span>
+            </div>
+            <p class="text-muted mb-0 mt-1 small">
+                Theo dõi toàn bộ nhật ký hội viên ra vào tập luyện theo từng ngày và cơ sở
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a asp-controller="OwnerCheckin" asp-action="Scan" asp-route-gymId="@Model.SelectedGymId" class="btn btn-dark fw-semibold d-inline-flex align-items-center gap-2">
+                <i class="bi bi-qr-code-scan"></i>
+                <span>Mở Quầy Check-in</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter & Gym Switcher -->
+    <div class="history-card p-3 p-md-4 mb-4">
+        <form method="get" asp-controller="OwnerCheckin" asp-action="History" class="row g-3 align-items-end">
+            @if (Model.MyGyms.Count > 1)
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Cơ sở Phòng Gym</label>
+                    <select name="gymId" class="form-select fw-semibold" onchange="this.form.submit()">
+                        @foreach (var g in Model.MyGyms)
+                        {
+                            if (g.Id == Model.SelectedGymId)
+                            {
+                                <option value="@g.Id" selected="selected">@g.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@g.Id">@g.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+            else
+            {
+                <input type="hidden" name="gymId" value="@Model.SelectedGymId" />
+            }
+
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Chọn ngày</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted"><i class="bi bi-calendar-event"></i></span>
+                    <input type="date" name="date" class="form-control fw-semibold" value="@Model.FilterDate.ToString("yyyy-MM-dd")" onchange="this.form.submit()" />
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tìm kiếm hội viên</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Tên, số điện thoại, email..." value="@Model.SearchQuery" />
+                </div>
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary fw-semibold flex-grow-1">
+                    <i class="bi bi-filter me-1"></i>Lọc
+                </button>
+                <a asp-controller="OwnerCheckin" asp-action="History" asp-route-gymId="@Model.SelectedGymId" class="btn btn-outline-secondary" title="Xem hôm nay">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-uppercase small fw-bold text-muted mb-1">Tổng lượt Check-in</div>
+                    <div class="display-6 fw-bold text-dark">@Model.TotalCheckinsCount</div>
+                    <div class="small text-muted mt-1">Ngày @Model.FilterDate.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div class="p-3 bg-primary-subtle text-primary rounded-3 fs-3">
+                    <i class="bi bi-qr-code-scan"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="kpi-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-uppercase small fw-bold text-muted mb-1">Hội viên khác nhau</div>
+                    <div class="display-6 fw-bold text-success">@Model.UniqueMembersCount</div>
+                    <div class="small text-muted mt-1">Người đến tập luyện</div>
+                </div>
+                <div class="p-3 bg-success-subtle text-success rounded-3 fs-3">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="kpi-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-uppercase small fw-bold text-muted mb-1">Khung giờ đông nhất</div>
+                    <div class="h3 fw-bold text-warning mb-0">@Model.PeakHourText</div>
+                    <div class="small text-muted mt-1">Giờ cao điểm trong ngày</div>
+                </div>
+                <div class="p-3 bg-warning-subtle text-warning rounded-3 fs-3">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="history-card">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-journal-text me-2 text-secondary"></i>Nhật ký chi tiết: @Model.SelectedGymName
+            </h5>
+            <span class="badge bg-light text-secondary border">
+                @Model.Checkins.Count bản ghi
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover table-history mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Hội viên</th>
+                        <th>Gói tập sử dụng</th>
+                        <th>Giờ vào</th>
+                        <th>Giờ ra</th>
+                        <th>Phương thức</th>
+                        <th>Trạng thái</th>
+                        <th>Nhân viên xác nhận</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Checkins.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                                <span class="fw-medium">Không tìm thấy lượt check-in nào trong ngày @Model.FilterDate.ToString("dd/MM/yyyy")</span>
+                                @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                                {
+                                    <div class="small mt-1">Hãy thử xóa bộ lọc tìm kiếm: "@Model.SearchQuery"</div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        int index = 1;
+                        foreach (var item in Model.Checkins)
+                        {
+                            <tr>
+                                <td class="text-center text-muted fw-semibold">@(index++)</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.MemberName</div>
+                                    <div class="small text-muted d-flex align-items-center gap-2 mt-1">
+                                        @if (!string.IsNullOrEmpty(item.MemberPhone))
+                                        {
+                                            <span><i class="bi bi-telephone me-1"></i>@item.MemberPhone</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.MemberEmail) && item.MemberEmail != "—")
+                                        {
+                                            <span class="text-truncate" style="max-width: 180px;"><i class="bi bi-envelope me-1"></i>@item.MemberEmail</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-medium px-2 py-1">
+                                        <i class="bi bi-ticket-perforated me-1 text-primary"></i>@item.PackageName
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">
+                                        <i class="bi bi-box-arrow-in-right text-success me-1"></i>@item.CheckinTime.ToString("HH:mm")
+                                    </div>
+                                    <div class="small text-muted">@item.CheckinTime.ToString("dd/MM/yyyy")</div>
+                                </td>
+                                <td>
+                                    @if (item.CheckoutTime.HasValue)
+                                    {
+                                        <div class="fw-semibold text-secondary">
+                                            <i class="bi bi-box-arrow-right text-danger me-1"></i>@item.CheckoutTime.Value.ToString("HH:mm")
+                                        </div>
+                                        <div class="small text-muted">Check-out sớm</div>
+                                    }
+                                    else
+                                    {
+                                        var elapsed = GymManagement.Helpers.VnTime.Now - item.CheckinTime;
+                                        if (elapsed.TotalHours < 2)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                <span class="spinner-grow spinner-grow-sm me-1" role="status"></span>Đang trong phòng tập
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small" title="Tự động kết thúc sau 2 giờ theo cơ chế Session Timeout">
+                                                <i class="bi bi-check-all text-secondary me-1"></i>Đã về (~2h)
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.CheckinMethod == "QrScan")
+                                    {
+                                        <span class="method-badge method-qr">
+                                            <i class="bi bi-qr-code"></i>Mã QR
+                                        </span>
+                                    }
+                                    else if (item.CheckinMethod == "UsbScanner")
+                                    {
+                                        <span class="method-badge method-usb">
+                                            <i class="bi bi-upc-scan"></i>Máy quét Barcode
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="method-badge method-phone">
+                                            <i class="bi bi-telephone"></i>Nhập SĐT
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-success text-white px-2 py-1 fw-semibold">
+                                        <i class="bi bi-check-circle me-1"></i>Thành công
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="small text-muted">
+                                        <i class="bi bi-person-badge me-1"></i>@(item.StaffName ?? "Hệ thống")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
