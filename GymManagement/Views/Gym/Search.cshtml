@@ -334,7 +334,28 @@
 
                             <!-- Thông tin -->
                             <div class="gym-card-body">
-                                <h2 class="gym-card-name">@item.Name</h2>
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                    <h2 class="gym-card-name mb-0">@item.Name</h2>
+                                    @if (item.HasReviews)
+                                    {
+                                        <span class="badge bg-dark text-warning rounded-0 d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size:0.72rem; padding: 3px 7px;">
+                                            <i class="bi bi-star-fill text-warning"></i> @item.AverageRating.ToString("0.0")
+                                        </span>
+                                    }
+                                </div>
+
+                                @if (item.HasReviews)
+                                {
+                                    <div class="text-muted small" style="font-size:0.72rem;">
+                                        <i class="bi bi-chat-left-text me-1"></i>@item.TotalReviews đánh giá từ hội viên
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted small" style="font-size:0.72rem;">
+                                        <i class="bi bi-star me-1 text-muted"></i>Chưa có đánh giá
+                                    </div>
+                                }
 
                                 <p class="gym-card-address">
                                     <i class="bi bi-geo-alt" aria-hidden="true"></i>

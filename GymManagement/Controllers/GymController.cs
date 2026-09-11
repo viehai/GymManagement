@@ -51,7 +51,11 @@ namespace GymManagement.Controllers
                                   ?? g.GymImages.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).FirstOrDefault()
                                   ?? g.ImageUrl ?? string.Empty,
                     Status      = g.Status,
-                    CreatedAt   = g.CreatedAt
+                    CreatedAt   = g.CreatedAt,
+                    TotalReviews = g.GymReviews.Count(r => r.IsVisible),
+                    AverageRating = g.GymReviews.Where(r => r.IsVisible).Any()
+                        ? Math.Round(g.GymReviews.Where(r => r.IsVisible).Average(r => (double)r.Rating), 1)
+                        : 0.0
                 })
                 .ToListAsync();
 
@@ -137,6 +141,95 @@ namespace GymManagement.Controllers
                 _ => ("Rất đông / Giờ cao điểm", "#ef4444", "bi-exclamation-octagon", "Phòng tập đang trong giờ cao điểm — Nên cân nhắc đến vào khung giờ khác.")
             };
 
+            // ── Rating & Review (V2) ──
+            var visibleReviews = await _context.GymReviews
+                .Include(r => r.Member)
+                .Where(r => r.GymId == id && r.IsVisible)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            int totalReviews = visibleReviews.Count;
+            double avgRating = totalReviews > 0 ? Math.Round(visibleReviews.Average(r => r.Rating), 1) : 0;
+
+            var starCounts = new Dictionary<int, int>
+            {
+                { 5, visibleReviews.Count(r => r.Rating == 5) },
+                { 4, visibleReviews.Count(r => r.Rating == 4) },
+                { 3, visibleReviews.Count(r => r.Rating == 3) },
+                { 2, visibleReviews.Count(r => r.Rating == 2) },
+                { 1, visibleReviews.Count(r => r.Rating == 1) }
+            };
+
+            var reviewDisplays = visibleReviews.Select(r => new GymReviewDisplayViewModel
+            {
+                Id = r.Id,
+                GymId = r.GymId,
+                GymName = gym.Name,
+                GymAddress = gym.Address,
+                MemberId = r.MemberId,
+                MemberName = r.Member?.FullName ?? "Hội viên",
+                Rating = r.Rating,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt,
+                IsVisible = r.IsVisible,
+                OwnerReply = r.OwnerReply,
+                OwnerRepliedAt = r.OwnerRepliedAt
+            }).ToList();
+
+            bool canReview = false;
+            string? cannotReviewReason = null;
+            GymReviewDisplayViewModel? currentUserReviewVm = null;
+
+            if (currentUser != null)
+            {
+                var userReview = await _context.GymReviews
+                    .FirstOrDefaultAsync(r => r.GymId == id && r.MemberId == currentUser.Id);
+
+                if (userReview != null)
+                {
+                    currentUserReviewVm = new GymReviewDisplayViewModel
+                    {
+                        Id = userReview.Id,
+                        GymId = userReview.GymId,
+                        GymName = gym.Name,
+                        GymAddress = gym.Address,
+                        MemberId = userReview.MemberId,
+                        MemberName = currentUser.FullName ?? "Hội viên",
+                        Rating = userReview.Rating,
+                        Comment = userReview.Comment,
+                        CreatedAt = userReview.CreatedAt,
+                        UpdatedAt = userReview.UpdatedAt,
+                        IsVisible = userReview.IsVisible,
+                        OwnerReply = userReview.OwnerReply,
+                        OwnerRepliedAt = userReview.OwnerRepliedAt
+                    };
+                }
+
+                bool hasPurchased = await _context.MemberMemberships
+                    .AnyAsync(m => m.MemberId == currentUser.Id && m.GymId == id);
+
+                if (!hasPurchased)
+                {
+                    hasPurchased = await _context.Transactions
+                        .AnyAsync(t => t.MemberId == currentUser.Id && t.Status == "Success"
+                                       && t.Membership != null && t.Membership.GymId == id);
+                }
+
+                if (hasPurchased)
+                {
+                    canReview = true;
+                }
+                else
+                {
+                    cannotReviewReason = "Chỉ hội viên đã từng mua vé hoặc gói tập tại cơ sở này mới có thể viết đánh giá.";
+                }
+            }
+            else
+            {
+                cannotReviewReason = "Vui lòng đăng nhập tài khoản để viết đánh giá cho phòng Gym.";
+            }
+
             var vm = new GymDetailsViewModel
             {
                 Id                    = gym.Id,
@@ -155,7 +248,14 @@ namespace GymManagement.Controllers
                 CrowdStatusText       = cText,
                 CrowdStatusColor      = cColor,
                 CrowdStatusIcon       = cIcon,
-                CrowdRecommendation   = cRec
+                CrowdRecommendation   = cRec,
+                AverageRating         = avgRating,
+                TotalReviews          = totalReviews,
+                StarCounts            = starCounts,
+                Reviews               = reviewDisplays,
+                CanReview             = canReview,
+                CannotReviewReason    = cannotReviewReason,
+                CurrentUserReview     = currentUserReviewVm
             };
 
             return View(vm);

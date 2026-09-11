@@ -22,6 +22,8 @@ namespace GymManagement.Models
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<CheckinLog> CheckinLogs { get; set; }
+        public DbSet<GymReview> GymReviews { get; set; }
+        public DbSet<BannedWord> BannedWords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -265,6 +267,35 @@ namespace GymManagement.Models
                       .WithMany()
                       .HasForeignKey(c => c.MembershipId)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ===================== GYM REVIEW =====================
+            modelBuilder.Entity<GymReview>(entity =>
+            {
+                entity.ToTable(tb =>
+                {
+                    tb.HasCheckConstraint("CK_GymReviews_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+                });
+
+                entity.HasIndex(r => new { r.GymId, r.MemberId }).IsUnique();
+                entity.HasIndex(r => new { r.GymId, r.IsVisible });
+                entity.HasIndex(r => r.CreatedAt);
+
+                entity.HasOne(r => r.Gym)
+                      .WithMany(g => g.GymReviews)
+                      .HasForeignKey(r => r.GymId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.Member)
+                      .WithMany(u => u.GymReviews)
+                      .HasForeignKey(r => r.MemberId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ===================== BANNED WORD =====================
+            modelBuilder.Entity<BannedWord>(entity =>
+            {
+                entity.HasIndex(b => b.Word).IsUnique();
             });
         }
     }

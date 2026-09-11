@@ -92,5 +92,20 @@ namespace GymManagement.ViewModels
         public string CrowdStatusColor { get; set; } = "#10b981";
         public string CrowdStatusIcon { get; set; } = "bi-emoji-smile";
         public string CrowdRecommendation { get; set; } = "Phòng tập đang vắng, máy tập thoáng đãng — Thời điểm lý tưởng!";
+
+        // ── Rating & Review (V2) ──
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
+        public bool HasReviews => TotalReviews > 0;
+        public Dictionary<int, int> StarCounts { get; set; } = new() { { 5, 0 }, { 4, 0 }, { 3, 0 }, { 2, 0 }, { 1, 0 } };
+        public List<GymReviewDisplayViewModel> Reviews { get; set; } = new();
+
+        /// <summary>Hội viên hiện tại có quyền viết đánh giá cho gym này không.</summary>
+        public bool CanReview { get; set; }
+        public string? CannotReviewReason { get; set; }
+
+        /// <summary>Đánh giá đã có của hội viên hiện tại (nếu có để cho phép sửa/xóa).</summary>
+        public GymReviewDisplayViewModel? CurrentUserReview { get; set; }
+        public bool HasUserReviewed => CurrentUserReview != null;
     }
 }

@@ -12,8 +12,8 @@
 | 1 | 🖼️ Multi-Image Gallery | ⭐⭐ | Owner upload nhiều ảnh cho Gym, kéo thả sắp xếp, gallery carousel | ✅ **Hoàn thành** |
 | 2 | 🚫 Đình Chỉ Hội Viên | ⭐⭐ | Owner tạm đình chỉ / cấm vĩnh viễn Member vi phạm tại gym | ✅ **Hoàn thành** |
 | 3 | 👑 VIP Loyalty System | ⭐⭐⭐ | Hệ thống thăng hạng tự động dựa trên số lần mua vé, Owner tùy chỉnh ngưỡng | ✅ **Hoàn thành** |
-| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên | ⏳ Tiếp theo |
-| 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập | ⏸️ Chưa làm |
+| 4 | 📱 QR Check-in Thông Minh | ⭐⭐⭐ | Mỗi Member có mã QR riêng, Owner quét để xem đầy đủ thông tin hội viên; Thước đo độ đông đúc realtime | ✅ **Hoàn thành** |
+| 5 | ⭐ Rating & Review | ⭐⭐ | Member đánh giá sao + viết review cho Gym đã tập, bộ lọc từ cấm | ✅ **Hoàn thành** |
 | 6 | 🔔 Notification Center | ⭐⭐ | Trung tâm thông báo real-time (sắp hết hạn, đình chỉ, khuyến mãi...) | ✅ **Hoàn thành** |
 | 7 | 📊 Nâng cấp Dashboard & Báo cáo | ⭐⭐ | Biểu đồ nâng cao, thống kê VIP, xuất báo cáo Excel/PDF | ⏸️ Chưa làm |
 
@@ -174,14 +174,14 @@ Khi Transaction.Status chuyển thành "Success":
 
 ---
 
-## MODULE 4: 📱 QR CHECK-IN THÔNG MINH
+## MODULE 4: 📱 QR CHECK-IN THÔNG MINH — ✅ [ĐÃ HOÀN THÀNH]
 
 ### 4.1 Vấn đề V1
 - Không có cơ chế **check-in** khi hội viên đến tập
 - Owner không biết ai đang ở trong phòng, ai đã hết hạn
-- Không có bằng chứng hội viên đã sử dụng dịch vụ
+- Khách hàng không biết phòng tập đang đông hay vắng tại thời điểm muốn đi tập
 
-### 4.2 Giải pháp V2
+### 4.2 Giải pháp V2 (Đã triển khai)
 
 #### Luồng hoạt động
 
@@ -224,7 +224,7 @@ Khi Transaction.Status chuyển thành "Success":
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Database — Entities mới
+#### Database — Entities mới (Đã áp dụng Migration `AddCheckinSystemAndMaxCapacity`)
 
 **`MemberQrToken.cs`** — Token bảo mật cho QR của Member
 
@@ -245,20 +245,25 @@ Khi Transaction.Status chuyển thành "Success":
 | `GymId` | int (FK → Gym) | |
 | `MembershipId` | int (FK → MemberMembership) | Vé nào được dùng |
 | `CheckinTime` | DateTime | Thời điểm check-in |
+| `CheckoutTime` | DateTime? | Thời điểm check-out (rời phòng) |
 | `CheckedByUserId` | string (FK → ApplicationUser) | Owner/Staff quét |
 | `Status` | enum | `Success` / `Expired` / `Suspended` / `NoActiveMembership` |
 
-#### Functions mới
+**Trường bổ sung trên `Gym.cs`:**
+- `MaxCapacity`: Sức chứa tối đa của phòng Gym (mặc định 50, tùy chỉnh 5–2000).
 
-| Mã | Function | Screen | Mô tả |
-|----|----------|--------|-------|
-| MEM-20 | Xem mã QR cá nhân | `Member/MyQrCode` | Hiển thị QR Code + nút tải/lưu ảnh QR |
-| MEM-21 | Lịch sử check-in | `Member/CheckinHistory` | Danh sách lần check-in tại các gym, lọc theo thời gian |
-| OWN-29 | Quét QR check-in | `OwnerCheckin/Scan/{gymId}` | Mở camera quét QR, hiển thị thông tin Member + trạng thái |
-| OWN-30 | Xác nhận check-in | `OwnerCheckin/Confirm` (POST) | Bấm xác nhận cho Member vào tập |
-| OWN-31 | Lịch sử check-in gym | `OwnerCheckin/History/{gymId}` | Danh sách check-in hôm nay / theo ngày, thống kê lượt tập |
-| OWN-32 | Thống kê lượt check-in | `OwnerDashboard/CheckinStats/{gymId}` | Biểu đồ check-in theo ngày/tuần/tháng, giờ cao điểm |
-| ADM-18 | Giám sát check-in toàn hệ thống | `AdminCheckin/Index` | Thống kê check-in tổng quan |
+#### Functions đã hoàn thành
+
+| Mã | Function | Screen | Trạng thái | Mô tả |
+|----|----------|--------|------------|-------|
+| MEM-20 | Xem mã QR cá nhân | `Member/MyQrCode` | [x] Hoàn thành | Hiển thị QR Code + nút tải/lưu ảnh QR |
+| MEM-21 | Lịch sử check-in | `Member/CheckinHistory` | [x] Hoàn thành | Danh sách lần check-in tại các gym, lọc theo thời gian |
+| OWN-29 | Quét QR check-in | `OwnerCheckin/Scan/{gymId}` | [x] Hoàn thành | Mở camera quét QR, hiển thị thông tin Member + trạng thái |
+| OWN-30 | Xác nhận check-in | `OwnerCheckin/Confirm` (POST) | [x] Hoàn thành | Bấm xác nhận cho Member vào tập, check-out khi rời phòng |
+| OWN-31 | Lịch sử check-in gym | `OwnerCheckin/History/{gymId}` | [x] Hoàn thành | Danh sách check-in hôm nay / theo ngày, thống kê lượt tập |
+| OWN-32 | Thống kê lượt check-in | `OwnerDashboard/CheckinStats/{gymId}` | [x] Hoàn thành | Biểu đồ check-in theo ngày/tuần/tháng, giờ cao điểm |
+| GUE-12 | Thước đo độ đông đúc thời gian thực (Live Crowd Meter) | `Gym/Details/{id}` | [x] Hoàn thành | Đếm số lượng khách đang tập thực tế so với sức chứa tối đa (`MaxCapacity`), hiển thị % công suất và trạng thái: Đang vắng / Khá đông / Rất đông để người mua vé biết tình trạng trước khi đến |
+| ADM-18 | Giám sát check-in toàn hệ thống | `AdminCheckin/Index` | [x] Hoàn thành | Thống kê check-in tổng quan |
 
 #### Nội dung mã QR
 ```json
@@ -272,63 +277,60 @@ Khi Transaction.Status chuyển thành "Success":
 - Sinh QR bằng thư viện **QRCoder** (NuGet) — hoàn toàn server-side, không cần API bên thứ ba
 - Token **đổi mỗi 24 giờ** (hoặc khi Member bấm "Làm mới QR") → chống chụp ảnh QR giả mạo
 
-#### Logic kiểm tra khi quét
-
-```
-Khi Owner quét QR thành công:
-  1. Decode QR → lấy MemberId + Token
-  2. Verify Token còn hiệu lực (chưa hết hạn)
-  3. Kiểm tra MemberMembership:
-     - Có vé active tại gym này? (EndDate >= today)
-     - Gói tập là gì? Hạn đến bao giờ?
-  4. Kiểm tra MemberSuspension:
-     - Đang bị đình chỉ tại gym này?
-  5. Lấy MemberVipStatus:
-     - Hạng VIP hiện tại, quyền lợi
-  6. Trả về kết quả tổng hợp:
-     ✅ HỢP LỆ → Nút "Check-in" cho phép vào tập
-     ❌ HẾT HẠN → Cảnh báo đỏ, gợi ý gia hạn
-     🚫 ĐÌNH CHỈ → Hiện lý do, thời hạn đình chỉ
-     ⚠️ KHÔNG CÓ VÉ → Hiện thông báo chưa mua vé tại gym này
-```
-
 ---
 
-## MODULE 5: ⭐ RATING & REVIEW
+## MODULE 5: ⭐ RATING & REVIEW — ✅ [ĐÃ HOÀN THÀNH]
 
 ### 5.1 Ý tưởng
 - Member đã từng mua vé tại gym mới được phép đánh giá
 - Giúp Guest/Member khác tham khảo khi chọn gym
+- Tích hợp **bộ lọc từ ngữ cấm (Profanity Filter)** để bảo đảm môi trường đánh giá văn minh, không xúc phạm hay spam
 
-### 5.2 Giải pháp V2
+### 5.2 Giải pháp V2 (Đã triển khai)
 
-#### Database — Entity mới: `GymReview.cs`
+#### Database — Entities mới (Đã áp dụng Migration `AddGymReviewsAndBannedWords`)
+
+**`GymReview.cs`** — Đánh giá của hội viên
 
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `Id` | int (PK) | |
-| `GymId` | int (FK → Gym) | |
-| `MemberId` | string (FK → ApplicationUser) | |
+| `GymId` | int (FK → Gym) | Phòng gym được đánh giá |
+| `MemberId` | string (FK → ApplicationUser) | Hội viên đánh giá |
 | `Rating` | int | Số sao 1-5 |
 | `Comment` | string? | Nội dung đánh giá (tối đa 500 ký tự) |
 | `CreatedAt` | DateTime | Thời điểm đánh giá |
-| `IsVisible` | bool | Owner có thể ẩn review vi phạm |
+| `UpdatedAt` | DateTime? | Thời điểm chỉnh sửa |
+| `IsVisible` | bool | Trạng thái hiển thị (Owner/Admin có thể ẩn) |
+| `OwnerReply` | string? | Phản hồi của chủ phòng gym |
+| `OwnerRepliedAt` | DateTime? | Thời điểm chủ phòng phản hồi |
 
-#### Functions mới
+**`BannedWord.cs`** — Danh sách từ ngữ cấm trong bình luận
 
-| Mã | Function | Screen | Mô tả |
-|----|----------|--------|-------|
-| MEM-22 | Viết đánh giá Gym | `Gym/Details/{id}` (nâng cấp) | Form chấm sao + viết nhận xét (chỉ khi đã mua vé) |
-| MEM-23 | Sửa/xóa đánh giá | `Member/MyReviews` | Quản lý các đánh giá đã viết |
-| GUE-11 | Xem đánh giá Gym | `Gym/Details/{id}` (nâng cấp) | Danh sách review, trung bình sao |
-| OWN-33 | Quản lý review | `OwnerReview/Index/{gymId}` | Xem tất cả review, ẩn review vi phạm |
-| ADM-19 | Giám sát review toàn hệ thống | `AdminReview/Index` | Quản lý review bị report |
+| Field | Type | Mô tả |
+|-------|------|-------|
+| `Id` | int (PK) | |
+| `Word` | string | Từ ngữ/cụm từ bị cấm (viết hoa/thường, không phân biệt dấu) |
+| `Category` | string? | Phân loại (Thô tục, Xúc phạm, Lừa đảo, Quảng cáo) |
+| `CreatedAt` | DateTime | Thời điểm thêm vào danh sách |
+
+#### Functions đã hoàn thành
+
+| Mã | Function | Screen | Trạng thái | Mô tả |
+|----|----------|--------|------------|-------|
+| MEM-22 | Viết đánh giá Gym | `Gym/Details/{id}` (nâng cấp) | [x] Hoàn thành | Form chấm sao + viết nhận xét (chỉ khi đã mua vé, tự động kiểm tra từ cấm) |
+| MEM-23 | Sửa/xóa đánh giá | `Member/MyReviews` | [x] Hoàn thành | Quản lý các đánh giá đã viết, chỉnh sửa hoặc xóa |
+| GUE-11 | Xem đánh giá Gym | `Gym/Details/{id}` & `Gym/Search` | [x] Hoàn thành | Danh sách review, thanh phân bổ 5⭐-1⭐, điểm trung bình sao trên card |
+| OWN-33 | Quản lý review | `OwnerReview/Index/{gymId}` | [x] Hoàn thành | Xem tất cả review, ẩn review vi phạm, viết phản hồi cho khách |
+| ADM-19 | Giám sát review toàn hệ thống | `AdminReview/Index` | [x] Hoàn thành | Quản lý, ẩn hoặc xóa vĩnh viễn review |
+| ADM-20 | Cấu hình từ ngữ cấm | `AdminReview/BannedWords` | [x] Hoàn thành | Thiết lập danh sách từ cấm, tự động chặn bình luận vi phạm |
 
 #### Business Rules
-- **1 Member chỉ được 1 review / gym** (có thể sửa lại)
-- Chỉ Member **đã từng có vé Success** tại gym mới được đánh giá
-- Owner có thể **ẩn review** nhưng KHÔNG được xóa (Admin mới được xóa)
-- Điểm trung bình sao hiển thị trên card Gym ở trang Search
+- **1 Member chỉ được 1 review / gym** (có thể sửa lại hoặc xóa)
+- Chỉ Member **đã từng có vé Success / MemberMembership** tại gym mới được đánh giá
+- **Bộ lọc từ ngữ cấm**: Khi gửi hoặc sửa review, hệ thống quét comment với danh sách `BannedWord`. Nếu phát hiện từ cấm → Chặn lưu và báo lỗi cụ thể để thành viên chỉnh sửa
+- Owner có thể **ẩn review** và **phản hồi review**, nhưng KHÔNG được xóa (Admin mới được xóa)
+- Điểm trung bình sao hiển thị trên card Gym ở trang Search và trang Chi tiết Gym
 
 ---
 
@@ -448,11 +450,11 @@ Khi Owner quét QR thành công:
 
 ### Phase 2 — Core V2 Features
 4. [x] **Module 3**: VIP Loyalty System — ✅ **Đã hoàn thành 100%**
-5. [ ] **Module 4**: QR Check-in — ⏳ **Tiếp theo** (tích hợp VIP + Suspension info)
+5. [x] **Module 4**: QR Check-in & Live Crowd Meter — ✅ **Đã hoàn thành 100%**
 
 ### Phase 3 — Polish & Analytics
-6. **Module 5**: Rating & Review — tăng tương tác cộng đồng
-7. **Module 7**: Nâng cấp Dashboard — tổng hợp dữ liệu từ tất cả module mới
+6. [x] **Module 5**: Rating & Review — ✅ **Đã hoàn thành 100%** (Đánh giá, phản hồi & bộ lọc từ cấm)
+7. [ ] **Module 7**: Nâng cấp Dashboard — tổng hợp dữ liệu từ tất cả module mới (Tiếp theo)
 
 ---
 

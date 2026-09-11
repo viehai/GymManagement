@@ -376,6 +376,10 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerTransaction" ? "active" : "")">
                 <i class="bi bi-receipt"></i> Lịch sử giao dịch
             </a>
+            <a asp-controller="OwnerReview" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerReview" ? "active" : "")">
+                <i class="bi bi-star text-warning"></i> Đánh giá &amp; Nhận xét
+            </a>
 
             <p class="nav-section-label" style="margin-top:1rem;">Điểm danh & Ra vào</p>
             <a asp-controller="OwnerCheckin" asp-action="Scan"

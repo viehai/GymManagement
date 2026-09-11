@@ -49,5 +49,6 @@ namespace GymManagement.Models
         public ICollection<VipTierSetting> VipTierSettings { get; set; } = new List<VipTierSetting>();
         public ICollection<MemberVipStatus> MemberVipStatuses { get; set; } = new List<MemberVipStatus>();
         public ICollection<CheckinLog> CheckinLogs { get; set; } = new List<CheckinLog>();
+        public ICollection<GymReview> GymReviews { get; set; } = new List<GymReview>();
     }
 }

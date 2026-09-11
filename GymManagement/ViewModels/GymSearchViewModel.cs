@@ -25,6 +25,14 @@ namespace GymManagement.ViewModels
         /// <summary>Ngày tạo.</summary>
         public DateTime CreatedAt { get; set; }
 
+        /// <summary>Điểm đánh giá trung bình (1.0 - 5.0).</summary>
+        public double AverageRating { get; set; }
+
+        /// <summary>Tổng số lượt đánh giá hợp lệ.</summary>
+        public int TotalReviews { get; set; }
+
+        public bool HasReviews => TotalReviews > 0;
+
         // ── Computed helpers ──
 
         /// <summary>Trả về ảnh mặc định khi ImageUrl rỗng.</summary>

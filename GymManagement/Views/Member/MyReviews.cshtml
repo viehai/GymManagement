@@ -1,0 +1,321 @@
+@model IEnumerable<GymManagement.ViewModels.GymReviewDisplayViewModel>
+
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Đánh Giá Của Tôi";
+    var totalReviews = Model?.Count() ?? 0;
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       PAGE: MEMBER MY REVIEWS — INK WASH PALETTE
+       Flat Design · No border-radius · No box-shadow
+    ═══════════════════════════════════════════════ */
+    .myreviews-hero {
+        background: #F7F7F7;
+        border-bottom: 1px solid #CFCFCF;
+        padding: 3.5rem 0 2.5rem;
+    }
+    .myreviews-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        color: #252525;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.4rem;
+    }
+    .review-item-card {
+        border: 1px solid #CFCFCF;
+        background: #FFFFFF;
+        padding: 1.5rem;
+        transition: border-color 0.2s ease;
+    }
+    .review-item-card:hover {
+        border-color: #252525;
+    }
+    .gym-thumb {
+        width: 100px;
+        height: 75px;
+        object-fit: cover;
+        background: #F0F0F0;
+        flex-shrink: 0;
+    }
+    .owner-reply-quote {
+        background: #F8F9FA;
+        border-left: 3px solid #252525;
+        padding: 0.9rem 1.2rem;
+    }
+    .modal-content {
+        border: 2px solid #252525 !important;
+        border-radius: 0 !important;
+    }
+    .modal-header {
+        border-bottom: 1px solid #CFCFCF;
+        padding: 1.2rem 1.5rem;
+    }
+    .modal-footer {
+        border-top: 1px solid #CFCFCF;
+        padding: 1rem 1.5rem;
+    }
+</style>
+
+<!-- Hero Section -->
+<section class="myreviews-hero">
+    <div class="container">
+        <h1 class="myreviews-title">Đánh Giá Của Tôi</h1>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">
+            Quản lý các nhận xét, đánh giá bạn đã đóng góp cho các cơ sở phòng Gym trên hệ thống.
+        </p>
+    </div>
+</section>
+
+<!-- Content Section -->
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+        <span class="text-uppercase fw-bold text-muted small" style="letter-spacing: 1px;">
+            Tổng cộng: <strong>@totalReviews</strong> đánh giá
+        </span>
+        <a asp-controller="Gym" asp-action="Search" class="btn btn-outline-dark rounded-0 px-3 py-1 text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 1px;">
+            <i class="bi bi-search me-1"></i>Khám phá thêm phòng Gym
+        </a>
+    </div>
+
+    @if (totalReviews == 0)
+    {
+        <div class="text-center py-5 border border-dashed">
+            <i class="bi bi-star d-block text-muted mb-3" style="font-size: 3rem; opacity: 0.4;"></i>
+            <h5 class="fw-bold text-dark mb-2">Bạn chưa có đánh giá nào</h5>
+            <p class="text-muted small mb-4">
+                Sau khi mua vé và trải nghiệm dịch vụ tại các phòng Gym, bạn có thể để lại nhận xét để giúp các hội viên khác!
+            </p>
+            <a asp-controller="Gym" asp-action="Search" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 1.5px;">
+                Tìm phòng Gym ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-4">
+            @foreach (var r in Model!)
+            {
+                <div class="review-item-card" id="myreview-@r.Id">
+                    <div class="row g-4 align-items-start">
+                        <!-- Cột Gym Info -->
+                        <div class="col-12 col-md-4">
+                            <div class="d-flex gap-3">
+                                @if (!string.IsNullOrWhiteSpace(r.GymImage))
+                                {
+                                    <img src="@r.GymImage" alt="@r.GymName" class="gym-thumb" onerror="this.style.display='none';" />
+                                }
+                                <div>
+                                    <h6 class="fw-bold mb-1">
+                                        <a asp-controller="Gym" asp-action="Details" asp-route-id="@r.GymId" class="text-dark text-decoration-none">
+                                            @r.GymName
+                                        </a>
+                                    </h6>
+                                    <p class="text-muted small mb-2" style="font-size: 0.78rem;">
+                                        <i class="bi bi-geo-alt me-1"></i>@r.GymAddress
+                                    </p>
+                                    <a asp-controller="Gym" asp-action="Details" asp-route-id="@r.GymId" class="text-dark fw-bold small text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                        Xem phòng Gym <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cột Nội dung đánh giá -->
+                        <div class="col-12 col-md-6 border-start-md">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="text-warning" style="font-size: 1rem;">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="bi @(i <= r.Rating ? "bi-star-fill" : "bi-star text-muted")"></i>
+                                    }
+                                </div>
+                                <span class="fw-bold text-dark" style="font-size: 0.85rem;">@r.Rating sao</span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">• @r.TimeAgo</span>
+                                @if (!r.IsVisible)
+                                {
+                                    <span class="badge bg-danger rounded-0" style="font-size: 0.65rem;">Đang bị ẩn</span>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(r.Comment))
+                            {
+                                <p class="text-secondary mb-2" style="font-size: 0.88rem; line-height: 1.6;">
+                                    @r.Comment
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic small mb-2">
+                                    Không có lời nhận xét chữ.
+                                </p>
+                            }
+
+                            @if (r.UpdatedAt.HasValue)
+                            {
+                                <div class="text-muted small mb-2" style="font-size: 0.7rem;">
+                                    <i class="bi bi-clock-history me-1"></i>Chỉnh sửa lần cuối: @r.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+                            }
+
+                            @if (r.HasOwnerReply)
+                            {
+                                <div class="owner-reply-quote mt-3">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-dark text-white rounded-0" style="font-size: 0.65rem;">Phản hồi từ chủ phòng Gym</span>
+                                        <span class="text-muted small" style="font-size: 0.7rem;">@r.ReplyTimeAgo</span>
+                                    </div>
+                                    <p class="mb-0 text-dark small" style="font-size: 0.82rem;">@r.OwnerReply</p>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Cột Thao tác -->
+                        <div class="col-12 col-md-2 text-md-end">
+                            <div class="d-flex flex-md-column gap-2 justify-content-end">
+                                <button type="button"
+                                        class="btn btn-outline-dark rounded-0 btn-sm text-uppercase fw-bold py-1 px-3"
+                                        style="font-size: 0.7rem; letter-spacing: 1px;"
+                                        onclick="openEditModal(@r.Id, @r.GymId, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(r.GymName))', @r.Rating, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(r.Comment ?? ""))')">
+                                    <i class="bi bi-pencil-square me-1"></i>Sửa
+                                </button>
+                                <form method="post" asp-controller="Review" asp-action="Delete" asp-route-id="@r.Id" asp-route-returnUrl="/Member/MyReviews" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?');" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger rounded-0 btn-sm text-uppercase fw-bold py-1 px-3 w-100" style="font-size: 0.7rem; letter-spacing: 1px;">
+                                        <i class="bi bi-trash me-1"></i>Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Modal Chỉnh Sửa Đánh Giá -->
+<div class="modal fade" id="editReviewModal" tabindex="-1" aria-labelledby="editReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-controller="Review" asp-action="Submit">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="GymId" id="modalGymId" />
+                <input type="hidden" name="Rating" id="modalRating" value="5" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-uppercase" id="editReviewModalLabel" style="font-family:'Montserrat',sans-serif; font-size:0.88rem; letter-spacing:1px;">
+                        Chỉnh Sửa Đánh Giá
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Đang sửa đánh giá cho cơ sở: <strong id="modalGymName" class="text-dark"></strong>
+                    </p>
+
+                    <!-- Chọn sao tương tác -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold text-uppercase mb-1" style="font-size:0.72rem; letter-spacing:0.5px;">
+                            Số sao: <strong id="modalScoreText" class="text-dark">5 sao</strong>
+                        </label>
+                        <div class="d-flex align-items-center gap-2" id="modalStarPicker">
+                            @for (int s = 1; s <= 5; s++)
+                            {
+                                <i class="bi bi-star-fill star-picker-star active"
+                                   data-score="@s"
+                                   style="font-size: 1.8rem; cursor: pointer;"
+                                   title="@s sao"></i>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Ô nhận xét -->
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="modalCommentText" class="form-label text-muted small fw-semibold text-uppercase mb-0" style="font-size:0.72rem; letter-spacing:0.5px;">
+                                Lời nhận xét (tùy chọn):
+                            </label>
+                            <span id="modalCharCount" class="text-muted small" style="font-size:0.72rem;">0/500</span>
+                        </div>
+                        <textarea id="modalCommentText"
+                                  name="Comment"
+                                  class="form-control rounded-0 border-dark"
+                                  rows="4"
+                                  maxlength="500"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary rounded-0 px-3 py-2 text-uppercase fw-bold" style="font-size:0.72rem;" data-bs-dismiss="modal">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase fw-bold" style="font-size:0.72rem; letter-spacing:1px;">
+                        Lưu Đánh Giá
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var editModalInstance = null;
+        var modalPicker = document.getElementById('modalStarPicker');
+        var modalInputRating = document.getElementById('modalRating');
+        var modalScoreText = document.getElementById('modalScoreText');
+        var modalComment = document.getElementById('modalCommentText');
+        var modalCharCount = document.getElementById('modalCharCount');
+
+        function openEditModal(reviewId, gymId, gymName, rating, comment) {
+            document.getElementById('modalGymId').value = gymId;
+            document.getElementById('modalGymName').textContent = gymName;
+            modalInputRating.value = rating;
+            modalComment.value = comment || '';
+            renderModalStars(rating);
+            updateModalCharCount();
+
+            if (!editModalInstance) {
+                editModalInstance = new bootstrap.Modal(document.getElementById('editReviewModal'));
+            }
+            editModalInstance.show();
+        }
+
+        function renderModalStars(score) {
+            if (!modalPicker) return;
+            var stars = Array.from(modalPicker.querySelectorAll('.star-picker-star'));
+            stars.forEach(function (star) {
+                var s = parseInt(star.getAttribute('data-score'));
+                if (s <= score) {
+                    star.style.color = '#F59E0B';
+                } else {
+                    star.style.color = '#D1D5DB';
+                }
+            });
+            if (modalScoreText) modalScoreText.textContent = score + ' sao';
+        }
+
+        function updateModalCharCount() {
+            if (!modalComment || !modalCharCount) return;
+            var len = modalComment.value.length;
+            modalCharCount.textContent = len + '/500';
+        }
+
+        if (modalPicker) {
+            var stars = Array.from(modalPicker.querySelectorAll('.star-picker-star'));
+            stars.forEach(function (star) {
+                star.addEventListener('click', function () {
+                    var s = parseInt(this.getAttribute('data-score'));
+                    modalInputRating.value = s;
+                    renderModalStars(s);
+                });
+            });
+        }
+
+        if (modalComment) {
+            modalComment.addEventListener('input', updateModalCharCount);
+        }
+    </script>
+}

@@ -389,6 +389,14 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminLog" ? "active" : "")">
                 <i class="bi bi-journal-text"></i> Nhật ký hệ thống
             </a>
+            <a asp-controller="AdminReview" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminReview" && ViewContext.RouteData.Values["action"]?.ToString() != "BannedWords" ? "active" : "")">
+                <i class="bi bi-star text-warning"></i> Giám sát Đánh giá
+            </a>
+            <a asp-controller="AdminReview" asp-action="BannedWords"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminReview" && ViewContext.RouteData.Values["action"]?.ToString() == "BannedWords" ? "active" : "")">
+                <i class="bi bi-shield-slash text-danger"></i> Cấu hình Từ cấm
+            </a>
 
             <p class="nav-section-label" style="margin-top:1rem;">Phím tắt</p>
             <a asp-controller="Notification" asp-action="Index"

@@ -1,0 +1,347 @@
+@model GymManagement.ViewModels.OwnerReviewIndexViewModel
+
+@{
+    Layout = "_OwnerAdminLayout";
+    ViewData["Title"] = "Đánh giá & Nhận xét phòng Gym";
+}
+
+@if (ViewBag.NoGyms == true)
+{
+    <div class="content-card text-center py-5">
+        <i class="bi bi-building-slash text-muted" style="font-size: 3rem;"></i>
+        <h5 class="fw-bold mt-3 mb-2">Bạn chưa có cơ sở phòng Gym nào</h5>
+        <p class="text-muted small mb-3">Vui lòng tạo cơ sở phòng gym trước khi quản lý đánh giá.</p>
+        <a asp-controller="OwnerGym" asp-action="Create" class="btn-owner-primary">
+            <i class="bi bi-plus-lg"></i> Tạo phòng Gym mới
+        </a>
+    </div>
+}
+else
+{
+    <!-- Gym selector & Filter header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Đánh giá &amp; Nhận xét của Hội viên</h4>
+            <p class="text-muted small mb-0">Theo dõi phản hồi của khách hàng, ẩn đánh giá vi phạm và tương tác phản hồi.</p>
+        </div>
+
+        @if (Model.OwnerGyms.Count > 1)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <label for="selectGymDropdown" class="text-muted small fw-semibold text-nowrap">Chọn cơ sở:</label>
+                <select id="selectGymDropdown" class="form-select form-select-sm" style="min-width: 200px;" onchange="window.location.href='/OwnerReview/Index?gymId=' + this.value;">
+                    @foreach (var g in Model.OwnerGyms)
+                    {
+                        <option value="@g.Id" selected="@(g.Id == Model.SelectedGymId ? "selected" : null)">@g.Name</option>
+                    }
+                </select>
+            </div>
+        }
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning text-dark">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div class="stat-value">@(Model.TotalReviews > 0 ? Model.AverageRating.ToString("0.0") : "—")</div>
+                <div class="stat-label">Điểm đánh giá trung bình</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary text-white">
+                    <i class="bi bi-chat-left-text"></i>
+                </div>
+                <div class="stat-value">@Model.TotalReviews</div>
+                <div class="stat-label">Tổng số lượt đánh giá</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger text-white">
+                    <i class="bi bi-eye-slash"></i>
+                </div>
+                <div class="stat-value">@Model.HiddenReviewsCount</div>
+                <div class="stat-label">Đánh giá đang bị ẩn</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success text-white">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div class="stat-value">@(Model.TotalReviews - Model.HiddenReviewsCount)</div>
+                <div class="stat-label">Đang hiển thị công khai</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phân bổ sao & Bộ lọc -->
+    <div class="content-card mb-4">
+        <div class="content-card-header">
+            <h5><i class="bi bi-funnel me-1"></i> Phân bổ số sao &amp; Bộ lọc</h5>
+        </div>
+        <div class="content-card-body">
+            <div class="row align-items-center g-4">
+                <!-- Cột phân bổ thanh sao -->
+                <div class="col-12 col-lg-6 border-end-lg">
+                    <div class="d-flex flex-column gap-2">
+                        @for (int s = 5; s >= 1; s--)
+                        {
+                            var count = Model.StarCounts.GetValueOrDefault(s, 0);
+                            var pct = Model.TotalReviews > 0 ? (int)Math.Round((double)count / Model.TotalReviews * 100) : 0;
+                            <div class="d-flex align-items-center gap-2" style="font-size:0.8rem;">
+                                <span style="width: 50px;" class="fw-bold">@s <i class="bi bi-star-fill text-warning"></i></span>
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: @pct%;"></div>
+                                </div>
+                                <span class="text-muted small" style="width: 60px; text-align: right;">@count (@pct%)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Cột nút lọc nhanh -->
+                <div class="col-12 col-lg-6">
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase d-block mb-2">Lọc theo số sao:</span>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="@Url.Action("Index", new { gymId = Model.SelectedGymId, rating = (int?)null, isVisible = Model.FilterVisibility })"
+                                   class="btn btn-sm @(!Model.FilterRating.HasValue ? "btn-dark" : "btn-outline-secondary")">
+                                    Tất cả sao
+                                </a>
+                                @for (int s = 5; s >= 1; s--)
+                                {
+                                    <a href="@Url.Action("Index", new { gymId = Model.SelectedGymId, rating = s, isVisible = Model.FilterVisibility })"
+                                       class="btn btn-sm @(Model.FilterRating == s ? "btn-warning text-dark fw-bold" : "btn-outline-secondary")">
+                                        @s <i class="bi bi-star-fill text-warning"></i>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase d-block mb-2">Trạng thái hiển thị:</span>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="@Url.Action("Index", new { gymId = Model.SelectedGymId, rating = Model.FilterRating, isVisible = (bool?)null })"
+                                   class="btn btn-sm @(!Model.FilterVisibility.HasValue ? "btn-dark" : "btn-outline-secondary")">
+                                    Tất cả
+                                </a>
+                                <a href="@Url.Action("Index", new { gymId = Model.SelectedGymId, rating = Model.FilterRating, isVisible = true })"
+                                   class="btn btn-sm @(Model.FilterVisibility == true ? "btn-success" : "btn-outline-secondary")">
+                                    <i class="bi bi-eye me-1"></i>Đang hiển thị
+                                </a>
+                                <a href="@Url.Action("Index", new { gymId = Model.SelectedGymId, rating = Model.FilterRating, isVisible = false })"
+                                   class="btn btn-sm @(Model.FilterVisibility == false ? "btn-danger" : "btn-outline-secondary")">
+                                    <i class="bi bi-eye-slash me-1"></i>Đang ẩn
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách đánh giá -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5><i class="bi bi-list-stars me-1"></i> Danh sách đánh giá (@Model.Reviews.Count)</h5>
+        </div>
+        <div class="content-card-body p-0">
+            @if (!Model.Reviews.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                    Không có đánh giá nào phù hợp với bộ lọc hiện tại.
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var r in Model.Reviews)
+                    {
+                        <div class="list-group-item p-4">
+                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar" style="width: 36px; height: 36px; border-radius: 50%; background: #6366f1; color: #fff; font-weight: bold; display: flex; align-items: center; justify-content: center;">
+                                        @r.MemberAvatarLetter
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">
+                                            @r.MemberName
+                                        </div>
+                                        <div class="text-muted small" style="font-size: 0.72rem;">
+                                            @r.TimeAgo • Gửi ngày @r.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Số sao -->
+                                    <div class="text-warning" style="font-size: 0.95rem;">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <i class="bi @(i <= r.Rating ? "bi-star-fill" : "bi-star text-muted")"></i>
+                                        }
+                                    </div>
+
+                                    <!-- Status badge -->
+                                    @if (r.IsVisible)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-eye me-1"></i>Hiển thị
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-eye-slash me-1"></i>Đang ẩn
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Comment text -->
+                            @if (!string.IsNullOrWhiteSpace(r.Comment))
+                            {
+                                <p class="text-secondary mb-3" style="font-size: 0.88rem; line-height: 1.6;">
+                                    @r.Comment
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic small mb-3">
+                                    Hội viên không để lại nhận xét chữ.
+                                </p>
+                            }
+
+                            <!-- Owner reply nested (nếu có) -->
+                            @if (r.HasOwnerReply)
+                            {
+                                <div class="p-3 bg-light border-start border-3 border-indigo rounded-2 mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <strong class="text-indigo small" style="font-size: 0.78rem;">
+                                            <i class="bi bi-reply-fill me-1"></i>Phản hồi của bạn (Chủ phòng):
+                                        </strong>
+                                        <span class="text-muted small" style="font-size: 0.7rem;">@r.ReplyTimeAgo</span>
+                                    </div>
+                                    <p class="mb-0 text-dark small" style="font-size: 0.84rem;">@r.OwnerReply</p>
+                                </div>
+                            }
+
+                            <!-- Action buttons -->
+                            <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                                <!-- Nút Ẩn / Hiện -->
+                                <form method="post" asp-action="ToggleVisibility" asp-route-id="@r.Id" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    @if (r.IsVisible)
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size: 0.75rem;" title="Ẩn đánh giá khỏi trang công khai">
+                                            <i class="bi bi-eye-slash me-1"></i>Ẩn đánh giá
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-success" style="font-size: 0.75rem;" title="Cho phép hiển thị lại">
+                                            <i class="bi bi-eye me-1"></i>Hiện lại đánh giá
+                                        </button>
+                                    }
+                                </form>
+
+                                <!-- Nút Viết / Sửa phản hồi -->
+                                <button type="button"
+                                        class="btn btn-sm btn-owner-primary"
+                                        style="font-size: 0.75rem;"
+                                        onclick="openReplyModal(@r.Id, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(r.MemberName))', '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(r.OwnerReply ?? ""))')">
+                                    <i class="bi bi-reply-fill me-1"></i>@(r.HasOwnerReply ? "Sửa phản hồi" : "Phản hồi khách")
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Modal Phản hồi đánh giá của Owner -->
+<div class="modal fade" id="ownerReplyModal" tabindex="-1" aria-labelledby="ownerReplyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="ownerReplyForm" asp-action="Reply">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="ownerReplyModalLabel" style="font-size: 0.95rem;">
+                        <i class="bi bi-reply-all me-1"></i> Phản hồi đánh giá
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Đang phản hồi cho hội viên: <strong id="modalReplyMemberName" class="text-dark"></strong>
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="modalReplyText" class="form-label small fw-semibold text-dark mb-1">
+                            Nội dung phản hồi của phòng gym:
+                        </label>
+                        <textarea id="modalReplyText"
+                                  name="replyText"
+                                  class="form-control"
+                                  rows="4"
+                                  maxlength="1000"
+                                  placeholder="Cảm ơn bạn đã đóng góp ý kiến... / Rất xin lỗi bạn vì sự bất tiện này..."
+                                  required></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <small class="text-muted" style="font-size: 0.7rem;">Hội viên sẽ nhận được thông báo chuông khi bạn gửi phản hồi.</small>
+                            <small id="replyCharCount" class="text-muted" style="font-size: 0.7rem;">0/1000</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-send me-1"></i> Gửi phản hồi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var replyModalInstance = null;
+        var replyTextarea = document.getElementById('modalReplyText');
+        var replyCharCount = document.getElementById('replyCharCount');
+
+        function openReplyModal(reviewId, memberName, currentReply) {
+            document.getElementById('ownerReplyForm').action = '/OwnerReview/Reply/' + reviewId;
+            document.getElementById('modalReplyMemberName').textContent = memberName;
+            replyTextarea.value = currentReply || '';
+            updateReplyCharCount();
+
+            if (!replyModalInstance) {
+                replyModalInstance = new bootstrap.Modal(document.getElementById('ownerReplyModal'));
+            }
+            replyModalInstance.show();
+        }
+
+        function updateReplyCharCount() {
+            if (!replyTextarea || !replyCharCount) return;
+            replyCharCount.textContent = replyTextarea.value.length + '/1000';
+        }
+
+        if (replyTextarea) {
+            replyTextarea.addEventListener('input', updateReplyCharCount);
+        }
+    </script>
+}

@@ -151,6 +151,21 @@ using (var scope = app.Services.CreateScope())
     {
         await dbContext.SaveChangesAsync();
     }
+
+    // Seed danh sách từ ngữ cấm mặc định nếu bảng BannedWords đang trống
+    if (!await dbContext.BannedWords.AnyAsync())
+    {
+        foreach (var (word, cat) in ContentFilterHelper.DefaultBannedWords)
+        {
+            dbContext.BannedWords.Add(new BannedWord
+            {
+                Word = word,
+                Category = cat,
+                CreatedAt = VnTime.Now
+            });
+        }
+        await dbContext.SaveChangesAsync();
+    }
 }
 
 // ===================== MIDDLEWARE PIPELINE =====================

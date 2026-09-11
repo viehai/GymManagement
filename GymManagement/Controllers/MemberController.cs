@@ -565,5 +565,40 @@ namespace GymManagement.Controllers
 
             return View(vm);
         }
+
+        // ==================== MEM-23: QUẢN LÝ ĐÁNH GIÁ CỦA TÔI ====================
+        public async Task<IActionResult> MyReviews()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var reviews = await _context.GymReviews
+                .Include(r => r.Gym)
+                    .ThenInclude(g => g.GymImages)
+                .Where(r => r.MemberId == user.Id)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new GymReviewDisplayViewModel
+                {
+                    Id = r.Id,
+                    GymId = r.GymId,
+                    GymName = r.Gym.Name,
+                    GymAddress = r.Gym.Address,
+                    GymImage = r.Gym.GymImages.Where(i => i.IsCover).Select(i => i.ImageUrl).FirstOrDefault()
+                               ?? r.Gym.GymImages.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).FirstOrDefault()
+                               ?? r.Gym.ImageUrl ?? string.Empty,
+                    MemberId = r.MemberId,
+                    MemberName = user.FullName ?? user.UserName ?? "Hội viên",
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt,
+                    IsVisible = r.IsVisible,
+                    OwnerReply = r.OwnerReply,
+                    OwnerRepliedAt = r.OwnerRepliedAt
+                })
+                .ToListAsync();
+
+            return View(reviews);
+        }
     }
 }
