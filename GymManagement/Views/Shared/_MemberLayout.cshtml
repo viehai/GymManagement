@@ -213,6 +213,12 @@
                                    asp-controller="Member" asp-action="MyMemberships">Gói Tập Của Tôi</a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" && ViewContext.RouteData.Values["action"]?.ToString() == "FaceId" ? "active" : "")"
+                                   asp-controller="Member" asp-action="FaceId">
+                                    <i class="bi bi-person-bounding-box text-success me-1"></i>Face ID
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Member" && ViewContext.RouteData.Values["action"]?.ToString() == "MyQrCode" ? "active" : "")"
                                    asp-controller="Member" asp-action="MyQrCode">
                                     <i class="bi bi-qr-code text-primary me-1"></i>Mã QR Vào Tập

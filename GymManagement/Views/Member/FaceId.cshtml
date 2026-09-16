@@ -1,0 +1,580 @@
+@model GymManagement.ViewModels.MemberFaceIdViewModel
+@{
+    Layout = "_MemberLayout";
+    ViewData["Title"] = "Face ID — Nhận diện khuôn mặt điểm danh";
+}
+
+@Html.AntiForgeryToken()
+
+<style>
+    /* ═══════════════════════════════════════════════
+       FACE ID ENROLLMENT — INK WASH HIGH-TECH
+    ═══════════════════════════════════════════════ */
+    .face-hero {
+        background: #252525;
+        color: #fff;
+        padding: 2.5rem 0;
+        border-bottom: 1px solid #CFCFCF;
+    }
+    .face-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: 1.5rem;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .face-container {
+        max-width: 960px;
+        margin: 2.5rem auto 4rem;
+        padding: 0 1rem;
+    }
+
+    .face-card {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        padding: 2rem;
+        position: relative;
+    }
+
+    /* Scanner Viewport */
+    .camera-viewport {
+        position: relative;
+        width: 100%;
+        max-width: 480px;
+        height: 360px;
+        margin: 0 auto 1.5rem;
+        background: #0f172a;
+        overflow: hidden;
+        border: 2px solid #252525;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .camera-viewport video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1); /* Gương phản chiếu tự nhiên */
+    }
+
+    .camera-viewport canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform: scaleX(-1);
+    }
+
+    /* Face Oval Guide */
+    .face-oval-guide {
+        position: absolute;
+        width: 200px;
+        height: 260px;
+        border: 3px dashed rgba(255, 255, 255, 0.4);
+        border-radius: 50% / 60% 60% 40% 40%;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+        pointer-events: none;
+        transition: border-color 0.3s ease, border-style 0.3s ease;
+    }
+    .face-oval-guide.aligned {
+        border-color: #10b981;
+        border-style: solid;
+        box-shadow: 0 0 25px rgba(16, 185, 129, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Progress bar */
+    .scan-progress-bar {
+        height: 8px;
+        background: #e2e8f0;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto 1rem;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .scan-progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #252525;
+        transition: width 0.3s ease;
+    }
+
+    .status-text {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        text-align: center;
+        margin-bottom: 1.2rem;
+    }
+
+    .btn-ink-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #252525;
+        color: #fff !important;
+        border: 1px solid #252525;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.75rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.8rem 1.6rem;
+        text-decoration: none;
+        transition: background 0.2s;
+        cursor: pointer;
+    }
+    .btn-ink-primary:hover {
+        background: #545454;
+    }
+
+    .btn-ink-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: transparent;
+        color: #252525 !important;
+        border: 1px solid #CFCFCF;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 0.75rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 0.8rem 1.6rem;
+        text-decoration: none;
+        transition: border-color 0.2s, background 0.2s;
+        cursor: pointer;
+    }
+    .btn-ink-outline:hover {
+        border-color: #252525;
+        background: #f5f5f5;
+    }
+
+    .face-badge-active {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        padding: 4px 12px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="face-hero">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <span style="font-size:0.68rem; letter-spacing:2px; text-transform:uppercase; color:#CFCFCF;">CÔNG NGHỆ V3 &bull; AI COMPUTER VISION</span>
+                <h1 class="face-title mt-1"><i class="bi bi-person-bounding-box me-2"></i>Face ID Điểm Danh Thông Minh</h1>
+            </div>
+            <a asp-controller="Member" asp-action="Profile" class="btn btn-outline-light btn-sm px-3" style="font-size:0.75rem; border-radius:0;">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại trang cá nhân
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="face-container">
+    <div class="row g-4">
+        <!-- Cột Trái: Trạng thái & Hướng dẫn -->
+        <div class="col-12 col-lg-5">
+            <div class="face-card h-100">
+                <h2 style="font-size:1.1rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem;">
+                    Hồ sơ Face ID của bạn
+                </h2>
+
+                <div id="profileStatusBox" class="p-3 mb-4" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    @if (Model.HasFaceRegistered)
+                    {
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:64px; height:64px; border:2px solid #252525; background:#fff; overflow:hidden; flex-shrink:0;">
+                                @if (!string.IsNullOrEmpty(Model.SampleImageUrl))
+                                {
+                                    <img src="@Model.SampleImageUrl" id="previewThumb" alt="Face thumbnail" style="width:100%; height:100%; object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-secondary">
+                                        <i class="bi bi-person-fill fs-3"></i>
+                                    </div>
+                                }
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="face-badge-active" id="statusBadge">ĐÃ KÍCH HOẠT</span>
+                                </div>
+                                <div style="font-size:0.8rem; color:#64748b;">
+                                    Đăng ký: <strong id="registeredTime">@(Model.RegisteredAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</strong>
+                                </div>
+                                <div style="font-size:0.75rem; color:#94a3b8;">
+                                    Độ chính xác FaceNet: <strong>99.4%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-2" id="emptyStatus">
+                            <i class="bi bi-person-x fs-1 text-secondary mb-2 d-block"></i>
+                            <span class="fw-bold text-dark d-block" style="font-size:0.9rem;">Chưa kích hoạt Face ID</span>
+                            <span class="text-muted small">Hãy bật camera laptop bên cạnh để quét và lưu khuôn mặt điểm danh.</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="mb-4">
+                    <h3 style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#545454; margin-bottom:0.75rem;">
+                        <i class="bi bi-shield-check text-dark me-1"></i> Lợi ích của Face ID
+                    </h3>
+                    <ul class="ps-3 mb-0" style="font-size:0.82rem; color:#64748b; line-height:1.7;">
+                        <li><strong>Vào tập trong 0.5 giây:</strong> Không cần mở điện thoại lấy mã QR.</li>
+                        <li><strong>Check-out tự động:</strong> Chỉ cần bước qua camera khi ra về để ghi nhận buổi tập.</li>
+                        <li><strong>Bảo mật cao:</strong> Hệ thống mã hóa khuôn mặt thành chuỗi số vector 128 chiều, tuyệt đối an toàn.</li>
+                    </ul>
+                </div>
+
+                <div class="p-3 mb-4" style="background:#fffbeb; border:1px solid #fef3c7; font-size:0.78rem; color:#92400e; line-height:1.5;">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    <strong>Mẹo chụp chuẩn trên Laptop:</strong> Ngồi thẳng lưng cách webcam laptop <strong>40cm – 60cm</strong>, đảm bảo phòng đủ ánh sáng, không đeo khẩu trang hoặc kính râm tối màu.
+                </div>
+
+                @if (Model.HasFaceRegistered)
+                {
+                    <div class="d-flex flex-column gap-2" id="manageFaceActions">
+                        <button type="button" class="btn-ink-outline w-100" id="btnRetake">
+                            <i class="bi bi-camera me-1"></i> Quét lại khuôn mặt mới
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm py-2" style="font-size:0.72rem; font-weight:700; letter-spacing:1px; border-radius:0;" id="btnDeleteFace">
+                            <i class="bi bi-trash3 me-1"></i> Xóa dữ liệu Face ID
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Cột Phải: Camera Quét Mẫu -->
+        <div class="col-12 col-lg-7">
+            <div class="face-card text-center">
+                <h2 style="font-size:1.1rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:1.5rem;">
+                    Quét Khuôn Mặt Bằng Webcam Laptop
+                </h2>
+
+                <!-- Viewport Camera -->
+                <div class="camera-viewport" id="cameraViewport">
+                    <video id="videoFeed" autoplay playsinline muted></video>
+                    <canvas id="overlayCanvas"></canvas>
+                    <div class="face-oval-guide" id="faceOval"></div>
+                    <div id="camPlaceholder" class="d-flex flex-column align-items-center justify-content-center text-secondary">
+                        <i class="bi bi-camera-video fs-1 mb-2"></i>
+                        <span class="small">Camera chưa khởi động</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="scan-progress-bar">
+                    <div class="scan-progress-fill" id="scanProgress"></div>
+                </div>
+
+                <!-- Trạng thái chữ -->
+                <div class="status-text text-secondary" id="scanStatus">
+                    Bấm "BẬT CAMERA QUÉT KHUÔN MẶT" để bắt đầu
+                </div>
+
+                <!-- Nút thao tác -->
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn-ink-primary" id="btnStartScan">
+                        <i class="bi bi-camera-video-fill me-1"></i> Bật Camera Quét Khuôn Mặt
+                    </button>
+                    <button type="button" class="btn-ink-outline d-none" id="btnStopScan">
+                        <i class="bi bi-stop-circle me-1"></i> Tắt Camera
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Face-api.js từ CDN ổn định -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<script>
+    // ═══════════════════════════════════════════════════════
+    // FACENET ENROLLMENT ENGINE
+    // ═══════════════════════════════════════════════════════
+    var video = document.getElementById('videoFeed');
+    var canvas = document.getElementById('overlayCanvas');
+    var oval = document.getElementById('faceOval');
+    var progressBar = document.getElementById('scanProgress');
+    var statusText = document.getElementById('scanStatus');
+    var btnStart = document.getElementById('btnStartScan');
+    var btnStop = document.getElementById('btnStopScan');
+    var placeholder = document.getElementById('camPlaceholder');
+
+    var stream = null;
+    var isDetecting = false;
+    var modelsLoaded = false;
+    var collectedSamples = [];
+    var REQUIRED_SAMPLES = 3;
+    var lastSampleTime = 0;
+
+    // CDN Models Fallback
+    var MODEL_URLS = [
+        'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@master/weights',
+        'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+    ];
+    var currentModelUrlIndex = 0;
+
+    // ── 1. Tải Model Weights ──
+    async function loadFaceModels() {
+        if (modelsLoaded) return true;
+        statusText.innerText = 'Đang nạp mô hình AI FaceNet vào bộ nhớ...';
+
+        var modelUrl = MODEL_URLS[currentModelUrlIndex];
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
+                faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl),
+                faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl)
+            ]);
+            modelsLoaded = true;
+            return true;
+        } catch (err) {
+            console.warn('Lỗi nạp từ ' + modelUrl + ', thử nguồn dự phòng...', err);
+            currentModelUrlIndex++;
+            if (currentModelUrlIndex < MODEL_URLS.length) {
+                return await loadFaceModels();
+            }
+            throw new Error('Không thể tải mô hình FaceNet từ CDN: ' + err.message);
+        }
+    }
+
+    // ── 2. Bật Camera ──
+    btnStart.addEventListener('click', async function() {
+        btnStart.disabled = true;
+        btnStart.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang chuẩn bị...';
+
+        try {
+            await loadFaceModels();
+
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                }
+            });
+
+            video.srcObject = stream;
+            placeholder.classList.add('d-none');
+            btnStart.classList.add('d-none');
+            btnStop.classList.remove('d-none');
+            collectedSamples = [];
+            progressBar.style.width = '0%';
+
+            video.onloadedmetadata = function() {
+                video.play();
+                isDetecting = true;
+                statusText.innerText = 'Hãy nhìn thẳng vào camera và căn chỉnh mặt vào khung oval';
+                startFaceDetectionLoop();
+            };
+        } catch (err) {
+            alert('Lỗi khởi động camera hoặc nạp model: ' + err.message);
+            btnStart.disabled = false;
+            btnStart.innerHTML = '<i class="bi bi-camera-video-fill me-1"></i> Bật Camera Quét Khuôn Mặt';
+        }
+    });
+
+    // ── 3. Tắt Camera ──
+    btnStop.addEventListener('click', stopCamera);
+
+    function stopCamera() {
+        isDetecting = false;
+        if (stream) {
+            stream.getTracks().forEach(function(t) { t.stop(); });
+            stream = null;
+        }
+        video.srcObject = null;
+        placeholder.classList.remove('d-none');
+        btnStop.classList.add('d-none');
+        btnStart.classList.remove('d-none');
+        btnStart.disabled = false;
+        btnStart.innerHTML = '<i class="bi bi-camera-video-fill me-1"></i> Bật Camera Quét Khuôn Mặt';
+        oval.classList.remove('aligned');
+        statusText.innerText = 'Camera đã dừng.';
+    }
+
+    // ── 4. Vòng Lặp Nhận Diện Khuôn Mặt (Detection Loop) ──
+    async function startFaceDetectionLoop() {
+        if (!isDetecting) return;
+
+        var detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+        var detection = await faceapi.detectSingleFace(video, detectorOptions)
+                                      .withFaceLandmarks()
+                                      .withFaceDescriptor();
+
+        if (detection && isDetecting) {
+            var box = detection.detection.box;
+            var score = detection.detection.score;
+
+            // Kiểm tra mặt có nằm trong vùng trung tâm không
+            var isCentered = (box.x > 50 && (box.x + box.width) < (video.videoWidth - 50));
+
+            if (isCentered && score > 0.75) {
+                oval.classList.add('aligned');
+                var now = Date.now();
+
+                // Lấy mẫu cách nhau 800ms
+                if (now - lastSampleTime > 800) {
+                    lastSampleTime = now;
+                    collectedSamples.push(detection.descriptor);
+
+                    var pct = Math.round((collectedSamples.length / REQUIRED_SAMPLES) * 100);
+                    progressBar.style.width = pct + '%';
+                    statusText.innerText = 'Đang quét mẫu ' + collectedSamples.length + '/' + REQUIRED_SAMPLES + '... Giữ nguyên khuôn mặt!';
+
+                    if (collectedSamples.length >= REQUIRED_SAMPLES) {
+                        isDetecting = false;
+                        await processAndEnrollFace();
+                        return;
+                    }
+                }
+            } else {
+                oval.classList.remove('aligned');
+                statusText.innerText = 'Hãy di chuyển mặt vào giữa khung viền oval...';
+            }
+        } else {
+            oval.classList.remove('aligned');
+            if (isDetecting) {
+                statusText.innerText = 'Chưa phát hiện khuôn mặt. Hãy nhìn thẳng vào webcam.';
+            }
+        }
+
+        if (isDetecting) {
+            requestAnimationFrame(startFaceDetectionLoop);
+        }
+    }
+
+    // ── 5. Tính Vector Trung Bình & Gửi Lên Server ──
+    async function processAndEnrollFace() {
+        statusText.innerHTML = '<span class="spinner-border spinner-border-sm me-1 text-dark"></span> Đang trích xuất vector 128 chiều và lưu hồ sơ...';
+
+        // 1. Tính vector trung bình từ 3 mẫu
+        var avgDescriptor = new Float32Array(128);
+        for (var i = 0; i < 128; i++) {
+            var sum = 0;
+            for (var j = 0; j < collectedSamples.length; j++) {
+                sum += collectedSamples[j][i];
+            }
+            avgDescriptor[i] = sum / collectedSamples.length;
+        }
+
+        // 2. Chụp thumbnail khuôn mặt từ Video
+        var cropCanvas = document.createElement('canvas');
+        cropCanvas.width = 160;
+        cropCanvas.height = 160;
+        var ctx = cropCanvas.getContext('2d');
+        // Flip canvas để ảnh lưu đúng góc nhìn
+        ctx.translate(160, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, (video.videoWidth - 320) / 2, (video.videoHeight - 320) / 2, 320, 320, 0, 0, 160, 160);
+        var imageBase64 = cropCanvas.toDataURL('image/jpeg', 0.85);
+
+        // 3. Gửi lên server
+        var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+        try {
+            var response = await fetch('/Member/RegisterFace', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    descriptor: Array.from(avgDescriptor),
+                    imageBase64: imageBase64,
+                    qualityScore: 0.95
+                })
+            });
+
+            var result = await response.json();
+            if (result.success) {
+                stopCamera();
+                playSuccessChime();
+                statusText.className = 'status-text text-success';
+                statusText.innerText = '✅ ' + result.message;
+
+                // Cập nhật giao diện trạng thái bên trái
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1200);
+            } else {
+                alert('Lỗi đăng ký: ' + result.message);
+                btnStart.classList.remove('d-none');
+                btnStop.classList.add('d-none');
+                btnStart.disabled = false;
+            }
+        } catch (err) {
+            alert('Lỗi kết nối server: ' + err);
+            btnStart.classList.remove('d-none');
+            btnStop.classList.add('d-none');
+            btnStart.disabled = false;
+        }
+    }
+
+    // ── 6. Chụp lại / Xóa Face ID ──
+    var btnRetake = document.getElementById('btnRetake');
+    if (btnRetake) {
+        btnRetake.addEventListener('click', function() {
+            btnStart.click();
+        });
+    }
+
+    var btnDelete = document.getElementById('btnDeleteFace');
+    if (btnDelete) {
+        btnDelete.addEventListener('click', async function() {
+            if (!confirm('Bạn có chắc chắn muốn xóa dữ liệu Face ID của tài khoản này không?')) return;
+
+            var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+            var res = await fetch('/Member/DeleteFaceId', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                }
+            });
+            var data = await res.json();
+            if (data.success) {
+                alert('Đã xóa Face ID.');
+                window.location.reload();
+            }
+        });
+    }
+
+    // Web Audio Sound Chime
+    function playSuccessChime() {
+        try {
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+        } catch(e) {}
+    }
+</script>

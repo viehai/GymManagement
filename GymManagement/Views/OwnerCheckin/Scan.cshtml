@@ -129,6 +129,9 @@
                 </select>
             </form>
 
+            <a asp-action="Kiosk" asp-route-gymId="@Model.SelectedGymId" target="_blank" class="btn btn-dark btn-sm fw-bold px-3" style="background:#0f172a; border-color:#0f172a;" title="Mở chế độ Kiosk toàn màn hình đặt tại cửa">
+                <i class="bi bi-display me-1 text-info"></i> Mở Kiosk Face ID (V3)
+            </a>
             <a asp-action="History" asp-route-gymId="@Model.SelectedGymId" class="btn btn-outline-dark btn-sm fw-bold px-3">
                 <i class="bi bi-clock-history me-1"></i> Xem lịch sử check-in
             </a>
@@ -194,6 +197,11 @@
                     <li class="nav-item">
                         <button class="nav-link fw-bold" id="phone-tab" data-bs-toggle="pill" data-bs-target="#phoneTabContent" type="button" style="font-size:0.82rem;">
                             <i class="bi bi-telephone-fill me-1"></i> Tra cứu SĐT
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold" id="facenet-tab" data-bs-toggle="pill" data-bs-target="#facenetTabContent" type="button" style="font-size:0.82rem; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;">
+                            <i class="bi bi-person-bounding-box me-1"></i> Quét Face ID (V3)
                         </button>
                     </li>
                 </ul>
@@ -269,6 +277,31 @@
                             <div class="form-text mt-1" style="font-size:0.75rem;">
                                 Áp dụng cho hội viên quên điện thoại, hết pin hoặc không dùng smartphone.
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: FaceNet Face Recognition -->
+                    <div class="tab-pane fade" id="facenetTabContent">
+                        <div class="scanner-box position-relative" id="faceNetContainer" style="min-height:300px; background:#020617; overflow:hidden;">
+                            <video id="ownerFaceVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
+                            <canvas id="ownerFaceCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
+                            <div class="face-oval-guide" id="ownerFaceOval" style="position:absolute; width:190px; height:250px; border:3px dashed rgba(56,189,248,0.5); border-radius:50%/60% 60% 40% 40%; pointer-events:none; box-shadow:0 0 0 9999px rgba(0,0,0,0.35);"></div>
+                            <div id="facePlaceholder" class="d-flex flex-column align-items-center justify-content-center text-secondary">
+                                <i class="bi bi-person-bounding-box fs-1 mb-2 text-info"></i>
+                                <span class="small fw-bold">Camera Face ID chưa bật</span>
+                                <span class="text-muted" style="font-size:0.7rem;">Sử dụng webcam laptop để nhận diện hội viên</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+                            <div class="d-flex gap-2">
+                                <button type="button" id="btnToggleFaceNet" class="btn btn-dark btn-sm fw-bold px-3" style="border-radius:6px; background:#0f172a; border-color:#334155;">
+                                    <i class="bi bi-camera-video me-1 text-info"></i> Bật Camera Face ID
+                                </button>
+                            </div>
+                            <span id="faceNetStatus" class="small text-muted fw-bold">
+                                Sẵn sàng
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -430,6 +463,8 @@
 
 <!-- HTML5 QR Code Library CDN -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- Face-api.js Library CDN -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
     var currentGymId = @Model.SelectedGymId;
@@ -1061,5 +1096,308 @@
         .catch(function(err) {
             alert('Lỗi: ' + err);
         });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // V3: FACENET SCANNING AT OWNER RECEPTION DESK
+    // ═══════════════════════════════════════════════════════
+    var ownerFaceVideo = document.getElementById('ownerFaceVideo');
+    var ownerFaceOval = document.getElementById('ownerFaceOval');
+    var faceNetStatus = document.getElementById('faceNetStatus');
+    var btnToggleFaceNet = document.getElementById('btnToggleFaceNet');
+    var facePlaceholder = document.getElementById('facePlaceholder');
+
+    var isFaceCamRunning = false;
+    var faceStream = null;
+    var faceModelsReady = false;
+    var isCheckingFace = false;
+    var lastVerifiedFaceId = "";
+    var lastVerifiedFaceTime = 0;
+
+    var FACENET_MODEL_URLS = [
+        'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@master/weights',
+        'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+    ];
+    var faceModelIndex = 0;
+
+    async function loadOwnerFaceModels() {
+        if (faceModelsReady) return true;
+        faceNetStatus.innerText = 'Đang nạp mô hình AI FaceNet...';
+        var url = FACENET_MODEL_URLS[faceModelIndex];
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(url),
+                faceapi.nets.faceLandmark68Net.loadFromUri(url),
+                faceapi.nets.faceRecognitionNet.loadFromUri(url)
+            ]);
+            faceModelsReady = true;
+            return true;
+        } catch (err) {
+            faceModelIndex++;
+            if (faceModelIndex < FACENET_MODEL_URLS.length) {
+                return await loadOwnerFaceModels();
+            }
+            throw err;
+        }
+    }
+
+    if (btnToggleFaceNet) {
+        btnToggleFaceNet.addEventListener('click', async function() {
+            if (isFaceCamRunning) {
+                stopFaceCam();
+            } else {
+                await startFaceCam();
+            }
+        });
+    }
+
+    async function startFaceCam() {
+        if (isCameraRunning && typeof stopCamera === 'function') {
+            await stopCamera();
+        }
+
+        btnToggleFaceNet.disabled = true;
+        btnToggleFaceNet.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang nạp AI...';
+
+        try {
+            await loadOwnerFaceModels();
+
+            faceStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+            });
+
+            ownerFaceVideo.srcObject = faceStream;
+            facePlaceholder.classList.add('d-none');
+            btnToggleFaceNet.disabled = false;
+            btnToggleFaceNet.className = 'btn btn-outline-danger btn-sm fw-bold px-3';
+            btnToggleFaceNet.innerHTML = '<i class="bi bi-stop-circle me-1"></i> Tắt Camera Face ID';
+            isFaceCamRunning = true;
+            faceNetStatus.className = 'small text-success fw-bold';
+            faceNetStatus.innerText = 'Camera đang hoạt động';
+
+            ownerFaceVideo.onloadedmetadata = function() {
+                ownerFaceVideo.play();
+                ownerFaceDetectLoop();
+            };
+        } catch (err) {
+            alert('Không thể mở camera hoặc nạp model FaceNet: ' + err.message);
+            stopFaceCam();
+        }
+    }
+
+    function stopFaceCam() {
+        isFaceCamRunning = false;
+        if (faceStream) {
+            faceStream.getTracks().forEach(function(t) { t.stop(); });
+            faceStream = null;
+        }
+        ownerFaceVideo.srcObject = null;
+        facePlaceholder.classList.remove('d-none');
+        btnToggleFaceNet.className = 'btn btn-dark btn-sm fw-bold px-3';
+        btnToggleFaceNet.style.background = '#0f172a';
+        btnToggleFaceNet.disabled = false;
+        btnToggleFaceNet.innerHTML = '<i class="bi bi-camera-video me-1 text-info"></i> Bật Camera Face ID';
+        faceNetStatus.className = 'small text-muted fw-bold';
+        faceNetStatus.innerText = 'Đã tắt camera';
+        ownerFaceOval.style.borderColor = 'rgba(56,189,248,0.5)';
+    }
+
+    async function ownerFaceDetectLoop() {
+        if (!isFaceCamRunning) return;
+
+        if (!isCheckingFace) {
+            var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.6 });
+            var detection = await faceapi.detectSingleFace(ownerFaceVideo, opts)
+                                          .withFaceLandmarks()
+                                          .withFaceDescriptor();
+
+            if (detection) {
+                ownerFaceOval.style.borderColor = '#10b981';
+                var now = Date.now();
+                if (now - lastVerifiedFaceTime > 2500) {
+                    isCheckingFace = true;
+                    faceNetStatus.innerText = 'Đang nhận diện...';
+                    await verifyFaceWithServer(detection.descriptor);
+                }
+            } else {
+                ownerFaceOval.style.borderColor = 'rgba(56,189,248,0.5)';
+                faceNetStatus.innerText = 'Đang tìm khuôn mặt...';
+            }
+        }
+
+        if (isFaceCamRunning) {
+            requestAnimationFrame(ownerFaceDetectLoop);
+        }
+    }
+
+    async function verifyFaceWithServer(descriptor) {
+        var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+        try {
+            var res = await fetch('/OwnerCheckin/VerifyFace', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    gymId: currentGymId,
+                    descriptor: Array.from(descriptor)
+                })
+            });
+
+            var data = await res.json();
+
+            if (data.success && data.foundMatch) {
+                if (data.memberId === lastVerifiedFaceId && (Date.now() - lastVerifiedFaceTime < 7000)) {
+                    isCheckingFace = false;
+                    return;
+                }
+
+                lastVerifiedFaceTime = Date.now();
+                lastVerifiedFaceId = data.memberId;
+                playBeep(data.canCheckin || data.isAlreadyInside);
+
+                displayFaceVerifyResult(data);
+            } else {
+                faceNetStatus.className = 'small text-warning fw-bold';
+                faceNetStatus.innerText = 'Chưa nhận diện được hội viên';
+                setTimeout(function() { isCheckingFace = false; }, 1200);
+            }
+        } catch (err) {
+            console.error(err);
+            isCheckingFace = false;
+        }
+    }
+
+    function displayFaceVerifyResult(res) {
+        currentVerifyData = {
+            memberId: res.memberId,
+            membershipId: res.membershipId,
+            method: 'FaceNet',
+            faceMatchScore: res.confidenceScore,
+            isAlreadyInside: res.isAlreadyInside,
+            activeCheckinId: res.activeCheckinId
+        };
+
+        var placeholder = document.getElementById('verifyPlaceholder');
+        var card = document.getElementById('verifyResultCard');
+        var btnConfirm = document.getElementById('btnConfirmCheckin');
+
+        placeholder.classList.add('d-none');
+        card.classList.remove('d-none');
+
+        document.getElementById('resFullName').innerText = res.fullName;
+        document.getElementById('resPhone').innerText = res.phoneNumber || '—';
+        document.getElementById('resEmail').innerText = res.email || '—';
+
+        var vipBadge = document.getElementById('resVipBadge');
+        vipBadge.innerText = res.vipTierName;
+        vipBadge.style.backgroundColor = res.vipBadgeColor;
+
+        var statusBadge = document.getElementById('resStatusBadge');
+        var alertBox = document.getElementById('resAlertBox');
+        var alertMsg = document.getElementById('resAlertMessage');
+        var alertIcon = document.getElementById('resAlertIcon');
+
+        // Nếu ĐÃ Ở TRONG PHÒNG -> Check-out sớm
+        if (res.isAlreadyInside) {
+            card.className = 'member-result-card warning';
+            statusBadge.className = 'badge bg-warning text-dark';
+            statusBadge.innerText = 'Đang Trong Phòng';
+            document.getElementById('resPackageName').innerText = res.packageName;
+            document.getElementById('resDaysRemaining').innerText = 'Đã tập ' + res.minutesInside + ' phút';
+            document.getElementById('resPackageValidity').innerText = 'Vào lúc: ' + (res.checkinTime ? new Date(res.checkinTime).toLocaleTimeString('vi-VN') : 'Gần đây');
+
+            alertBox.className = 'alert alert-warning p-2 mb-3 small d-flex align-items-center gap-2';
+            alertIcon.className = 'bi bi-box-arrow-right fs-5 text-warning';
+            alertMsg.innerText = '👤 Hội viên đang trong phòng tập (' + res.minutesInside + ' phút). Bấm nút bên dưới để CHECK-OUT cho hội viên ra về.';
+
+            btnConfirm.className = 'btn btn-warning w-100 fw-bold py-2';
+            btnConfirm.innerHTML = '<i class="bi bi-box-arrow-right me-1"></i> XÁC NHẬN CHECK-OUT RA VỀ (FACENET)';
+            btnConfirm.classList.remove('d-none');
+
+            btnConfirm.onclick = function() {
+                checkoutEarly(res.activeCheckinId, res.fullName);
+                card.classList.add('d-none');
+                placeholder.classList.remove('d-none');
+            };
+
+            isCheckingFace = false;
+            return;
+        }
+
+        // Nếu HỢP LỆ VÀO TẬP
+        if (res.canCheckin) {
+            card.className = 'member-result-card valid';
+            statusBadge.className = 'badge bg-success';
+            statusBadge.innerText = 'Hợp Lệ (Face ID)';
+            document.getElementById('resPackageName').innerText = res.packageName;
+            document.getElementById('resDaysRemaining').innerText = 'Còn ' + res.daysRemaining + ' ngày';
+            document.getElementById('resPackageValidity').innerText = 'FaceNet Khớp: ' + Math.round(res.confidenceScore * 100) + '%';
+
+            alertBox.className = 'alert alert-success p-2 mb-3 small d-flex align-items-center gap-2';
+            alertIcon.className = 'bi bi-check-circle-fill fs-5 text-success';
+            alertMsg.innerText = res.message;
+
+            btnConfirm.className = 'btn-checkin-confirm';
+            btnConfirm.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> XÁC NHẬN CHO VÀO TẬP (FACENET)';
+            btnConfirm.classList.remove('d-none');
+
+            btnConfirm.onclick = function() {
+                btnConfirm.disabled = true;
+                btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xác nhận...';
+                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+                fetch('/OwnerCheckin/ConfirmFaceCheckin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token
+                    },
+                    body: new URLSearchParams({
+                        'gymId': currentGymId,
+                        'memberId': currentVerifyData.memberId,
+                        'membershipId': currentVerifyData.membershipId || '',
+                        'faceMatchScore': currentVerifyData.faceMatchScore || 0.95
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(resp) {
+                    btnConfirm.disabled = false;
+                    btnConfirm.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> XÁC NHẬN CHO VÀO TẬP (FACENET)';
+                    if (resp.success) {
+                        btnConfirm.classList.add('d-none');
+                        document.getElementById('resAlertBox').className = 'alert alert-success p-2 mb-3 small d-flex align-items-center gap-2';
+                        document.getElementById('resAlertMessage').innerText = '✅ ' + resp.message;
+                        updateCrowdMeter(resp);
+                        appendLiveMemberRow(resp.newMember);
+                    } else {
+                        alert('Lỗi: ' + resp.message);
+                    }
+                })
+                .catch(function(err) {
+                    btnConfirm.disabled = false;
+                    alert('Lỗi: ' + err);
+                });
+            };
+
+            // Nếu bật tự động xác nhận (Fast Pass)
+            if (document.getElementById('autoConfirmCheck')?.checked) {
+                btnConfirm.click();
+            }
+        } else {
+            card.className = 'member-result-card invalid';
+            statusBadge.className = 'badge bg-danger';
+            statusBadge.innerText = res.isSuspended ? 'Kỷ Luật' : 'Không Hợp Lệ';
+
+            alertBox.className = 'alert alert-danger p-2 mb-3 small d-flex align-items-center gap-2';
+            alertIcon.className = 'bi bi-x-circle-fill fs-5 text-danger';
+            alertMsg.innerText = res.message;
+
+            btnConfirm.classList.add('d-none');
+        }
+
+        setTimeout(function() { isCheckingFace = false; }, 2000);
     }
 </script>

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GymManagement.Helpers;
+using System.Text.Json;
 
 namespace GymManagement.Controllers
 {
@@ -599,6 +600,166 @@ namespace GymManagement.Controllers
                 .ToListAsync();
 
             return View(reviews);
+        }
+
+        // ==================== MEM-24 (V3): QUẢN LÝ FACE ID ĐIỂM DANH ====================
+        [HttpGet]
+        public async Task<IActionResult> FaceId()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var faceProfile = await _context.MemberFaceProfiles
+                .FirstOrDefaultAsync(f => f.MemberId == user.Id);
+
+            var vm = new MemberFaceIdViewModel
+            {
+                HasFaceRegistered = faceProfile != null,
+                SampleImageUrl = faceProfile?.SampleImageUrl,
+                RegisteredAt = faceProfile?.CreatedAt,
+                UpdatedAt = faceProfile?.UpdatedAt,
+                QualityScore = faceProfile?.QualityScore ?? 1.0,
+                IsActive = faceProfile?.IsActive ?? true,
+                FullName = user.FullName ?? user.UserName ?? "Hội viên",
+                Email = user.Email ?? "—"
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Member/RegisterFace
+        [HttpPost]
+        public async Task<IActionResult> RegisterFace([FromBody] RegisterFaceRequestDto model)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized(new { success = false, message = "Vui lòng đăng nhập lại." });
+
+            if (model == null || model.Descriptor == null || model.Descriptor.Length != 128)
+            {
+                return Json(new { success = false, message = "Vector đặc trưng khuôn mặt không hợp lệ (cần đủ 128 chiều FaceNet)." });
+            }
+
+            // Lưu ảnh thumbnail khuôn mặt nếu có gửi lên dạng Base64
+            string? sampleImageUrl = null;
+            if (!string.IsNullOrWhiteSpace(model.ImageBase64))
+            {
+                try
+                {
+                    string base64Data = model.ImageBase64;
+                    if (base64Data.Contains(","))
+                    {
+                        base64Data = base64Data.Substring(base64Data.IndexOf(",") + 1);
+                    }
+
+                    byte[] imageBytes = Convert.FromBase64String(base64Data);
+                    string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "faces");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    string fileName = $"{user.Id}_{DateTime.UtcNow.Ticks}.jpg";
+                    string filePath = Path.Combine(uploadsFolder, fileName);
+                    await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+                    sampleImageUrl = $"/uploads/faces/{fileName}";
+                }
+                catch
+                {
+                    // Nếu lỗi lưu ảnh thì không chặn lưu vector
+                }
+            }
+
+            string embeddingJson = JsonSerializer.Serialize(model.Descriptor);
+
+            var existingProfile = await _context.MemberFaceProfiles
+                .FirstOrDefaultAsync(f => f.MemberId == user.Id);
+
+            if (existingProfile == null)
+            {
+                existingProfile = new MemberFaceProfile
+                {
+                    MemberId = user.Id,
+                    FaceEmbeddingJson = embeddingJson,
+                    SampleImageUrl = sampleImageUrl,
+                    QualityScore = model.QualityScore > 0 ? model.QualityScore : 1.0,
+                    IsActive = true,
+                    CreatedAt = VnTime.Now
+                };
+                _context.MemberFaceProfiles.Add(existingProfile);
+            }
+            else
+            {
+                existingProfile.FaceEmbeddingJson = embeddingJson;
+                if (!string.IsNullOrEmpty(sampleImageUrl))
+                {
+                    existingProfile.SampleImageUrl = sampleImageUrl;
+                }
+                existingProfile.QualityScore = model.QualityScore > 0 ? model.QualityScore : 1.0;
+                existingProfile.IsActive = true;
+                existingProfile.UpdatedAt = VnTime.Now;
+            }
+
+            _context.SystemLogs.Add(new SystemLog
+            {
+                UserId = user.Id,
+                Action = "FaceIdEnrolled",
+                Entity = "MemberFaceProfile",
+                EntityId = user.Id,
+                Level = "Info",
+                Description = $"Hội viên {user.FullName} ({user.Email}) đã kích hoạt/cập nhật Face ID FaceNet thành công.",
+                CreatedAt = VnTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = "Thiết lập Face ID thành công! Bạn có thể sử dụng khuôn mặt để Check-in/Check-out tại quầy lễ tân.",
+                sampleImageUrl = existingProfile.SampleImageUrl,
+                registeredAt = existingProfile.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+            });
+        }
+
+        // POST: /Member/ToggleFaceId
+        [HttpPost]
+        public async Task<IActionResult> ToggleFaceId([FromBody] bool isActive)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized(new { success = false });
+
+            var profile = await _context.MemberFaceProfiles.FirstOrDefaultAsync(f => f.MemberId == user.Id);
+            if (profile == null)
+            {
+                return Json(new { success = false, message = "Bạn chưa đăng ký Face ID." });
+            }
+
+            profile.IsActive = isActive;
+            profile.UpdatedAt = VnTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Json(new { 
+                success = true, 
+                isActive = profile.IsActive, 
+                message = profile.IsActive ? "Đã bật tính năng điểm danh bằng Face ID." : "Đã tạm dừng tính năng Face ID." 
+            });
+        }
+
+        // POST: /Member/DeleteFaceId
+        [HttpPost]
+        public async Task<IActionResult> DeleteFaceId()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized(new { success = false });
+
+            var profile = await _context.MemberFaceProfiles.FirstOrDefaultAsync(f => f.MemberId == user.Id);
+            if (profile != null)
+            {
+                _context.MemberFaceProfiles.Remove(profile);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, message = "Đã gỡ bỏ dữ liệu Face ID." });
         }
     }
 }

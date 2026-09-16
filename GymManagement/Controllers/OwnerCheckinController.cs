@@ -680,6 +680,666 @@ namespace GymManagement.Controllers
             return View(vm);
         }
 
+        // ==================== V3: FACE ID RECOGNITION API ====================
+        // POST: /OwnerCheckin/VerifyFace
+        [HttpPost]
+        public async Task<IActionResult> VerifyFace([FromBody] VerifyFaceRequestDto request)
+        {
+            if (request == null || request.Descriptor == null || request.Descriptor.Length != 128)
+            {
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = false,
+                    FoundMatch = false,
+                    Message = "Dữ liệu khuôn mặt không hợp lệ hoặc thiếu vector 128D."
+                });
+            }
+
+            var userId = await GetCurrentUserIdAsync();
+            var gym = await _context.Gyms.FirstOrDefaultAsync(g => g.Id == request.GymId && g.OwnerId == userId);
+            if (gym == null)
+            {
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = false,
+                    FoundMatch = false,
+                    Message = "Phòng gym không tồn tại hoặc bạn không có quyền quản lý."
+                });
+            }
+
+            // Lấy toàn bộ Face Profile đang kích hoạt kèm ApplicationUser
+            var activeProfiles = await _context.MemberFaceProfiles
+                .Include(f => f.Member)
+                .Where(f => f.IsActive)
+                .ToListAsync();
+
+            if (!activeProfiles.Any())
+            {
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = true,
+                    FoundMatch = false,
+                    Message = "Chưa có hội viên nào đăng ký Face ID trong hệ thống."
+                });
+            }
+
+            // So khớp tìm người phù hợp nhất (ngưỡng 0.53 cho webcam laptop)
+            var matchResult = FaceRecognitionHelper.FindBestMatch(request.Descriptor, activeProfiles, threshold: 0.53);
+            if (!matchResult.HasValue)
+            {
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = true,
+                    FoundMatch = false,
+                    Message = "Không nhận diện được hội viên nào khớp với khuôn mặt này."
+                });
+            }
+
+            var bestProfile = matchResult.Value.Profile;
+            var member = bestProfile.Member;
+            double distance = matchResult.Value.Distance;
+            double confidence = matchResult.Value.ConfidenceScore;
+
+            // Kiểm tra Kỷ luật / Đình chỉ
+            var today = VnTime.Today;
+            var activeSuspension = await _context.MemberSuspensions
+                .FirstOrDefaultAsync(s => s.GymId == request.GymId
+                                       && s.MemberId == member.Id
+                                       && s.Status == "Active"
+                                       && (s.SuspensionType == "Permanent" || (s.EndDate.HasValue && s.EndDate.Value >= today)));
+
+            if (activeSuspension != null)
+            {
+                string suspMsg = activeSuspension.SuspensionType == "Permanent"
+                    ? "Đình chỉ VĨNH VIỄN"
+                    : $"Đình chỉ đến {activeSuspension.EndDate:dd/MM/yyyy}";
+
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = true,
+                    FoundMatch = true,
+                    CanCheckin = false,
+                    IsSuspended = true,
+                    SuspensionReason = $"Hội viên đang bị {suspMsg} (Lý do: {activeSuspension.Reason}).",
+                    MemberId = member.Id,
+                    FullName = member.FullName ?? member.UserName ?? "Hội viên",
+                    Email = member.Email ?? "—",
+                    PhoneNumber = member.PhoneNumber ?? "—",
+                    AvatarUrl = bestProfile.SampleImageUrl,
+                    Distance = distance,
+                    ConfidenceScore = confidence,
+                    Message = $"⚠️ CẢNH BÁO: Hội viên đang bị {suspMsg.ToUpper()}!"
+                });
+            }
+
+            // Kiểm tra xem hội viên ĐANG Ở TRONG PHÒNG TẬP hay chưa (Session Timeout 2h)
+            var twoHoursAgo = VnTime.Now.AddHours(-2);
+            var currentActiveCheckin = await _context.CheckinLogs
+                .Include(c => c.Membership).ThenInclude(m => m!.Package)
+                .Where(c => c.GymId == request.GymId
+                         && c.MemberId == member.Id
+                         && c.CheckinTime >= twoHoursAgo
+                         && c.CheckoutTime == null
+                         && c.Status == "Success")
+                .OrderByDescending(c => c.CheckinTime)
+                .FirstOrDefaultAsync();
+
+            // Lấy hạng VIP
+            var vipStatus = await _context.MemberVipStatuses
+                .Include(v => v.CurrentTier)
+                .FirstOrDefaultAsync(v => v.GymId == request.GymId && v.MemberId == member.Id);
+
+            string vipName = vipStatus?.CurrentTier?.TierName ?? "Standard";
+            string vipColor = vipStatus?.CurrentTier?.BadgeColor ?? "#64748b";
+
+            // Nếu hội viên ĐÃ Ở TRONG PHÒNG -> Luồng CHECK-OUT tự động!
+            if (currentActiveCheckin != null)
+            {
+                int minutesInside = Math.Max(0, (int)(VnTime.Now - currentActiveCheckin.CheckinTime).TotalMinutes);
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = true,
+                    FoundMatch = true,
+                    CanCheckin = false,
+                    IsAlreadyInside = true,
+                    ActiveCheckinId = currentActiveCheckin.Id,
+                    MinutesInside = minutesInside,
+                    CheckinTime = currentActiveCheckin.CheckinTime,
+                    MemberId = member.Id,
+                    FullName = member.FullName ?? member.UserName ?? "Hội viên",
+                    Email = member.Email ?? "—",
+                    PhoneNumber = member.PhoneNumber ?? "—",
+                    AvatarUrl = bestProfile.SampleImageUrl,
+                    VipTierName = vipName,
+                    VipBadgeColor = vipColor,
+                    PackageName = currentActiveCheckin.Membership?.Package?.Name ?? "Vé vào tập",
+                    Distance = distance,
+                    ConfidenceScore = confidence,
+                    Message = $"Hội viên đã vào tập được {minutesInside} phút. Sẵn sàng CHECK-OUT ra về!"
+                });
+            }
+
+            // Nếu CHƯA Ở TRONG PHÒNG -> Kiểm tra vé còn hạn
+            var activeMemberships = await _context.MemberMemberships
+                .Include(m => m.Package)
+                .Where(m => m.GymId == request.GymId && m.MemberId == member.Id && m.EndDate >= today)
+                .OrderBy(m => m.EndDate)
+                .ToListAsync();
+
+            if (!activeMemberships.Any())
+            {
+                return Json(new VerifyFaceResultDto
+                {
+                    Success = true,
+                    FoundMatch = true,
+                    CanCheckin = false,
+                    HasActiveMembership = false,
+                    MemberId = member.Id,
+                    FullName = member.FullName ?? member.UserName ?? "Hội viên",
+                    Email = member.Email ?? "—",
+                    PhoneNumber = member.PhoneNumber ?? "—",
+                    AvatarUrl = bestProfile.SampleImageUrl,
+                    VipTierName = vipName,
+                    VipBadgeColor = vipColor,
+                    Distance = distance,
+                    ConfidenceScore = confidence,
+                    Message = "❌ Hội viên không có gói tập nào còn hạn tại cơ sở này."
+                });
+            }
+
+            var chosenMembership = activeMemberships.First();
+            int daysRemaining = Math.Max(0, (int)(chosenMembership.EndDate.Date - today).TotalDays);
+
+            return Json(new VerifyFaceResultDto
+            {
+                Success = true,
+                FoundMatch = true,
+                CanCheckin = true,
+                HasActiveMembership = true,
+                MemberId = member.Id,
+                FullName = member.FullName ?? member.UserName ?? "Hội viên",
+                Email = member.Email ?? "—",
+                PhoneNumber = member.PhoneNumber ?? "—",
+                AvatarUrl = bestProfile.SampleImageUrl,
+                VipTierName = vipName,
+                VipBadgeColor = vipColor,
+                MembershipId = chosenMembership.Id,
+                PackageName = chosenMembership.Package?.Name ?? "Gói tập",
+                DaysRemaining = daysRemaining,
+                Distance = distance,
+                ConfidenceScore = confidence,
+                Message = $"✅ HỢP LỆ: {chosenMembership.Package?.Name} (Còn {daysRemaining} ngày). Sẵn sàng Check-in!"
+            });
+        }
+
+        // POST: /OwnerCheckin/ConfirmFaceCheckin
+        [HttpPost]
+        public async Task<IActionResult> ConfirmFaceCheckin(int gymId, string memberId, int? membershipId, double? faceMatchScore)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            var gym = await _context.Gyms.FirstOrDefaultAsync(g => g.Id == gymId && g.OwnerId == userId);
+            if (gym == null)
+            {
+                return Json(new { success = false, message = "Phòng gym không tồn tại." });
+            }
+
+            var member = await _userManager.FindByIdAsync(memberId);
+            if (member == null)
+            {
+                return Json(new { success = false, message = "Hội viên không tồn tại." });
+            }
+
+            // Ghi nhận CheckinLog
+            var log = new CheckinLog
+            {
+                MemberId        = memberId,
+                GymId           = gymId,
+                MembershipId    = membershipId,
+                CheckinTime     = VnTime.Now,
+                CheckedByUserId = userId,
+                Status          = "Success",
+                CheckinMethod   = "FaceNet",
+                FaceMatchScore  = faceMatchScore,
+                Notes           = $"Điểm danh tự động bằng Face ID (Độ tin cậy: {Math.Round((faceMatchScore ?? 0.95) * 100, 1)}%)"
+            };
+
+            _context.CheckinLogs.Add(log);
+            await _context.SaveChangesAsync();
+
+            // Gửi thông báo đến chuông của Member
+            string timeStr = VnTime.Now.ToString("HH:mm");
+            await NotificationHelper.CreateAsync(
+                _context,
+                userId: memberId,
+                title: "Face ID Check-in thành công 👤⚡",
+                message: $"Hệ thống Face ID đã nhận diện khuôn mặt bạn lúc {timeStr} tại {gym.Name}. Chúc bạn có một buổi tập hiệu quả!",
+                type: "Success",
+                category: "Membership",
+                linkUrl: "/Member/CheckinHistory"
+            );
+
+            // Tính lại Crowd Meter
+            int maxCapacity = gym.MaxCapacity > 0 ? gym.MaxCapacity : 50;
+            var twoHoursAgo = VnTime.Now.AddHours(-2);
+            int activeCount = await _context.CheckinLogs
+                .CountAsync(c => c.GymId == gymId && c.CheckinTime >= twoHoursAgo && c.CheckoutTime == null && c.Status == "Success");
+
+            int crowdPercentage = Math.Min(100, (int)Math.Round((double)activeCount / maxCapacity * 100));
+            var (statusText, statusColor, statusIcon, recommendation) = GetCrowdStatus(crowdPercentage);
+
+            var vip = await _context.MemberVipStatuses
+                .Include(v => v.CurrentTier)
+                .FirstOrDefaultAsync(v => v.GymId == gymId && v.MemberId == memberId);
+
+            var activeItem = new LiveMemberInGymItem
+            {
+                CheckinId     = log.Id,
+                MemberId      = member.Id,
+                MemberName    = member.FullName ?? member.UserName ?? "Hội viên",
+                MemberEmail   = member.Email ?? "—",
+                MemberPhone   = member.PhoneNumber ?? "—",
+                PackageName   = (await _context.MemberMemberships.Include(m => m.Package).FirstOrDefaultAsync(m => m.Id == membershipId))?.Package?.Name ?? "Vé vào tập",
+                VipTierName   = vip?.CurrentTier?.TierName ?? "Standard",
+                VipBadgeColor = vip?.CurrentTier?.BadgeColor ?? "#64748b",
+                CheckinTime   = log.CheckinTime,
+                MinutesAgo    = 0,
+                CheckinMethod = "FaceNet"
+            };
+
+            return Json(new
+            {
+                success = true,
+                message = $"Đã xác nhận Face ID Check-in thành công cho {member.FullName}!",
+                activeCount,
+                maxCapacity,
+                crowdPercentage,
+                statusText,
+                statusColor,
+                statusIcon,
+                recommendation,
+                newMember = activeItem
+            });
+        }
+
+        // ==================== V3: CHẾ ĐỘ KIOSK TỰ ĐỘNG CHECK-IN/OUT BẰNG FACENET ====================
+        // GET: /OwnerCheckin/Kiosk?gymId=...
+        public async Task<IActionResult> Kiosk(int? gymId)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            var myGyms = await _context.Gyms
+                .Where(g => g.OwnerId == userId && g.Status == "Approved")
+                .OrderByDescending(g => g.CreatedAt)
+                .ToListAsync();
+
+            if (!myGyms.Any())
+            {
+                TempData["Warning"] = "Bạn chưa có phòng gym nào được duyệt để mở Kiosk.";
+                return RedirectToAction("Index", "OwnerGym");
+            }
+
+            var selectedGym = gymId.HasValue
+                ? myGyms.FirstOrDefault(g => g.Id == gymId.Value) ?? myGyms.First()
+                : myGyms.First();
+
+            ViewBag.SelectedGym = selectedGym;
+            ViewBag.MyGyms = myGyms;
+
+            return View(selectedGym);
+        }
+
+        // ==================== V3: BATCH MULTI-FACE RECOGNITION (WALK-THROUGH) ====================
+        // POST: /OwnerCheckin/VerifyAndProcessMultiFace
+        [HttpPost]
+        public async Task<IActionResult> VerifyAndProcessMultiFace([FromBody] VerifyMultiFaceRequestDto request)
+        {
+            if (request == null || request.Faces == null || !request.Faces.Any())
+            {
+                return Json(new VerifyMultiFaceResponseDto { Success = false });
+            }
+
+            var userId = await GetCurrentUserIdAsync();
+            var gym = await _context.Gyms.FirstOrDefaultAsync(g => g.Id == request.GymId && g.OwnerId == userId);
+            if (gym == null)
+            {
+                return Json(new VerifyMultiFaceResponseDto { Success = false });
+            }
+
+            var activeProfiles = await _context.MemberFaceProfiles
+                .Include(f => f.Member)
+                .Where(f => f.IsActive)
+                .ToListAsync();
+
+            if (!activeProfiles.Any())
+            {
+                return Json(new VerifyMultiFaceResponseDto { Success = true, Results = new() });
+            }
+
+            var today = VnTime.Today;
+            var twoHoursAgo = VnTime.Now.AddHours(-2);
+            var antiReboundTime = VnTime.Now.AddSeconds(-25); // Chỉ chống lặp 25 giây sau khi check-out
+            var results = new List<MultiFaceProcessResultDto>();
+            var processedMemberIds = new HashSet<string>();
+            string gateMode = string.IsNullOrWhiteSpace(request.GateMode) ? "Auto" : request.GateMode;
+
+            // Lấy tất cả checkin đang active tại gym này
+            var activeCheckins = await _context.CheckinLogs
+                .Include(c => c.Membership).ThenInclude(m => m!.Package)
+                .Where(c => c.GymId == request.GymId && c.CheckinTime >= twoHoursAgo && c.CheckoutTime == null && c.Status == "Success")
+                .ToListAsync();
+
+            // Lấy các lượt check-out gần đây (trong vòng 25 giây) để chống dội vòng lặp (anti-rebound)
+            var recentCheckouts = await _context.CheckinLogs
+                .Where(c => c.GymId == request.GymId && c.CheckoutTime != null && c.CheckoutTime >= antiReboundTime && c.Status == "Success")
+                .ToListAsync();
+
+            // Lấy suspensions
+            var suspensions = await _context.MemberSuspensions
+                .Where(s => s.GymId == request.GymId && s.Status == "Active" && (s.SuspensionType == "Permanent" || (s.EndDate.HasValue && s.EndDate.Value >= today)))
+                .ToListAsync();
+
+            // Lấy active memberships của gym này
+            var memberships = await _context.MemberMemberships
+                .Include(m => m.Package)
+                .Where(m => m.GymId == request.GymId && m.EndDate >= today)
+                .OrderBy(m => m.EndDate)
+                .ToListAsync();
+
+            // Lấy VIP status
+            var vipStatuses = await _context.MemberVipStatuses
+                .Include(v => v.CurrentTier)
+                .Where(v => v.GymId == request.GymId)
+                .ToDictionaryAsync(v => v.MemberId);
+
+            bool anyChanges = false;
+
+            foreach (var face in request.Faces)
+            {
+                if (face.Descriptor == null || face.Descriptor.Length != 128) continue;
+
+                var matchResult = FaceRecognitionHelper.FindBestMatch(face.Descriptor, activeProfiles, threshold: 0.53);
+                if (!matchResult.HasValue)
+                {
+                    results.Add(new MultiFaceProcessResultDto
+                    {
+                        FaceIndex = face.FaceIndex,
+                        FoundMatch = false,
+                        ActionType = "None",
+                        Message = "Chưa nhận diện được",
+                        BoxX = face.BoxX,
+                        BoxY = face.BoxY,
+                        BoxWidth = face.BoxWidth,
+                        BoxHeight = face.BoxHeight
+                    });
+                    continue;
+                }
+
+                var profile = matchResult.Value.Profile;
+                var member = profile.Member;
+                double confidence = matchResult.Value.ConfidenceScore;
+
+                // Nếu trong cùng 1 frame nhiều người trùng 1 memberId
+                if (processedMemberIds.Contains(member.Id))
+                {
+                    results.Add(new MultiFaceProcessResultDto
+                    {
+                        FaceIndex = face.FaceIndex,
+                        FoundMatch = true,
+                        MemberId = member.Id,
+                        FullName = member.FullName,
+                        ActionType = "AlreadyProcessed",
+                        BoxX = face.BoxX,
+                        BoxY = face.BoxY,
+                        BoxWidth = face.BoxWidth,
+                        BoxHeight = face.BoxHeight
+                    });
+                    continue;
+                }
+
+                processedMemberIds.Add(member.Id);
+
+                // Kiểm tra đình chỉ
+                var isSuspended = suspensions.Any(s => s.MemberId == member.Id);
+                if (isSuspended)
+                {
+                    results.Add(new MultiFaceProcessResultDto
+                    {
+                        FaceIndex = face.FaceIndex,
+                        FoundMatch = true,
+                        MemberId = member.Id,
+                        FullName = member.FullName,
+                        ActionType = "Denied",
+                        Message = "Đang bị kỷ luật",
+                        ConfidenceScore = confidence,
+                        BoxX = face.BoxX,
+                        BoxY = face.BoxY,
+                        BoxWidth = face.BoxWidth,
+                        BoxHeight = face.BoxHeight
+                    });
+                    continue;
+                }
+
+                var vip = vipStatuses.GetValueOrDefault(member.Id);
+                string vipName = vip?.CurrentTier?.TierName ?? "Standard";
+                string vipColor = vip?.CurrentTier?.BadgeColor ?? "#64748b";
+
+                // 1. Chống lặp vòng vèo (Anti-Rebound):
+                // Chỉ áp dụng ở chế độ "Auto" trong vòng 25 giây (để người bước ra không bị quét ngược lại).
+                // Nếu người dùng chọn rõ ràng "InOnly" (Cổng Vào) -> BỎ QUA cooldown này, cho check-in ngay lập tức!
+                if (gateMode.Equals("Auto", StringComparison.OrdinalIgnoreCase))
+                {
+                    var recentOut = recentCheckouts.FirstOrDefault(c => c.MemberId == member.Id);
+                    if (recentOut != null && recentOut.CheckoutTime.HasValue)
+                    {
+                        int secondsSinceCheckout = (int)(VnTime.Now - recentOut.CheckoutTime.Value).TotalSeconds;
+                        int secondsRemaining = Math.Max(1, 25 - secondsSinceCheckout);
+
+                        results.Add(new MultiFaceProcessResultDto
+                        {
+                            FaceIndex = face.FaceIndex,
+                            FoundMatch = true,
+                            MemberId = member.Id,
+                            FullName = member.FullName,
+                            VipTierName = vipName,
+                            VipBadgeColor = vipColor,
+                            ActionType = "AlreadyCheckedOut",
+                            Message = $"Bạn vừa check-out lúc {recentOut.CheckoutTime:HH:mm}. Có thể check-in lại sau {secondsRemaining}s!",
+                            ConfidenceScore = confidence,
+                            BoxX = face.BoxX,
+                            BoxY = face.BoxY,
+                            BoxWidth = face.BoxWidth,
+                            BoxHeight = face.BoxHeight
+                        });
+                        continue;
+                    }
+                }
+
+                // 2. Kiểm tra xem ĐANG Ở TRONG PHÒNG TẬP hay chưa
+                var activeCheckin = activeCheckins.FirstOrDefault(c => c.MemberId == member.Id);
+                if (activeCheckin != null)
+                {
+                    int secondsInside = Math.Max(0, (int)(VnTime.Now - activeCheckin.CheckinTime).TotalSeconds);
+                    int minutesInside = secondsInside / 60;
+
+                    // a) Nếu ở chế độ "Cổng Vào" (InOnly): Đã ở trong phòng rồi -> Không check-out, chỉ báo trạng thái
+                    if (gateMode.Equals("InOnly", StringComparison.OrdinalIgnoreCase))
+                    {
+                        results.Add(new MultiFaceProcessResultDto
+                        {
+                            FaceIndex = face.FaceIndex,
+                            FoundMatch = true,
+                            MemberId = member.Id,
+                            FullName = member.FullName,
+                            VipTierName = vipName,
+                            VipBadgeColor = vipColor,
+                            ActionType = "AlreadyInside",
+                            MinutesInside = minutesInside,
+                            Message = $"Hội viên đã check-in lúc {activeCheckin.CheckinTime:HH:mm} (đang tập {minutesInside}p)",
+                            ConfidenceScore = confidence,
+                            BoxX = face.BoxX,
+                            BoxY = face.BoxY,
+                            BoxWidth = face.BoxWidth,
+                            BoxHeight = face.BoxHeight
+                        });
+                        continue;
+                    }
+
+                    // b) Nếu ở chế độ "Tự Động" (Auto) nhưng mới vào dưới 45 giây:
+                    //    Hội viên vừa bước qua cổng -> Giữ trạng thái vào tập, chưa auto-checkout!
+                    if (gateMode.Equals("Auto", StringComparison.OrdinalIgnoreCase) && secondsInside < 45)
+                    {
+                        results.Add(new MultiFaceProcessResultDto
+                        {
+                            FaceIndex = face.FaceIndex,
+                            FoundMatch = true,
+                            MemberId = member.Id,
+                            FullName = member.FullName,
+                            VipTierName = vipName,
+                            VipBadgeColor = vipColor,
+                            ActionType = "AlreadyInside",
+                            MinutesInside = minutesInside,
+                            Message = $"Đã điểm danh lúc {activeCheckin.CheckinTime:HH:mm}. Hãy vào tập luyện!",
+                            ConfidenceScore = confidence,
+                            BoxX = face.BoxX,
+                            BoxY = face.BoxY,
+                            BoxWidth = face.BoxWidth,
+                            BoxHeight = face.BoxHeight
+                        });
+                        continue;
+                    }
+
+                    // c) CHECK-OUT HỢP LỆ (Khi ở chế độ OutOnly HOẶC Auto và đã vào > 45 giây)
+                    activeCheckin.CheckoutTime = VnTime.Now;
+                    anyChanges = true;
+
+                    // Chuyển sang danh sách recentCheckouts để ngăn lặp tức thì
+                    recentCheckouts.Add(activeCheckin);
+                    activeCheckins.Remove(activeCheckin);
+
+                    results.Add(new MultiFaceProcessResultDto
+                    {
+                        FaceIndex = face.FaceIndex,
+                        FoundMatch = true,
+                        MemberId = member.Id,
+                        FullName = member.FullName,
+                        VipTierName = vipName,
+                        VipBadgeColor = vipColor,
+                        ActionType = "Checkout",
+                        MinutesInside = minutesInside,
+                        Message = $"Tạm biệt! Bạn đã tập {minutesInside} phút",
+                        ConfidenceScore = confidence,
+                        BoxX = face.BoxX,
+                        BoxY = face.BoxY,
+                        BoxWidth = face.BoxWidth,
+                        BoxHeight = face.BoxHeight
+                    });
+                    continue;
+                }
+
+                // 3. Nếu chưa có Check-in active:
+                // Nếu đang ở chế độ "Cổng Ra" (OutOnly) mà chưa check-in -> Báo lỗi
+                if (gateMode.Equals("OutOnly", StringComparison.OrdinalIgnoreCase))
+                {
+                    results.Add(new MultiFaceProcessResultDto
+                    {
+                        FaceIndex = face.FaceIndex,
+                        FoundMatch = true,
+                        MemberId = member.Id,
+                        FullName = member.FullName,
+                        ActionType = "Denied",
+                        Message = "Chưa có lượt check-in nào trong hôm nay",
+                        ConfidenceScore = confidence,
+                        BoxX = face.BoxX,
+                        BoxY = face.BoxY,
+                        BoxWidth = face.BoxWidth,
+                        BoxHeight = face.BoxHeight
+                    });
+                    continue;
+                }
+
+                // 4. Kiểm tra vé còn hạn -> CHECK-IN
+                var memberPkg = memberships.FirstOrDefault(m => m.MemberId == member.Id);
+                if (memberPkg == null)
+                {
+                    results.Add(new MultiFaceProcessResultDto
+                    {
+                        FaceIndex = face.FaceIndex,
+                        FoundMatch = true,
+                        MemberId = member.Id,
+                        FullName = member.FullName,
+                        ActionType = "Denied",
+                        Message = "Gói tập đã hết hạn",
+                        ConfidenceScore = confidence,
+                        BoxX = face.BoxX,
+                        BoxY = face.BoxY,
+                        BoxWidth = face.BoxWidth,
+                        BoxHeight = face.BoxHeight
+                    });
+                    continue;
+                }
+
+                // Tự động Check-in
+                var newLog = new CheckinLog
+                {
+                    MemberId = member.Id,
+                    GymId = request.GymId,
+                    MembershipId = memberPkg.Id,
+                    CheckinTime = VnTime.Now,
+                    CheckedByUserId = userId,
+                    Status = "Success",
+                    CheckinMethod = "FaceNet",
+                    FaceMatchScore = confidence,
+                    Notes = "Điểm danh luồng tự do (Multi-Face Walk-Through)"
+                };
+                _context.CheckinLogs.Add(newLog);
+                anyChanges = true;
+                activeCheckins.Add(newLog); // Thêm ngay vào activeCheckins để chống lặp các frame kế tiếp
+
+                results.Add(new MultiFaceProcessResultDto
+                {
+                    FaceIndex = face.FaceIndex,
+                    FoundMatch = true,
+                    MemberId = member.Id,
+                    FullName = member.FullName,
+                    VipTierName = vipName,
+                    VipBadgeColor = vipColor,
+                    PackageName = memberPkg.Package?.Name ?? "Vé vào tập",
+                    ActionType = "Checkin",
+                    Message = "Xin chào! Chúc bạn tập vui vẻ!",
+                    ConfidenceScore = confidence,
+                    BoxX = face.BoxX,
+                    BoxY = face.BoxY,
+                    BoxWidth = face.BoxWidth,
+                    BoxHeight = face.BoxHeight
+                });
+            }
+
+            if (anyChanges)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            // Tính lại Crowd Meter
+            int maxCapacity = gym.MaxCapacity > 0 ? gym.MaxCapacity : 50;
+            int activeCount = await _context.CheckinLogs
+                .CountAsync(c => c.GymId == request.GymId && c.CheckinTime >= twoHoursAgo && c.CheckoutTime == null && c.Status == "Success");
+
+            int crowdPercentage = Math.Min(100, (int)Math.Round((double)activeCount / maxCapacity * 100));
+            var (statusText, statusColor, statusIcon, recommendation) = GetCrowdStatus(crowdPercentage);
+
+            return Json(new VerifyMultiFaceResponseDto
+            {
+                Success = true,
+                Results = results,
+                ActiveCount = activeCount,
+                MaxCapacity = maxCapacity,
+                CrowdPercentage = crowdPercentage,
+                CrowdStatusText = statusText,
+                CrowdStatusColor = statusColor,
+                CrowdStatusIcon = statusIcon,
+                CrowdRecommendation = recommendation
+            });
+        }
+
         // Helper tính toán nhãn và màu sắc Crowd Meter
         private static (string text, string color, string icon, string recommendation) GetCrowdStatus(int percentage)
         {

@@ -24,6 +24,7 @@ namespace GymManagement.Models
         public DbSet<CheckinLog> CheckinLogs { get; set; }
         public DbSet<GymReview> GymReviews { get; set; }
         public DbSet<BannedWord> BannedWords { get; set; }
+        public DbSet<MemberFaceProfile> MemberFaceProfiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -296,6 +297,17 @@ namespace GymManagement.Models
             modelBuilder.Entity<BannedWord>(entity =>
             {
                 entity.HasIndex(b => b.Word).IsUnique();
+            });
+
+            // ===================== MEMBER FACE PROFILE (V3) =====================
+            modelBuilder.Entity<MemberFaceProfile>(entity =>
+            {
+                entity.HasIndex(f => f.MemberId).IsUnique();
+
+                entity.HasOne(f => f.Member)
+                      .WithOne(u => u.FaceProfile)
+                      .HasForeignKey<MemberFaceProfile>(f => f.MemberId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

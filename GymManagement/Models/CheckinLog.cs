@@ -58,11 +58,16 @@ namespace GymManagement.Models
         public string Status { get; set; } = "Success";
 
         /// <summary>
-        /// Phương thức check-in: QrScan (Quét camera), ManualPhone (Nhập SĐT), UsbScanner (Súng quét USB).
+        /// Phương thức check-in: QrScan (Quét camera), ManualPhone (Nhập SĐT), UsbScanner (Súng quét USB), FaceNet (Nhận diện khuôn mặt).
         /// </summary>
         [Required]
         [StringLength(30)]
         public string CheckinMethod { get; set; } = "QrScan";
+
+        /// <summary>
+        /// Điểm tương đồng nhận diện FaceNet (0.0 - 1.0, null nếu check-in bằng phương thức khác).
+        /// </summary>
+        public double? FaceMatchScore { get; set; }
 
         [StringLength(500)]
         public string? Notes { get; set; }

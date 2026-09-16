@@ -1,0 +1,799 @@
+@model GymManagement.Models.Gym
+@{
+    Layout = null; // Kiosk là trang độc lập toàn màn hình (Standalone Kiosk)
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GymPro Smart Kiosk — @Model.Name</title>
+
+    <!-- Bootstrap 5 CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    @Html.AntiForgeryToken()
+
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #060911;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        /* ── Header Bar ── */
+        .kiosk-header {
+            height: 72px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 20;
+        }
+
+        .kiosk-brand {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 1.25rem;
+            letter-spacing: 1.5px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .badge-walkthrough {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Mode Selector Pills */
+        .gate-mode-selector {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 4px;
+            border-radius: 999px;
+            display: flex;
+            gap: 4px;
+        }
+        .gate-btn {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gate-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .gate-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            box-shadow: 0 0 16px rgba(2, 132, 199, 0.5);
+        }
+        .gate-btn.active.mode-in {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.5);
+        }
+        .gate-btn.active.mode-out {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+        }
+
+        .kiosk-clock {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            color: #38bdf8;
+        }
+
+        /* ── Main Stage (Split View: Camera + Live Feed) ── */
+        .kiosk-body {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 1.25rem 2rem;
+            gap: 1.5rem;
+            overflow: hidden;
+        }
+
+        /* Camera Box Container */
+        .kiosk-cam-card {
+            position: relative;
+            flex: 1;
+            max-width: 960px;
+            height: 100%;
+            background: #020617;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(56, 189, 248, 0.35);
+            box-shadow: 0 0 60px rgba(56, 189, 248, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .kiosk-cam-card video,
+        .kiosk-cam-card canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .kiosk-cam-card canvas {
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Live status caption under oval */
+        .kiosk-scanner-caption {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.90);
+            backdrop-filter: blur(12px);
+            padding: 9px 26px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 15;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── Side Feed: Dải Băng Hoạt Động Thời Gian Thực ── */
+        .kiosk-side-feed {
+            width: 380px;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .side-feed-header {
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .side-feed-list {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* Toast Card Item */
+        .feed-toast-item {
+            background: rgba(30, 41, 59, 0.85);
+            border-left: 4px solid #10b981;
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+        .feed-toast-item.checkout {
+            border-left-color: #38bdf8;
+        }
+        .feed-toast-item.denied {
+            border-left-color: #ef4444;
+        }
+
+        @@keyframes slideInRight {
+            0% { transform: translateX(40px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .feed-toast-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #334155;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+        }
+
+        .feed-toast-name {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #fff;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .feed-toast-sub {
+            font-size: 0.74rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        /* ── Footer Bar ── */
+        .kiosk-footer {
+            height: 56px;
+            background: rgba(15, 23, 42, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="kiosk-header">
+        <div class="kiosk-brand">
+            <i class="bi bi-shield-shaded text-info"></i>
+            <span>GYMPRO SMART GATE</span>
+            <span class="badge-walkthrough"><i class="bi bi-lightning-charge-fill me-1"></i>FaceNet AI</span>
+        </div>
+
+        <!-- Chế Độ Cổng (Gate Mode Selector) -->
+        <div class="gate-mode-selector">
+            <button type="button" class="gate-btn active" id="btnModeAuto" onclick="setGateMode('Auto')">
+                <i class="bi bi-lightning-charge-fill text-warning"></i> Tự Động Thông Minh
+            </button>
+            <button type="button" class="gate-btn" id="btnModeIn" onclick="setGateMode('InOnly')">
+                <i class="bi bi-box-arrow-in-right text-success"></i> Cổng Vào
+            </button>
+            <button type="button" class="gate-btn" id="btnModeOut" onclick="setGateMode('OutOnly')">
+                <i class="bi bi-box-arrow-right text-info"></i> Cổng Ra
+            </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-4">
+            <div class="text-end d-none d-md-block">
+                <div class="text-secondary small fw-bold" style="font-size:0.68rem; text-transform:uppercase; letter-spacing:1px;">CƠ SỞ</div>
+                <div class="fw-bold text-white" style="font-size:0.92rem;">@Model.Name</div>
+            </div>
+            <div class="kiosk-clock" id="liveClock">00:00:00</div>
+            <a asp-action="Scan" asp-route-gymId="@Model.Id" class="btn btn-outline-secondary btn-sm px-3" style="border-radius:6px; font-size:0.75rem;" title="Thoát Kiosk về bàn Lễ tân">
+                <i class="bi bi-box-arrow-left me-1"></i> Thoát
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Stage -->
+    <div class="kiosk-body">
+        <!-- Cột Trái: Camera Feed + AR Bounding Boxes -->
+        <div class="kiosk-cam-card" id="kioskCamCard">
+            <video id="kioskVideo" autoplay playsinline muted></video>
+            <canvas id="arCanvas"></canvas>
+
+            <div class="kiosk-scanner-caption" id="kioskCaption">
+                <span class="spinner-grow spinner-grow-sm text-info" role="status"></span>
+                <span>Đang nạp AI Walk-Through...</span>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Dải Băng Hoạt Động Thời Gian Thực (Live Toast Feed) -->
+        <div class="kiosk-side-feed">
+            <div class="side-feed-header">
+                <div>
+                    <h5 style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.9rem; margin:0; text-transform:uppercase; letter-spacing:1px;">
+                        <i class="bi bi-activity text-success me-1"></i> Hoạt Động Điểm Danh
+                    </h5>
+                    <span style="font-size:0.72rem; color:#64748b;">Tự động cập nhật không gián đoạn</span>
+                </div>
+                <span class="badge bg-success" id="liveProcessedCount" style="font-size:0.75rem; font-weight:800;">
+                    0 lượt
+                </span>
+            </div>
+
+            <div class="side-feed-list" id="feedList">
+                <div class="text-center py-5 text-muted" id="emptyFeedMsg">
+                    <i class="bi bi-people fs-2 d-block mb-2 text-secondary"></i>
+                    <span style="font-size:0.82rem;">Sẵn sàng. Hội viên bước qua camera sẽ được điểm danh tức thì.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="kiosk-footer">
+        <div>
+            <i class="bi bi-lightning-fill text-warning me-1"></i>
+            <span><strong>Cổng Thông Minh:</strong> Tự động nhận diện vào/ra. Chuyển <strong>"Cổng Vào"</strong> hoặc <strong>"Cổng Ra"</strong> để điểm danh tức thì không cần chờ. Nhấn <strong>F11</strong> để xem Toàn Màn Hình.</span>
+        </div>
+        <div id="statusModeIndicator" class="text-info fw-bold">
+            ⚡ Chế độ: Tự Động Thông Minh (Auto)
+        </div>
+    </div>
+
+    <!-- Face-api.js Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <script>
+        var gymId = @Model.Id;
+        var video = document.getElementById('kioskVideo');
+        var canvas = document.getElementById('arCanvas');
+        var caption = document.getElementById('kioskCaption');
+        var feedList = document.getElementById('feedList');
+        var emptyMsg = document.getElementById('emptyFeedMsg');
+        var countBadge = document.getElementById('liveProcessedCount');
+
+        var isDetecting = false;
+        var isBatchProcessing = false;
+        var modelsLoaded = false;
+        var totalProcessed = 0;
+
+        // Chế độ Cổng: 'Auto', 'InOnly', 'OutOnly'
+        var currentGateMode = 'Auto';
+
+        // Bộ nhớ theo dõi khuôn mặt trong luồng (Client Identity Tracker)
+        // Key: memberId -> { memberId, name, actionType, color, cx, cy, expireAt }
+        var faceIdentityTracker = new Map();
+
+        // Bảng ghi nhớ Cooldown thông báo âm thanh: memberId -> timestamp
+        var memberAlertCooldown = {};
+        var ALERT_COOLDOWN_MS = 15000; // 15 giây không nhắc lại âm thanh cho cùng 1 người
+
+        // Đồng hồ thời gian thực
+        function updateClock() {
+            var now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString('vi-VN');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ── 0. Chuyển Chế Độ Cổng ──
+        function setGateMode(mode) {
+            currentGateMode = mode;
+            document.querySelectorAll('.gate-btn').forEach(b => {
+                b.classList.remove('active', 'mode-in', 'mode-out');
+            });
+
+            var activeBtn = document.getElementById(mode === 'Auto' ? 'btnModeAuto' : (mode === 'InOnly' ? 'btnModeIn' : 'btnModeOut'));
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                if (mode === 'InOnly') activeBtn.classList.add('mode-in');
+                if (mode === 'OutOnly') activeBtn.classList.add('mode-out');
+            }
+
+            var label = mode === 'Auto' ? '⚡ Tự Động Thông Minh (Auto)' : (mode === 'InOnly' ? '➡️ Cổng Vào (Check-in Only)' : '⬅️ Cổng Ra (Check-out Only)');
+            document.getElementById('statusModeIndicator').innerText = 'Chế độ: ' + label;
+            caption.innerHTML = `<i class="bi bi-gear-fill text-warning"></i> <span>Đã chuyển sang: <strong>${label}</strong></span>`;
+        }
+
+        // ── 1. Nạp Model FaceNet ──
+        var MODEL_URLS = [
+            'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@master/weights',
+            'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+        ];
+        var currentModelIndex = 0;
+
+        async function loadModels() {
+            caption.innerHTML = '<span class="spinner-border spinner-border-sm text-info"></span> <span>Đang nạp mạng nơ-ron AI FaceNet...</span>';
+            var url = MODEL_URLS[currentModelIndex];
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(url),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(url),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(url)
+                ]);
+                modelsLoaded = true;
+                return true;
+            } catch (err) {
+                console.warn('Lỗi nạp model từ ' + url, err);
+                currentModelIndex++;
+                if (currentModelIndex < MODEL_URLS.length) {
+                    return await loadModels();
+                }
+                caption.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Lỗi nạp mô hình AI FaceNet. Vui lòng tải lại trang.</span>';
+                throw err;
+            }
+        }
+
+        // ── 2. Khởi Động Camera ──
+        async function startKiosk() {
+            try {
+                await loadModels();
+
+                var stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 },
+                        facingMode: 'user'
+                    }
+                });
+
+                video.srcObject = stream;
+                video.onloadedmetadata = function() {
+                    video.play();
+                    canvas.width = video.videoWidth || 1280;
+                    canvas.height = video.videoHeight || 720;
+
+                    isDetecting = true;
+                    caption.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> <span>Cổng AI sẵn sàng. Mời bước qua...</span>';
+                    multiFaceDetectLoop();
+                };
+            } catch (err) {
+                caption.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Lỗi Camera: ' + err.message + '</span>';
+            }
+        }
+
+        // ── 3. Vòng Lặp Quét & Vẽ AR Khung Khuôn Mặt ──
+        async function multiFaceDetectLoop() {
+            if (!isDetecting) return;
+
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Tinh chỉnh inputSize: 416 & scoreThreshold: 0.35 để bắt khuôn mặt cực nhạy và ổn định
+            var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.35 });
+            
+            var detections = [];
+            try {
+                detections = await faceapi.detectAllFaces(video, opts)
+                                          .withFaceLandmarks()
+                                          .withFaceDescriptors();
+            } catch (e) {
+                console.warn('Lỗi frame detect:', e);
+            }
+
+            var now = Date.now();
+
+            // Xóa các tracked identity đã hết hạn (> 3.5s)
+            for (var [key, tracker] of faceIdentityTracker.entries()) {
+                if (tracker.expireAt < now) {
+                    faceIdentityTracker.delete(key);
+                }
+            }
+
+            if (detections && detections.length > 0) {
+                caption.innerHTML = `<i class="bi bi-radar text-info"></i> <span>Phát hiện ${detections.length} người trong luồng...</span>`;
+
+                var facesToProcess = [];
+
+                for (var i = 0; i < detections.length; i++) {
+                    var det = detections[i];
+                    var box = det.detection.box;
+                    var cx = box.x + box.width / 2;
+                    var cy = box.y + box.height / 2;
+
+                    // Tìm xem khuôn mặt này đã được nhận diện trong Tracker chưa (dựa theo vị trí gần nhất)
+                    var matchedTracker = null;
+                    var minDistance = 999999;
+                    for (var [key, tracker] of faceIdentityTracker.entries()) {
+                        var dist = Math.hypot(tracker.cx - cx, tracker.cy - cy);
+                        if (dist < 180 && dist < minDistance) {
+                            minDistance = dist;
+                            matchedTracker = tracker;
+                        }
+                    }
+
+                    if (matchedTracker) {
+                        // Cập nhật vị trí chuyển động hiện tại cho tracker
+                        matchedTracker.cx = cx;
+                        matchedTracker.cy = cy;
+                        matchedTracker.expireAt = now + 3500;
+
+                        var label = matchedTracker.name;
+                        if (matchedTracker.actionType === 'Checkin') {
+                            label = `✅ ${matchedTracker.name} (Vào tập)`;
+                        } else if (matchedTracker.actionType === 'Checkout') {
+                            label = `🚪 ${matchedTracker.name} (Ra về)`;
+                        } else if (matchedTracker.actionType === 'AlreadyInside') {
+                            label = `👤 ${matchedTracker.name} (Đang tập)`;
+                        } else if (matchedTracker.actionType === 'AlreadyCheckedOut') {
+                            label = `👋 ${matchedTracker.name} (Đã về)`;
+                        }
+
+                        drawArBox(ctx, box, label, matchedTracker.color);
+                    } else {
+                        // Khuôn mặt mới chưa nhận diện -> Vẽ màu xanh lam chờ xử lý
+                        drawArBox(ctx, box, 'Đang nhận diện...', '#38bdf8');
+                    }
+
+                    // Chuẩn bị descriptor gửi lên server
+                    facesToProcess.push({
+                        faceIndex: i,
+                        descriptor: Array.from(det.descriptor),
+                        boxX: box.x,
+                        boxY: box.y,
+                        boxWidth: box.width,
+                        boxHeight: box.height
+                    });
+                }
+
+                // Gửi lên server xử lý batch nếu không đang bận
+                if (!isBatchProcessing && facesToProcess.length > 0) {
+                    isBatchProcessing = true;
+                    processBatchFaces(facesToProcess);
+                }
+            } else {
+                caption.innerHTML = '<i class="bi bi-person-bounding-box text-success"></i> <span>Cổng AI sẵn sàng. Mời bước qua...</span>';
+            }
+
+            if (isDetecting) {
+                requestAnimationFrame(multiFaceDetectLoop);
+            }
+        }
+
+        // ── 4. Xử Lý Batch Đa Khuôn Mặt Với Server ──
+        async function processBatchFaces(faces) {
+            var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+            try {
+                var res = await fetch('/OwnerCheckin/VerifyAndProcessMultiFace', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        gymId: gymId,
+                        gateMode: currentGateMode,
+                        faces: faces
+                    })
+                });
+
+                var data = await res.json();
+
+                if (data.success && data.results) {
+                    var now = Date.now();
+
+                    data.results.forEach(function(r) {
+                        if (!r.foundMatch || !r.memberId) return;
+
+                        var cx = r.boxX + r.boxWidth / 2;
+                        var cy = r.boxY + r.boxHeight / 2;
+
+                        var color = '#10b981';
+                        if (r.actionType === 'Checkout') color = '#38bdf8';
+                        else if (r.actionType === 'AlreadyInside') color = '#06b6d4';
+                        else if (r.actionType === 'AlreadyCheckedOut') color = '#64748b';
+                        else if (r.actionType === 'Denied') color = '#ef4444';
+
+                        // Lưu vào Tracker để các khung hình kế tiếp bám theo khuôn mặt
+                        faceIdentityTracker.set(r.memberId, {
+                            memberId: r.memberId,
+                            name: r.fullName,
+                            actionType: r.actionType,
+                            color: color,
+                            cx: cx,
+                            cy: cy,
+                            expireAt: now + 3500
+                        });
+
+                        // Kiểm tra cooldown thông báo âm thanh & toast
+                        var lastAlert = memberAlertCooldown[r.memberId] || 0;
+                        if (now - lastAlert < ALERT_COOLDOWN_MS) {
+                            return; // Đã thông báo trong 15s gần đây -> Không làm phiền
+                        }
+
+                        // Xử lý thông báo cho các hành động mới
+                        if (r.actionType === 'Checkin') {
+                            memberAlertCooldown[r.memberId] = now;
+                            playChime(true);
+                            speakQuick(`Chào bạn ${r.fullName}!`);
+                            addFeedToast(r, 'checkin');
+                        } else if (r.actionType === 'Checkout') {
+                            memberAlertCooldown[r.memberId] = now;
+                            playChime(true);
+                            speakQuick(`Tạm biệt ${r.fullName}!`);
+                            addFeedToast(r, 'checkout');
+                        } else if (r.actionType === 'Denied') {
+                            memberAlertCooldown[r.memberId] = now;
+                            playChime(false);
+                            addFeedToast(r, 'denied');
+                        }
+                        // Ghi chú: 'AlreadyInside' & 'AlreadyCheckedOut' KHÔNG phát chuông và không chèn spam vào dải băng!
+                    });
+                }
+            } catch (err) {
+                console.error('Lỗi batch process:', err);
+            } finally {
+                setTimeout(function() {
+                    isBatchProcessing = false;
+                }, 350); // Khoảng nghỉ 350ms giữa các lần batch
+            }
+        }
+
+        // ── 5. Vẽ Khung AR Trực Tiếp Lên Đầu Người Dùng ──
+        function drawArBox(ctx, box, label, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+
+            // Khung bo góc
+            var r = 8;
+            ctx.beginPath();
+            ctx.moveTo(box.x + r, box.y);
+            ctx.lineTo(box.x + box.width - r, box.y);
+            ctx.quadraticCurveTo(box.x + box.width, box.y, box.x + box.width, box.y + r);
+            ctx.lineTo(box.x + box.width, box.y + box.height - r);
+            ctx.quadraticCurveTo(box.x + box.width, box.y + box.height, box.x + box.width - r, box.y + box.height);
+            ctx.lineTo(box.x + r, box.y + box.height);
+            ctx.quadraticCurveTo(box.x, box.y + box.height, box.x, box.y + box.height - r);
+            ctx.lineTo(box.x, box.y + r);
+            ctx.quadraticCurveTo(box.x, box.y, box.x + r, box.y);
+            ctx.stroke();
+
+            // 4 góc định vị công nghệ cao (Corner brackets)
+            var cLen = Math.min(22, box.width / 4);
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            // Top-left
+            ctx.moveTo(box.x, box.y + cLen); ctx.lineTo(box.x, box.y); ctx.lineTo(box.x + cLen, box.y);
+            // Top-right
+            ctx.moveTo(box.x + box.width - cLen, box.y); ctx.lineTo(box.x + box.width, box.y); ctx.lineTo(box.x + box.width, box.y + cLen);
+            // Bottom-left
+            ctx.moveTo(box.x, box.y + box.height - cLen); ctx.lineTo(box.x, box.y + box.height); ctx.lineTo(box.x + cLen, box.y + box.height);
+            // Bottom-right
+            ctx.moveTo(box.x + box.width - cLen, box.y + box.height); ctx.lineTo(box.x + box.width, box.y + box.height); ctx.lineTo(box.x + box.width, box.y + box.height - cLen);
+            ctx.stroke();
+
+            // Thẻ tên nổi (Floating Header Tag)
+            var tagH = 26;
+            var tagY = box.y - tagH - 6;
+            if (tagY < 0) tagY = box.y + box.height + 6;
+
+            ctx.fillStyle = color;
+            ctx.fillRect(box.x, tagY, box.width, tagH);
+
+            // Chữ tên lật lại vì canvas bị CSS transform: scaleX(-1)
+            ctx.save();
+            ctx.translate(box.x + box.width / 2, tagY + tagH / 2);
+            ctx.scale(-1, 1);
+            ctx.fillStyle = '#0a0f1d';
+            ctx.font = 'bold 13px Montserrat, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, 0, 0);
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        // ── 6. Thêm Thẻ Hoạt Động Vào Dải Băng (Live Toast Feed) ──
+        function addFeedToast(r, type) {
+            if (emptyMsg) emptyMsg.style.display = 'none';
+
+            totalProcessed++;
+            countBadge.innerText = totalProcessed + ' lượt';
+
+            var iconHtml = type === 'checkin'
+                ? '<i class="bi bi-box-arrow-in-right text-success fs-5"></i>'
+                : (type === 'checkout' ? '<i class="bi bi-box-arrow-right text-info fs-5"></i>' : '<i class="bi bi-x-circle-fill text-danger fs-5"></i>');
+
+            var badgeText = type === 'checkin'
+                ? `<span class="badge bg-success" style="font-size:0.68rem; font-weight:800;">VÀO TẬP</span>`
+                : (type === 'checkout' ? `<span class="badge bg-info text-dark" style="font-size:0.68rem; font-weight:800;">RA VỀ (${r.minutesInside}p)</span>` : `<span class="badge bg-danger" style="font-size:0.68rem; font-weight:800;">TỪ CHỐI</span>`);
+
+            var item = document.createElement('div');
+            item.className = 'feed-toast-item ' + type;
+            item.innerHTML = `
+                <div class="feed-toast-avatar">
+                    ${(r.fullName || 'H').substring(0, 1).toUpperCase()}
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div class="d-flex align-items-center justify-content-between gap-1 mb-1">
+                        <div class="feed-toast-name">${r.fullName}</div>
+                        ${badgeText}
+                    </div>
+                    <div class="feed-toast-sub">
+                        ${r.actionType === 'Checkout' ? `Đã tập ${r.minutesInside} phút` : (r.packageName || 'Vé vào tập')} &bull; ${new Date().toLocaleTimeString('vi-VN')}
+                    </div>
+                </div>
+            `;
+
+            feedList.insertBefore(item, feedList.firstChild);
+
+            // Giới hạn tối đa 20 dòng gần nhất
+            if (feedList.children.length > 20) {
+                feedList.removeChild(feedList.lastChild);
+            }
+        }
+
+        // Giọng nói thông báo ngắn gọn
+        function speakQuick(text) {
+            if ('speechSynthesis' in window) {
+                var utter = new SpeechSynthesisUtterance(text);
+                utter.lang = 'vi-VN';
+                utter.rate = 1.2;
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        // Âm thanh Ting!
+        function playChime(success) {
+            try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (success) {
+                    osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+                    osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.08); // D6
+                    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else {
+                    osc.frequency.setValueAtTime(220, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                }
+            } catch(e) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', startKiosk);
+    </script>
+</body>
+</html>
