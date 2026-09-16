@@ -240,6 +240,18 @@
                                     <i class="bi bi-star me-1 text-warning"></i>Đánh Giá Của Tôi
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AiWorkout" ? "active" : "")"
+                                   asp-controller="AiWorkout" asp-action="Index">
+                                    <i class="bi bi-robot me-1" style="color:#818cf8;"></i>AI Coach
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Chat" ? "active" : "")"
+                                   asp-controller="Chat" asp-action="Index">
+                                    <i class="bi bi-chat-dots me-1"></i>Tin Nhắn
+                                </a>
+                            </li>
                         }
                     </ul>
                     <ul class="navbar-nav ms-auto mb-2 mb-md-0 align-items-center gap-2">
@@ -260,6 +272,12 @@
                                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerGym" ? "active" : "")"
                                        asp-controller="OwnerGym" asp-action="Index">
                                         <i class="bi bi-building me-1"></i>Quản lý Gym
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerChat" ? "active" : "")"
+                                       asp-controller="OwnerChat" asp-action="Index">
+                                        <i class="bi bi-chat-dots me-1"></i>Tin Nhắn
                                     </a>
                                 </li>
                             }

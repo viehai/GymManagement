@@ -1,0 +1,362 @@
+@{
+    ViewData["Title"] = "Lịch Sử Tập Luyện AI";
+    Layout = "_MemberLayout";
+    var sessions   = ViewBag.Sessions   as List<GymManagement.Models.WorkoutSession> ?? new();
+    var stats      = ViewBag.Stats      as List<dynamic> ?? new();
+    var exercise   = ViewBag.Exercise   as string ?? "all";
+    int page       = ViewBag.Page       is int p ? p : 1;
+    int totalPages = ViewBag.TotalPages is int tp ? tp : 1;
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       AI WORKOUT HISTORY — INK WASH PALETTE
+    ═══════════════════════════════════════════════ */
+    .hist-hero {
+        background: #252525;
+        padding: 2.8rem 0 2.2rem;
+        color: #fff;
+    }
+    .hist-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 0.4rem;
+    }
+    .hist-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        color: #fff;
+        margin: 0 0 6px;
+        letter-spacing: -0.5px;
+    }
+    .hist-hero p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.6);
+    }
+
+    .hist-body {
+        padding: 3rem 0 5rem;
+        background: #fafafa;
+    }
+
+    /* Section label */
+    .section-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #CFCFCF;
+    }
+
+    /* Filter tabs */
+    .filter-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #CFCFCF;
+    }
+    .filter-btn {
+        padding: 6px 16px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        text-decoration: none;
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        color: #545454;
+        border-radius: 0;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .filter-btn:hover { border-color: #252525; color: #252525; text-decoration: none; }
+    .filter-btn.active { background: #252525; border-color: #252525; color: #fff; }
+
+    /* Stats grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1px;
+        background: #CFCFCF;
+        border: 1px solid #CFCFCF;
+        margin-bottom: 2rem;
+    }
+    .stat-box {
+        background: #fff;
+        padding: 1.2rem 1rem;
+        text-align: center;
+    }
+    .stat-box .etype {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #7D7D7D;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+    }
+    .stat-box .val {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #252525;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+    .stat-box .lbl {
+        font-size: 0.68rem;
+        color: #7D7D7D;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Table */
+    .history-table-wrap {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+    }
+    .history-table-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.4rem;
+        border-bottom: 1px solid #CFCFCF;
+    }
+    .history-table-header h6 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #252525;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.83rem;
+    }
+    .history-table thead tr {
+        background: #f8fafc;
+    }
+    .history-table thead th {
+        padding: 10px 16px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #7D7D7D;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #CFCFCF;
+    }
+    .history-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.15s;
+    }
+    .history-table tbody tr:last-child { border-bottom: none; }
+    .history-table tbody tr:hover { background: #fafafa; }
+    .history-table td { padding: 12px 16px; vertical-align: middle; }
+
+    .exercise-tag {
+        display: inline-block;
+        border: 1px solid #CFCFCF;
+        padding: 3px 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #545454;
+        background: #fafafa;
+    }
+
+    .form-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .form-bar-bg { width: 80px; height: 5px; background: #f0f0f0; }
+    .form-bar-fill { height: 100%; }
+
+    /* Pagination */
+    .pagination-row { display: flex; justify-content: center; gap: 4px; margin-top: 1.5rem; }
+    .page-btn {
+        width: 34px; height: 34px;
+        display: flex; align-items: center; justify-content: center;
+        border: 1px solid #CFCFCF;
+        background: #fff;
+        color: #545454;
+        font-size: 0.8rem; font-weight: 700;
+        text-decoration: none;
+        transition: border-color 0.15s;
+    }
+    .page-btn:hover { border-color: #252525; color: #252525; }
+    .page-btn.active { background: #252525; border-color: #252525; color: #fff; }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #fff;
+        border: 1px solid #CFCFCF;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .empty-state h5 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 1rem;
+        color: #252525;
+        margin-bottom: 0.5rem;
+    }
+    .empty-state p { font-size: 0.85rem; color: #7D7D7D; max-width: 400px; margin: 0 auto 1.5rem; }
+</style>
+
+<!-- HERO -->
+<div class="hist-hero">
+    <div class="container">
+        <div class="hist-hero-label">AI POSE COACH</div>
+        <h1>LỊCH SỬ TẬP LUYỆN AI</h1>
+        <p>Theo dõi tiến trình từng buổi tập — rep chuẩn form, điểm tư thế và calo tiêu thụ.</p>
+    </div>
+</div>
+
+<!-- BODY -->
+<div class="hist-body">
+    <div class="container">
+
+        <!-- FILTER TABS -->
+        <div class="filter-row">
+            <a href="/AiWorkout/History?exercise=all"    class="filter-btn @(exercise=="all"   ?"active":"")">Tất cả</a>
+            <a href="/AiWorkout/History?exercise=Squat"  class="filter-btn @(exercise=="Squat" ?"active":"")">🏋️ Squat</a>
+            <a href="/AiWorkout/History?exercise=PushUp" class="filter-btn @(exercise=="PushUp"?"active":"")">💪 Hít đất</a>
+            <a href="/AiWorkout" class="filter-btn ms-auto">
+                <i class="bi bi-play-fill me-1"></i>Tập ngay
+            </a>
+        </div>
+
+        <!-- AGGREGATE STATS -->
+        @if (stats.Any())
+        {
+            <div class="section-label"><i class="bi bi-bar-chart me-1"></i>Thống kê tổng hợp</div>
+            <div class="stats-grid mb-4">
+                @foreach (var s in stats)
+                {
+                    string etype = s.ExerciseType;
+                    string etypeLabel = etype == "Squat" ? "🏋️ SQUAT" : "💪 HÍT ĐẤT";
+                    <div class="stat-box">
+                        <div class="etype">@etypeLabel</div>
+                        <div class="val">@s.TotalValidReps</div>
+                        <div class="lbl">Tổng rep chuẩn</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="etype">@etypeLabel</div>
+                        <div class="val">@s.BestReps</div>
+                        <div class="lbl">Kỷ lục 1 buổi</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="etype">@etypeLabel</div>
+                        <div class="val">@(Math.Round(s.AvgFormScore, 0))đ</div>
+                        <div class="lbl">Điểm form TB</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="etype">@etypeLabel</div>
+                        <div class="val">@(Math.Round(s.TotalCalories, 0))</div>
+                        <div class="lbl">Tổng calo (kcal)</div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- SESSION LIST -->
+        <div class="section-label"><i class="bi bi-clock-history me-1"></i>Nhật ký buổi tập</div>
+
+        @if (!sessions.Any())
+        {
+            <div class="empty-state">
+                <div class="icon">🤖</div>
+                <h5>Chưa có buổi tập nào</h5>
+                <p>Bắt đầu buổi tập AI đầu tiên để theo dõi tiến trình của bạn tại đây.</p>
+                <a href="/AiWorkout" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase fw-bold" style="font-size:0.72rem; letter-spacing:1px;">
+                    <i class="bi bi-play-fill me-1"></i>Tập ngay
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="history-table-wrap">
+                <div class="history-table-header">
+                    <h6><i class="bi bi-list-ul me-2"></i>Danh sách buổi tập</h6>
+                    <span style="font-size:0.72rem; color:#7D7D7D; font-weight:600;">@sessions.Count buổi đang hiển thị</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Bài tập</th>
+                                <th>Ngày tập</th>
+                                <th>Rep chuẩn / Tổng</th>
+                                <th>Điểm form</th>
+                                <th>Thời gian</th>
+                                <th>Calo (kcal)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in sessions)
+                            {
+                                var formColor = s.AverageFormScore >= 80 ? "#16a34a" : s.AverageFormScore >= 55 ? "#d97706" : "#dc2626";
+                                var duration  = TimeSpan.FromSeconds(s.DurationSeconds);
+                                <tr>
+                                    <td>
+                                        <span class="exercise-tag">
+                                            @(s.ExerciseType == "Squat" ? "🏋️ Squat" : "💪 Hít đất")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight:700; color:#252525;">@s.CreatedAt.AddHours(7).ToString("dd/MM/yyyy")</div>
+                                        <div style="font-size:0.72rem; color:#7D7D7D;">@s.CreatedAt.AddHours(7).ToString("HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <span style="font-family:'Montserrat',sans-serif; font-weight:900; font-size:1rem; color:#252525;">@s.ValidReps</span>
+                                        <span style="color:#7D7D7D; font-size:0.78rem;"> / @s.TotalReps</span>
+                                    </td>
+                                    <td>
+                                        <div class="form-bar-wrap">
+                                            <span style="font-weight:700; color:@formColor; font-size:0.88rem;">@s.AverageFormScore.ToString("F0")đ</span>
+                                            <div class="form-bar-bg">
+                                                <div class="form-bar-fill" style="width:@s.AverageFormScore%; background:@formColor;"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="color:#545454;">@duration.ToString(@"m\:ss")</td>
+                                    <td style="font-weight:600; color:#252525;">@s.CaloriesBurned.ToString("F1")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAGINATION -->
+            @if (totalPages > 1)
+            {
+                <div class="pagination-row">
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <a href="/AiWorkout/History?exercise=@exercise&page=@i"
+                           class="page-btn @(i == page ? "active" : "")">@i</a>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>

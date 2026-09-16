@@ -1,0 +1,403 @@
+@{
+    ViewData["Title"] = "AI Workout Coach";
+    Layout = "_MemberLayout";
+    var recentSquat  = ViewBag.RecentSquat  as List<GymManagement.Models.WorkoutSession> ?? new();
+    var recentPushUp = ViewBag.RecentPushUp as List<GymManagement.Models.WorkoutSession> ?? new();
+    var bestSquat    = ViewBag.BestSquat  as GymManagement.Models.WorkoutSession;
+    var bestPushUp   = ViewBag.BestPushUp as GymManagement.Models.WorkoutSession;
+}
+
+<style>
+    /* ═══════════════════════════════════════════════
+       AI WORKOUT — INK WASH PALETTE
+       #252525  Xám than   → hero / nút CTA
+       #545454  Xám đậm    → hover
+       #7D7D7D  Xám trung  → văn bản phụ
+       #CFCFCF  Xám nhạt  → viền
+       #FFFFFF  Trắng      → nền card
+       #fafafa             → nền body
+    ═══════════════════════════════════════════════ */
+
+    /* ── Hero ── */
+    .aiwk-hero {
+        background: #252525;
+        padding: 2.8rem 0 2.2rem;
+        color: #fff;
+    }
+    .aiwk-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .aiwk-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        color: #fff;
+        margin: 0 0 6px;
+        letter-spacing: -0.5px;
+    }
+    .aiwk-hero p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.6);
+        max-width: 520px;
+    }
+
+    /* ── Body ── */
+    .aiwk-body {
+        padding: 3rem 0 5rem;
+        background: #fafafa;
+    }
+
+    /* ── Section title ── */
+    .section-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #7D7D7D;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #CFCFCF;
+    }
+
+    /* ── Stats bar ── */
+    .stats-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid #CFCFCF;
+        margin-bottom: 2.5rem;
+        background: #fff;
+    }
+    .stat-cell {
+        padding: 1.4rem 1.2rem;
+        text-align: center;
+        border-right: 1px solid #CFCFCF;
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-cell .val {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #252525;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+    .stat-cell .lbl {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #7D7D7D;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Exercise cards ── */
+    .exercise-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    @@media(max-width: 768px) { .exercise-grid { grid-template-columns: 1fr; } }
+
+    .exercise-card {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        border-radius: 0;
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.2s;
+    }
+    .exercise-card:hover {
+        border-color: #252525;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    /* Banner: minimal dark strip */
+    .card-banner {
+        padding: 2rem 1.8rem;
+        background: #252525;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .card-banner-icon {
+        font-size: 2.4rem;
+        line-height: 1;
+    }
+    .card-banner-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 900;
+        color: #fff;
+        margin: 0 0 4px;
+        letter-spacing: -0.3px;
+    }
+    .card-banner-sub {
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .card-body-inner { padding: 1.4rem 1.6rem 1.6rem; }
+
+    .card-desc {
+        font-size: 0.85rem;
+        color: #545454;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    /* Feature tags */
+    .feature-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+    .feature-tag {
+        border: 1px solid #CFCFCF;
+        padding: 3px 10px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #545454;
+        background: #fafafa;
+        border-radius: 0;
+    }
+
+    /* Personal record */
+    .pr-strip {
+        background: #fafafa;
+        border: 1px solid #CFCFCF;
+        border-left: 3px solid #252525;
+        padding: 0.8rem 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .pr-strip .pr-reps {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #252525;
+        line-height: 1;
+    }
+    .pr-strip .pr-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #7D7D7D;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .pr-strip .pr-meta {
+        font-size: 0.72rem;
+        color: #7D7D7D;
+        margin-top: 2px;
+    }
+
+    /* History mini-table */
+    .history-mini {
+        font-size: 0.78rem;
+        color: #7D7D7D;
+        margin-bottom: 1.2rem;
+    }
+    .history-mini-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .history-mini-row:last-child { border-bottom: none; }
+    .history-mini-row .rep-val { font-weight: 700; color: #252525; }
+    .history-mini-row .score-val { color: #252525; font-weight: 600; }
+
+    /* CTA button */
+    .btn-cta {
+        display: inline-block;
+        background: #252525;
+        color: #fff;
+        padding: 9px 22px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        text-decoration: none;
+        border: none;
+        border-radius: 0;
+        transition: background 0.2s;
+    }
+    .btn-cta:hover { background: #545454; color: #fff; text-decoration: none; }
+
+    /* Empty state */
+    .empty-text {
+        font-size: 0.78rem;
+        color: #7D7D7D;
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+</style>
+
+<!-- HERO -->
+<div class="aiwk-hero">
+    <div class="container">
+        <div class="aiwk-hero-label">
+            <i class="bi bi-robot"></i> AI POSE COACH
+        </div>
+        <h1>AI WORKOUT COACH</h1>
+        <p>Trí tuệ nhân tạo chấm điểm tư thế realtime — tập đúng form, tập đẹp, tập an toàn trực tiếp qua camera laptop.</p>
+    </div>
+</div>
+
+<!-- BODY -->
+<div class="aiwk-body">
+    <div class="container">
+
+        <!-- STATS STRIP -->
+        <div class="stats-strip">
+            <div class="stat-cell">
+                <div class="val">@(bestSquat?.ValidReps ?? 0)</div>
+                <div class="lbl">🏆 Kỷ lục Squat (rep)</div>
+            </div>
+            <div class="stat-cell">
+                <div class="val">@(bestPushUp?.ValidReps ?? 0)</div>
+                <div class="lbl">🏆 Kỷ lục Hít đất (rep)</div>
+            </div>
+            <div class="stat-cell">
+                <div class="val">@Math.Round(recentSquat.Sum(s => s.CaloriesBurned) + recentPushUp.Sum(s => s.CaloriesBurned), 0)</div>
+                <div class="lbl">🔥 Calo (5 buổi gần nhất)</div>
+            </div>
+        </div>
+
+        <!-- EXERCISE SELECT -->
+        <div class="section-label"><i class="bi bi-play-circle me-1"></i>Chọn bài tập hôm nay</div>
+
+        <div class="exercise-grid mb-5">
+
+            <!-- SQUAT -->
+            <a class="exercise-card" href="/AiWorkout/Studio?exercise=Squat">
+                <div class="card-banner">
+                    <div class="card-banner-icon">🏋️</div>
+                    <div>
+                        <div class="card-banner-title">Squat — Ngồi Xổm</div>
+                        <div class="card-banner-sub">Đùi & Mông · Góc gối ≤ 90°</div>
+                    </div>
+                </div>
+                <div class="card-body-inner">
+                    <p class="card-desc">Bài tập nền tảng — AI theo dõi góc gối theo thời gian thực và đếm rep chuẩn form tự động.</p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">✅ Chuẩn form 100%</span>
+                        <span class="feature-tag">🦴 33 khớp theo dõi</span>
+                        <span class="feature-tag">🔊 Voice Coach VI</span>
+                    </div>
+
+                    @if (bestSquat != null)
+                    {
+                        <div class="pr-strip">
+                            <div class="pr-reps">@bestSquat.ValidReps</div>
+                            <div>
+                                <div class="pr-label">🏆 Kỷ lục cá nhân</div>
+                                <div class="pr-meta">Form: @bestSquat.AverageFormScore.ToString("F0")đ · @bestSquat.CreatedAt.AddHours(7).ToString("dd/MM/yy")</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (recentSquat.Any())
+                    {
+                        <div class="history-mini">
+                            @foreach (var s in recentSquat.Take(3))
+                            {
+                                <div class="history-mini-row">
+                                    <span>@s.CreatedAt.AddHours(7).ToString("dd/MM")</span>
+                                    <span><span class="rep-val">@s.ValidReps</span> rep chuẩn</span>
+                                    <span class="score-val">@s.AverageFormScore.ToString("F0")đ</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-text">Chưa có buổi tập nào — hãy bắt đầu ngay!</p>
+                    }
+
+                    <a href="/AiWorkout/Studio?exercise=Squat" class="btn-cta">
+                        <i class="bi bi-play-fill me-1"></i>Bắt đầu tập
+                    </a>
+                </div>
+            </a>
+
+            <!-- PUSH-UP -->
+            <a class="exercise-card" href="/AiWorkout/Studio?exercise=PushUp">
+                <div class="card-banner">
+                    <div class="card-banner-icon">💪</div>
+                    <div>
+                        <div class="card-banner-title">Push-up — Hít Đất</div>
+                        <div class="card-banner-sub">Ngực & Tay · Góc khuỷu ≤ 90°</div>
+                    </div>
+                </div>
+                <div class="card-body-inner">
+                    <p class="card-desc">Bài tập ngực & tay — AI phát hiện lỗi võng lưng & xệ bụng, đảm bảo mỗi rep đều chuẩn form.</p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">✅ Chuẩn form 100%</span>
+                        <span class="feature-tag">📐 Góc khuỷu tay</span>
+                        <span class="feature-tag">🔊 Voice Coach VI</span>
+                    </div>
+
+                    @if (bestPushUp != null)
+                    {
+                        <div class="pr-strip">
+                            <div class="pr-reps">@bestPushUp.ValidReps</div>
+                            <div>
+                                <div class="pr-label">🏆 Kỷ lục cá nhân</div>
+                                <div class="pr-meta">Form: @bestPushUp.AverageFormScore.ToString("F0")đ · @bestPushUp.CreatedAt.AddHours(7).ToString("dd/MM/yy")</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (recentPushUp.Any())
+                    {
+                        <div class="history-mini">
+                            @foreach (var s in recentPushUp.Take(3))
+                            {
+                                <div class="history-mini-row">
+                                    <span>@s.CreatedAt.AddHours(7).ToString("dd/MM")</span>
+                                    <span><span class="rep-val">@s.ValidReps</span> rep chuẩn</span>
+                                    <span class="score-val">@s.AverageFormScore.ToString("F0")đ</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-text">Chưa có buổi tập nào — hãy bắt đầu ngay!</p>
+                    }
+
+                    <a href="/AiWorkout/Studio?exercise=PushUp" class="btn-cta">
+                        <i class="bi bi-play-fill me-1"></i>Bắt đầu tập
+                    </a>
+                </div>
+            </a>
+        </div>
+
+        <!-- LINK TO HISTORY -->
+        <div class="d-flex justify-content-end">
+            <a href="/AiWorkout/History" class="btn btn-outline-dark rounded-0 px-4 py-2 text-uppercase fw-bold" style="font-size:0.72rem; letter-spacing:1px;">
+                <i class="bi bi-clock-history me-1"></i>Xem toàn bộ lịch sử tập luyện
+            </a>
+        </div>
+    </div>
+</div>

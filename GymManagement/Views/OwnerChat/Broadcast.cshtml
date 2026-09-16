@@ -1,0 +1,392 @@
+@{
+    ViewData["Title"] = "Gửi Thông Báo Hàng Loạt";
+    Layout = "_OwnerAdminLayout";
+    var gym         = ViewBag.Gym         as GymManagement.Models.Gym;
+    var history     = ViewBag.History     as List<GymManagement.Models.ChatMessage> ?? new();
+    int memberCount = ViewBag.MemberCount is int mc ? mc : 0;
+}
+
+<style>
+    /* ════════════════════════════════════════════════
+       OWNER BROADCAST STYLES
+    ════════════════════════════════════════════════ */
+    .broadcast-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .broadcast-header {
+        padding: 1.1rem 1.4rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .broadcast-header h5 {
+        margin: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #0f172a;
+    }
+
+    .live-preview-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .preview-badge {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: #0f172a;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+    .preview-bubble {
+        background: #fff;
+        border-left: 4px solid #0f172a;
+        border-top: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.9rem 1.1rem;
+        border-radius: 4px;
+    }
+    .preview-text {
+        font-size: 0.88rem;
+        color: #1e293b;
+        white-space: pre-wrap;
+        line-height: 1.5;
+    }
+    .preview-img {
+        max-width: 100%;
+        max-height: 250px;
+        margin-top: 8px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+        display: none;
+    }
+
+    .history-item {
+        padding: 1.1rem 1.3rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s;
+    }
+    .history-item:hover {
+        background: #f8fafc;
+    }
+    .history-time {
+        font-size: 0.7rem;
+        color: #94a3b8;
+    }
+    .history-content {
+        font-size: 0.88rem;
+        color: #1e293b;
+        line-height: 1.5;
+        margin-top: 4px;
+        white-space: pre-wrap;
+    }
+    .history-img {
+        max-width: 220px;
+        max-height: 140px;
+        object-fit: cover;
+        margin-top: 8px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container-fluid py-2">
+
+    <!-- Top header & Navigation -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div>
+            <h1 style="font-family:'Montserrat',sans-serif;font-size:1.35rem;font-weight:900;color:#111;margin:0 0 4px;letter-spacing:-0.5px;">
+                <i class="bi bi-megaphone-fill text-warning me-2"></i>THÔNG BÁO HÀNG LOẠT
+            </h1>
+            <p style="margin:0;font-size:0.85rem;color:#6b7280;">
+                Gửi thông báo ưu đãi, lịch tập, sự kiện trực tiếp tới toàn bộ hội viên của <strong>@gym?.Name</strong>
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/OwnerChat" class="btn btn-outline-secondary rounded-0 px-3 py-2 text-uppercase fw-bold" style="font-size:0.75rem;letter-spacing:0.5px;">
+                <i class="bi bi-arrow-left me-1"></i>Hộp thư tin nhắn
+            </a>
+        </div>
+    </div>
+
+    <!-- Audience Banner -->
+    <div class="alert alert-light border d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 p-3" style="background:#fff;">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:42px;height:42px;border-radius:6px;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:0.92rem;color:#0f172a;">
+                    Phạm vi phát sóng: Tất cả hội viên hoạt động
+                </div>
+                <div style="font-size:0.8rem;color:#64748b;">
+                    Tin nhắn sẽ được gửi tức thời qua SignalR tới các hội viên đang online và lưu vào trang tin nhắn của họ.
+                </div>
+            </div>
+        </div>
+        <div class="badge bg-dark text-white px-3 py-2" style="font-family:'Montserrat',sans-serif;font-size:0.85rem;letter-spacing:0.5px;">
+            <i class="bi bi-person-check-fill me-1"></i>@memberCount Hội Viên
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT: Compose Form -->
+        <div class="col-lg-6">
+            <div class="broadcast-card mb-4">
+                <div class="broadcast-header">
+                    <h5><i class="bi bi-pencil-square text-primary me-2"></i>Soạn thông báo mới</h5>
+                </div>
+                <div class="p-3 p-md-4">
+                    <form id="broadcast-form" asp-action="Broadcast" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-secondary">
+                                NỘI DUNG THÔNG BÁO <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="broadcast-content" name="content" class="form-control rounded-0" rows="5"
+                                      placeholder="Ví dụ: Phòng gym xin thông báo lịch bảo trì vào ngày mai từ 12:00 - 14:00..."
+                                      maxlength="2000" required oninput="updatePreview()"></textarea>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="small text-muted" style="font-size:0.75rem;">Hỗ trợ định dạng văn bản nhiều dòng</span>
+                                <span id="char-counter" class="small text-muted" style="font-size:0.75rem;">0 / 2000</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-secondary">
+                                LIÊN KẾT HÌNH ẢNH (TÙY CHỌN)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text rounded-0 bg-light"><i class="bi bi-image"></i></span>
+                                <input type="url" id="broadcast-image-url" name="imageUrl" class="form-control rounded-0"
+                                       placeholder="https://example.com/banner-khuyen-mai.jpg"
+                                       oninput="updatePreview()" />
+                            </div>
+                            <span class="small text-muted" style="font-size:0.75rem;">Dán link ảnh online (PNG, JPG, WebP)</span>
+                        </div>
+
+                        <!-- LIVE PREVIEW -->
+                        <div class="live-preview-box">
+                            <span class="preview-badge"><i class="bi bi-eye-fill me-1"></i>Xem trước giao diện hội viên</span>
+                            <div class="preview-bubble mt-2">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <strong style="font-family:'Montserrat',sans-serif;font-size:0.85rem;color:#0f172a;">
+                                        📢 @gym?.Name
+                                    </strong>
+                                    <span style="font-size:0.68rem;color:#94a3b8;">Vừa xong</span>
+                                </div>
+                                <div id="preview-text" class="preview-text text-muted fst-italic">
+                                    Nội dung thông báo xem trước sẽ hiển thị ở đây...
+                                </div>
+                                <img id="preview-img" class="preview-img" src="" alt="Ảnh thông báo" onerror="this.style.display='none'" />
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-2">
+                            <button type="button" id="btn-submit-broadcast" onclick="handleSendBroadcast()"
+                                    class="btn btn-dark rounded-0 w-100 py-2 text-uppercase fw-bold"
+                                    style="font-family:'Montserrat',sans-serif;font-size:0.85rem;letter-spacing:1px;">
+                                <i class="bi bi-send-fill me-2"></i>Gửi Thông Báo Tức Thời
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: History of Broadcasts -->
+        <div class="col-lg-6">
+            <div class="broadcast-card">
+                <div class="broadcast-header">
+                    <h5><i class="bi bi-clock-history text-secondary me-2"></i>Lịch sử thông báo đã phát</h5>
+                    <span class="badge bg-light text-dark border">@history.Count đã gửi</span>
+                </div>
+
+                <div id="history-list" style="max-height:680px; overflow-y:auto;">
+                    @if (!history.Any())
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-megaphone fs-1 d-block mb-2 text-secondary"></i>
+                            <h6 class="fw-bold text-dark">Chưa phát thông báo nào</h6>
+                            <p class="small text-muted mb-0">Các thông báo gửi tới hội viên sẽ được lưu lịch sử tại đây.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in history)
+                        {
+                            <div class="history-item" data-id="@item.Id">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-dark text-white rounded-0" style="font-size:0.65rem;font-family:'Montserrat',sans-serif;">BROADCAST</span>
+                                        <span class="fw-bold small text-dark">@gym?.Name</span>
+                                    </div>
+                                    <span class="history-time">
+                                        <i class="bi bi-clock me-1"></i>@item.CreatedAt.ToString("HH:mm dd/MM/yyyy")
+                                    </span>
+                                </div>
+                                <div class="history-content">@item.Content</div>
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <a href="@item.ImageUrl" target="_blank" title="Xem ảnh kích thước gốc">
+                                        <img src="@item.ImageUrl" class="history-img" alt="Ảnh thông báo" onerror="this.style.display='none'" />
+                                    </a>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SignalR SDK -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    const GYM_ID   = @gym?.Id;
+    const GYM_NAME = '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(gym?.Name ?? ""))';
+
+    // ── Live Preview Logic ─────────────────────────────────────
+    function updatePreview() {
+        const content = document.getElementById('broadcast-content').value;
+        const imgUrl  = document.getElementById('broadcast-image-url').value.trim();
+        const pText   = document.getElementById('preview-text');
+        const pImg    = document.getElementById('preview-img');
+        const counter = document.getElementById('char-counter');
+
+        counter.textContent = `${content.length} / 2000`;
+
+        if (content.trim()) {
+            pText.textContent = content;
+            pText.classList.remove('text-muted', 'fst-italic');
+        } else {
+            pText.textContent = 'Nội dung thông báo xem trước sẽ hiển thị ở đây...';
+            pText.classList.add('text-muted', 'fst-italic');
+        }
+
+        if (imgUrl) {
+            pImg.src = imgUrl;
+            pImg.style.display = 'block';
+        } else {
+            pImg.style.display = 'none';
+        }
+    }
+
+    // ── SignalR Setup ──────────────────────────────────────────
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/hubs/chat")
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on("ReceiveBroadcast", (msg) => {
+        if (msg.gymId === GYM_ID) {
+            prependBroadcastHistory(msg);
+        }
+    });
+
+    async function startConnection() {
+        try {
+            await connection.start();
+        } catch (e) {
+            setTimeout(startConnection, 3000);
+        }
+    }
+    startConnection();
+
+    // ── Prepend History Item ───────────────────────────────────
+    function prependBroadcastHistory(msg) {
+        const list = document.getElementById('history-list');
+        // Xoá empty message nếu có
+        const emptyMsg = list.querySelector('.text-center.py-5');
+        if (emptyMsg) emptyMsg.remove();
+
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.dataset.id = msg.id;
+
+        const imgHtml = msg.imageUrl
+            ? `<a href="${esc(msg.imageUrl)}" target="_blank"><img src="${esc(msg.imageUrl)}" class="history-img" alt="Ảnh thông báo" onerror="this.style.display='none'" /></a>`
+            : '';
+
+        div.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-dark text-white rounded-0" style="font-size:0.65rem;font-family:'Montserrat',sans-serif;">BROADCAST</span>
+                    <span class="fw-bold small text-dark">${esc(msg.gymName || GYM_NAME)}</span>
+                </div>
+                <span class="history-time">
+                    <i class="bi bi-clock me-1"></i>${msg.createdAt || 'Vừa xong'}
+                </span>
+            </div>
+            <div class="history-content">${esc(msg.content)}</div>
+            ${imgHtml}
+        `;
+
+        list.insertBefore(div, list.firstChild);
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Send Broadcast ─────────────────────────────────────────
+    async function handleSendBroadcast() {
+        const contentInput = document.getElementById('broadcast-content');
+        const imgInput     = document.getElementById('broadcast-image-url');
+        const content      = contentInput.value.trim();
+        const imgUrl       = imgInput.value.trim() || null;
+        const btn          = document.getElementById('btn-submit-broadcast');
+
+        if (!content) {
+            alert('Vui lòng nhập nội dung thông báo trước khi gửi.');
+            contentInput.focus();
+            return;
+        }
+
+        if (!confirm('Bạn có chắc chắn muốn gửi thông báo này tới toàn bộ hội viên?')) {
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Đang phát sóng...';
+
+        if (connection.state === 'Connected') {
+            try {
+                await connection.invoke("SendBroadcast", GYM_ID, content, imgUrl);
+                contentInput.value = '';
+                imgInput.value = '';
+                updatePreview();
+                alert('Đã phát sóng thông báo thành công tới tất cả hội viên qua SignalR!');
+            } catch (err) {
+                console.warn('Lỗi gửi qua SignalR, chuyển sang submit form:', err);
+                document.getElementById('broadcast-form').submit();
+                return;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Gửi Thông Báo Tức Thời';
+            }
+        } else {
+            // Fallback sang Form POST nếu chưa kết nối SignalR
+            document.getElementById('broadcast-form').submit();
+        }
+    }
+</script>

@@ -4,6 +4,7 @@ using GymManagement.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymManagement.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916062432_AddAiWorkoutModels")]
+    partial class AddAiWorkoutModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -118,104 +121,6 @@ namespace GymManagement.Migrations
                         .IsUnique();
 
                     b.ToTable("BannedWords");
-                });
-
-            modelBuilder.Entity("GymManagement.Models.ChatConversation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("GymId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LastMessageAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("MemberId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("MemberUnread")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OwnerUnread")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GymId");
-
-                    b.HasIndex("LastMessageAt");
-
-                    b.HasIndex("MemberId", "GymId")
-                        .IsUnique();
-
-                    b.ToTable("ChatConversations");
-                });
-
-            modelBuilder.Entity("GymManagement.Models.ChatMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int?>("ConversationId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("GymId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MessageType")
-                        .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<string>("SenderId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("SenderRole")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SenderId");
-
-                    b.HasIndex("ConversationId", "CreatedAt");
-
-                    b.HasIndex("GymId", "MessageType", "CreatedAt");
-
-                    b.ToTable("ChatMessages", t =>
-                        {
-                            t.HasCheckConstraint("CK_ChatMessages_MessageType", "[MessageType] IN ('Chat','Broadcast')");
-
-                            t.HasCheckConstraint("CK_ChatMessages_SenderRole", "[SenderRole] IN ('Member','Owner')");
-                        });
                 });
 
             modelBuilder.Entity("GymManagement.Models.CheckinLog", b =>
@@ -1240,50 +1145,6 @@ namespace GymManagement.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("GymManagement.Models.ChatConversation", b =>
-                {
-                    b.HasOne("GymManagement.Models.Gym", "Gym")
-                        .WithMany()
-                        .HasForeignKey("GymId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GymManagement.Models.ApplicationUser", "Member")
-                        .WithMany("ChatConversations")
-                        .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Gym");
-
-                    b.Navigation("Member");
-                });
-
-            modelBuilder.Entity("GymManagement.Models.ChatMessage", b =>
-                {
-                    b.HasOne("GymManagement.Models.ChatConversation", "Conversation")
-                        .WithMany("Messages")
-                        .HasForeignKey("ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("GymManagement.Models.Gym", "Gym")
-                        .WithMany()
-                        .HasForeignKey("GymId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("GymManagement.Models.ApplicationUser", "Sender")
-                        .WithMany("SentMessages")
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Conversation");
-
-                    b.Navigation("Gym");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("GymManagement.Models.CheckinLog", b =>
                 {
                     b.HasOne("GymManagement.Models.ApplicationUser", "CheckedByUser")
@@ -1631,8 +1492,6 @@ namespace GymManagement.Migrations
 
             modelBuilder.Entity("GymManagement.Models.ApplicationUser", b =>
                 {
-                    b.Navigation("ChatConversations");
-
                     b.Navigation("CheckinLogs");
 
                     b.Navigation("ConfirmedCheckins");
@@ -1651,18 +1510,11 @@ namespace GymManagement.Migrations
 
                     b.Navigation("Notifications");
 
-                    b.Navigation("SentMessages");
-
                     b.Navigation("Suspensions");
 
                     b.Navigation("Transactions");
 
                     b.Navigation("WorkoutSessions");
-                });
-
-            modelBuilder.Entity("GymManagement.Models.ChatConversation", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("GymManagement.Models.Equipment", b =>

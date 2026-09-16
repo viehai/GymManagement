@@ -1,0 +1,400 @@
+@{
+    ViewData["Title"] = "Tin Nhắn";
+    Layout = "_MemberLayout";
+    var conversations    = ViewBag.Conversations    as List<GymManagement.Models.ChatConversation> ?? new();
+    var latestBroadcasts = ViewBag.LatestBroadcasts as List<GymManagement.Models.ChatMessage>      ?? new();
+    var myGyms           = ViewBag.MyGyms           as List<GymManagement.Models.Gym>              ?? new();
+    int totalUnread      = ViewBag.TotalUnread      is int u ? u : 0;
+}
+
+<style>
+    /* ════════════════════════════════════════════════
+       CHAT INBOX — INK WASH PALETTE
+    ════════════════════════════════════════════════ */
+    .chat-hero {
+        background: #252525;
+        padding: 2.8rem 0 2.2rem;
+        color: #fff;
+    }
+    .chat-hero-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: rgba(255,255,255,.5); margin-bottom: 0.4rem;
+    }
+    .chat-hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        color: #fff; margin: 0 0 6px; letter-spacing: -0.5px;
+    }
+    .chat-hero p { margin: 0; font-size: .88rem; color: rgba(255,255,255,.55); }
+
+    .chat-body { padding: 2.5rem 0 5rem; background: #fafafa; }
+
+    .section-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: .65rem; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase;
+        color: #7D7D7D; margin-bottom: 1rem;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: #CFCFCF; }
+
+    /* ── Quick gym list ── */
+    .my-gyms-card {
+        background: #fff;
+        border: 1px solid #CFCFCF;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .my-gym-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .my-gym-row:last-child { border-bottom: none; }
+
+    /* ── Conversation list ── */
+    .conv-list { background: #fff; border: 1px solid #CFCFCF; }
+    .conv-item {
+        display: flex; align-items: center; gap: 14px;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid #f0f0f0;
+        text-decoration: none; color: inherit;
+        transition: background .15s;
+    }
+    .conv-item:last-child { border-bottom: none; }
+    .conv-item:hover { background: #fafafa; text-decoration: none; color: inherit; }
+    .conv-item.unread { background: #fff; border-left: 3px solid #252525; }
+
+    .conv-avatar {
+        width: 44px; height: 44px;
+        background: #252525; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: .95rem;
+        flex-shrink: 0;
+    }
+    .conv-item.unread .conv-avatar { background: #000; }
+
+    .conv-meta { flex: 1; min-width: 0; }
+    .conv-name {
+        font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: .9rem;
+        color: #252525; margin-bottom: 2px;
+    }
+    .conv-preview {
+        font-size: .78rem; color: #7D7D7D;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        max-width: 320px;
+    }
+    .conv-item.unread .conv-name { font-weight: 900; }
+    .conv-item.unread .conv-preview { color: #252525; font-weight: 600; }
+
+    .conv-time { font-size: .68rem; color: #7D7D7D; white-space: nowrap; }
+    .unread-badge {
+        background: #252525; color: #fff;
+        font-family: 'Montserrat', sans-serif; font-size: .62rem; font-weight: 900;
+        min-width: 18px; height: 18px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0 4px;
+    }
+
+    /* ── Broadcast list ── */
+    .broadcast-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .broadcast-item {
+        background: #fff; border: 1px solid #CFCFCF;
+        border-left: 4px solid #252525;
+        padding: 1.1rem 1.3rem;
+        transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .broadcast-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .broadcast-item.new-arrival {
+        animation: highlightPulse 2.5s ease-out;
+    }
+    @@keyframes highlightPulse {
+        0% { background-color: #fef08a; }
+        100% { background-color: #fff; }
+    }
+    .broadcast-gym {
+        font-family: 'Montserrat', sans-serif; font-size: .72rem; font-weight: 800;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: #252525; margin-bottom: 6px;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .broadcast-content { font-size: .88rem; color: #252525; line-height: 1.6; white-space: pre-wrap; }
+    .broadcast-time { font-size: .68rem; color: #7D7D7D; margin-top: 8px; }
+    .broadcast-img {
+        max-width: 100%;
+        max-height: 320px;
+        margin-top: 10px;
+        border: 1px solid #CFCFCF;
+        border-radius: 2px;
+        display: block;
+        cursor: pointer;
+    }
+
+    .empty-state {
+        text-align: center; padding: 3.5rem 2rem;
+        background: #fff; border: 1px solid #CFCFCF;
+    }
+    .empty-state .icon { font-size: 2.2rem; margin-bottom: 1rem; }
+    .empty-state h5 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800; font-size: 1rem; color: #252525; margin-bottom: .4rem;
+    }
+    .empty-state p { font-size: .85rem; color: #7D7D7D; max-width: 340px; margin: 0 auto 1.5rem; }
+
+    /* Toast alert realtime */
+    #chat-toast-alert {
+        display: none;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: #252525;
+        color: #fff;
+        padding: 1rem 1.4rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        border-left: 4px solid #f59e0b;
+        max-width: 380px;
+    }
+</style>
+
+<!-- REALTIME TOAST -->
+<div id="chat-toast-alert">
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-1">
+        <strong id="toast-title" style="font-family:'Montserrat',sans-serif;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;">
+            <i class="bi bi-megaphone-fill me-1"></i>Thông báo mới
+        </strong>
+        <button type="button" class="btn-close btn-close-white" style="font-size:0.6rem;" onclick="document.getElementById('chat-toast-alert').style.display='none'"></button>
+    </div>
+    <div id="toast-body" style="font-size:0.85rem;line-height:1.4;"></div>
+</div>
+
+<!-- HERO -->
+<div class="chat-hero">
+    <div class="container">
+        <div class="chat-hero-label"><i class="bi bi-chat-dots me-1"></i>MESSAGING</div>
+        <h1>TIN NHẮN
+            @if (totalUnread > 0)
+            {
+                <span id="header-unread-badge" style="font-size:.8rem; background:#fff; color:#252525; padding:3px 10px; margin-left:10px; font-weight:900; vertical-align:middle;">@totalUnread chưa đọc</span>
+            }
+        </h1>
+        <p>Chat trực tiếp với phòng gym của bạn và nhận thông báo ưu đãi tức thì.</p>
+    </div>
+</div>
+
+<!-- BODY -->
+<div class="chat-body">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- LEFT: CONVERSATIONS & MY GYMS -->
+            <div class="col-lg-7">
+                
+                @if (myGyms.Any())
+                {
+                    <div class="section-label"><i class="bi bi-building me-1"></i>Phòng Gym Của Bạn</div>
+                    <div class="my-gyms-card">
+                        <div class="small text-muted mb-2" style="font-size:0.75rem;">
+                            Phòng tập bạn đang tham gia — nhấn "Nhắn tin" để kết nối trực tiếp với Chủ phòng:
+                        </div>
+                        @foreach (var g in myGyms)
+                        {
+                            <div class="my-gym-row">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="conv-avatar" style="width:36px;height:36px;font-size:0.8rem;">
+                                        @(g.Name.Length > 0 ? g.Name[0].ToString().ToUpper() : "G")
+                                    </div>
+                                    <div>
+                                        <div style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:0.88rem;color:#252525;">@g.Name</div>
+                                        <div style="font-size:0.75rem;color:#7D7D7D;"><i class="bi bi-geo-alt me-1"></i>@g.Address</div>
+                                    </div>
+                                </div>
+                                <a href="/Chat/Conversation/@g.Id" class="btn btn-dark rounded-0 px-3 py-1 fw-bold text-uppercase" style="font-size:0.72rem;letter-spacing:0.5px;">
+                                    <i class="bi bi-chat-dots me-1"></i>Nhắn tin
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="section-label"><i class="bi bi-chat-left-text me-1"></i>Hội thoại gần đây</div>
+
+                <div id="conv-container">
+                    @if (!conversations.Any())
+                    {
+                        @if (!myGyms.Any())
+                        {
+                            <div class="empty-state">
+                                <div class="icon">💬</div>
+                                <h5>Chưa có hội thoại nào</h5>
+                                <p>Vào trang chi tiết phòng gym và nhấn "Nhắn tin" để bắt đầu chat với chủ phòng.</p>
+                                <a href="/Gym/Search" class="btn btn-dark rounded-0 px-4 py-2 text-uppercase fw-bold" style="font-size:.72rem;letter-spacing:1px;">
+                                    <i class="bi bi-search me-1"></i>Tìm phòng Gym
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="conv-list">
+                            @foreach (var conv in conversations)
+                            {
+                                var lastMsg = conv.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
+                                bool hasUnread = conv.MemberUnread > 0;
+                                string initial = conv.Gym?.Name?.Length > 0 ? conv.Gym.Name[0].ToString().ToUpper() : "G";
+                                <a href="/Chat/Conversation/@conv.GymId" class="conv-item @(hasUnread ? "unread" : "")" data-conv-id="@conv.Id">
+                                    <div class="conv-avatar">@initial</div>
+                                    <div class="conv-meta">
+                                        <div class="conv-name">@conv.Gym?.Name</div>
+                                        <div class="conv-preview">
+                                            @if (lastMsg != null)
+                                            {
+                                                <text>@(lastMsg.SenderRole == "Member" ? "Bạn: " : "")@lastMsg.Content</text>
+                                            }
+                                            else
+                                            {
+                                                <span style="font-style:italic;">Chưa có tin nhắn — nhấn để bắt đầu</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-column align-items-end gap-1">
+                                        <div class="conv-time">@conv.LastMessageAt.ToString("dd/MM HH:mm")</div>
+                                        @if (hasUnread)
+                                        {
+                                            <div class="unread-badge">@conv.MemberUnread</div>
+                                        }
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- RIGHT: BROADCASTS -->
+            <div class="col-lg-5">
+                <div class="section-label"><i class="bi bi-megaphone me-1"></i>Thông báo từ Phòng Gym</div>
+
+                <div id="broadcast-container" class="broadcast-wrap">
+                    @if (!latestBroadcasts.Any())
+                    {
+                        <div id="broadcast-empty-state" class="empty-state">
+                            <div class="icon">📢</div>
+                            <h5>Chưa có thông báo</h5>
+                            <p>Các ưu đãi và thông báo từ phòng gym sẽ hiển thị tại đây.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var bc in latestBroadcasts)
+                        {
+                            <div class="broadcast-item" data-id="@bc.Id">
+                                <div class="broadcast-gym">
+                                    <span><i class="bi bi-megaphone-fill me-1 text-warning"></i>@bc.Gym?.Name</span>
+                                    <span class="badge bg-dark text-white rounded-0" style="font-size:0.6rem;">THÔNG BÁO</span>
+                                </div>
+                                <div class="broadcast-content">@bc.Content</div>
+                                @if (!string.IsNullOrEmpty(bc.ImageUrl))
+                                {
+                                    <a href="@bc.ImageUrl" target="_blank">
+                                        <img src="@bc.ImageUrl" alt="Ảnh thông báo" class="broadcast-img"
+                                             onerror="this.style.display='none'" />
+                                    </a>
+                                }
+                                <div class="broadcast-time">
+                                    <i class="bi bi-clock me-1"></i>@bc.CreatedAt.ToString("HH:mm — dd/MM/yyyy")
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SignalR SDK -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    // ── SignalR Setup Realtime ─────────────────────────────────
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/hubs/chat")
+        .withAutomaticReconnect()
+        .build();
+
+    // Lắng nghe broadcast từ phòng gym real-time
+    connection.on("ReceiveBroadcast", (msg) => {
+        // Xoá empty state nếu có
+        const emptyState = document.getElementById('broadcast-empty-state');
+        if (emptyState) emptyState.remove();
+
+        // Tạo item broadcast mới
+        const container = document.getElementById('broadcast-container');
+        const item = document.createElement('div');
+        item.className = 'broadcast-item new-arrival';
+        item.dataset.id = msg.id;
+
+        const imgHtml = msg.imageUrl
+            ? `<a href="${esc(msg.imageUrl)}" target="_blank"><img src="${esc(msg.imageUrl)}" alt="Ảnh thông báo" class="broadcast-img" onerror="this.style.display='none'" /></a>`
+            : '';
+
+        item.innerHTML = `
+            <div class="broadcast-gym">
+                <span><i class="bi bi-megaphone-fill me-1 text-warning"></i>${esc(msg.gymName || 'Phòng Gym')}</span>
+                <span class="badge bg-dark text-white rounded-0" style="font-size:0.6rem;">VỪA GỬI</span>
+            </div>
+            <div class="broadcast-content">${esc(msg.content)}</div>
+            ${imgHtml}
+            <div class="broadcast-time">
+                <i class="bi bi-clock me-1"></i>${msg.createdAt || 'Vừa xong'}
+            </div>
+        `;
+
+        container.insertBefore(item, container.firstChild);
+
+        // Hiển thị toast popup
+        showToast(msg.gymName || 'Thông báo từ phòng gym', msg.content);
+    });
+
+    // Lắng nghe tin nhắn 1-1 mới
+    connection.on("ReceiveMessage", (msg) => {
+        showToast(msg.senderName || 'Tin nhắn mới', msg.content);
+    });
+
+    function showToast(title, content) {
+        const toast = document.getElementById('chat-toast-alert');
+        document.getElementById('toast-title').innerHTML = `<i class="bi bi-bell-fill me-1"></i>${esc(title)}`;
+        document.getElementById('toast-body').textContent = content;
+        toast.style.display = 'block';
+
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 8000);
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function startConnection() {
+        try {
+            await connection.start();
+        } catch (e) {
+            setTimeout(startConnection, 3000);
+        }
+    }
+    startConnection();
+</script>

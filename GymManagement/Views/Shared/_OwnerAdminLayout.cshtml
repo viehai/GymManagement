@@ -380,6 +380,10 @@
                class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerReview" ? "active" : "")">
                 <i class="bi bi-star text-warning"></i> Đánh giá &amp; Nhận xét
             </a>
+            <a asp-controller="OwnerChat" asp-action="Index"
+               class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "OwnerChat" ? "active" : "")">
+                <i class="bi bi-chat-dots text-primary"></i> Tin nhắn &amp; Thông báo
+            </a>
 
             <p class="nav-section-label" style="margin-top:1rem;">Điểm danh & Ra vào</p>
             <a asp-controller="OwnerCheckin" asp-action="Scan"

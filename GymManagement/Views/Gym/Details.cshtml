@@ -1170,6 +1170,13 @@ else
                             </a>
                         }
 
+                        @if (User.Identity!.IsAuthenticated && !Model.IsOwnerOfThisGym)
+                        {
+                            <a href="/Chat/Conversation/@Model.Id" class="btn btn-outline-dark rounded-0 w-100 fw-bold py-2 mt-2 text-uppercase" style="font-size:0.72rem; letter-spacing:1px;">
+                                <i class="bi bi-chat-dots me-1"></i> Nhắn tin với chủ phòng
+                            </a>
+                        }
+
                         <p class="cta-note">
                             @if (!User.Identity!.IsAuthenticated)
                             {

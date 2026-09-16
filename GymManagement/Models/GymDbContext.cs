@@ -25,6 +25,10 @@ namespace GymManagement.Models
         public DbSet<GymReview> GymReviews { get; set; }
         public DbSet<BannedWord> BannedWords { get; set; }
         public DbSet<MemberFaceProfile> MemberFaceProfiles { get; set; }
+        public DbSet<WorkoutSession> WorkoutSessions { get; set; }
+        public DbSet<GymWorkoutVideo> GymWorkoutVideos { get; set; }
+        public DbSet<ChatConversation> ChatConversations { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -308,6 +312,94 @@ namespace GymManagement.Models
                       .WithOne(u => u.FaceProfile)
                       .HasForeignKey<MemberFaceProfile>(f => f.MemberId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===================== WORKOUT SESSION (AI POSE COACH) =====================
+            modelBuilder.Entity<WorkoutSession>(entity =>
+            {
+                entity.ToTable(tb => tb.HasCheckConstraint(
+                    "CK_WorkoutSessions_ExerciseType",
+                    "[ExerciseType] IN ('Squat','PushUp')"));
+
+                entity.HasIndex(w => new { w.MemberId, w.CreatedAt });
+                entity.HasIndex(w => new { w.GymId, w.CreatedAt });
+
+                entity.HasOne(w => w.Member)
+                      .WithMany(u => u.WorkoutSessions)
+                      .HasForeignKey(w => w.MemberId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(w => w.Gym)
+                      .WithMany()
+                      .HasForeignKey(w => w.GymId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ===================== GYM WORKOUT VIDEO (AI POSE COACH) =====================
+            modelBuilder.Entity<GymWorkoutVideo>(entity =>
+            {
+                entity.ToTable(tb => tb.HasCheckConstraint(
+                    "CK_GymWorkoutVideos_ExerciseType",
+                    "[ExerciseType] IN ('Squat','PushUp')"));
+
+                entity.HasIndex(v => new { v.ExerciseType, v.IsDefault });
+
+                entity.HasOne(v => v.Gym)
+                      .WithMany()
+                      .HasForeignKey(v => v.GymId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===================== CHAT CONVERSATION =====================
+            modelBuilder.Entity<ChatConversation>(entity =>
+            {
+                // Mỗi member chỉ có 1 conversation với mỗi gym
+                entity.HasIndex(c => new { c.MemberId, c.GymId }).IsUnique();
+                entity.HasIndex(c => c.LastMessageAt);
+
+                entity.HasOne(c => c.Member)
+                      .WithMany(u => u.ChatConversations)
+                      .HasForeignKey(c => c.MemberId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Gym)
+                      .WithMany()
+                      .HasForeignKey(c => c.GymId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===================== CHAT MESSAGE =====================
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.ToTable(tb => tb.HasCheckConstraint(
+                    "CK_ChatMessages_SenderRole",
+                    "[SenderRole] IN ('Member','Owner')"));
+
+                entity.ToTable(tb => tb.HasCheckConstraint(
+                    "CK_ChatMessages_MessageType",
+                    "[MessageType] IN ('Chat','Broadcast')"));
+
+                entity.HasIndex(m => new { m.ConversationId, m.CreatedAt });
+                entity.HasIndex(m => new { m.GymId, m.MessageType, m.CreatedAt });
+
+                entity.HasOne(m => m.Conversation)
+                      .WithMany(c => c.Messages)
+                      .HasForeignKey(m => m.ConversationId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.Gym)
+                      .WithMany()
+                      .HasForeignKey(m => m.GymId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(m => m.Sender)
+                      .WithMany(u => u.SentMessages)
+                      .HasForeignKey(m => m.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

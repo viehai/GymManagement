@@ -1,0 +1,1181 @@
+@{
+    string exercise = ViewBag.Exercise as string ?? "Squat";
+    bool isSquat    = exercise == "Squat";
+    ViewData["Title"] = (isSquat ? "Squat AI Studio" : "Push-up AI Studio");
+    Layout = null; // Full-screen mode — không dùng layout
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — GymPro AI Coach</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            /* Ink Wash — dark studio variant */
+            --accent:      #fff;                /* trắng tinh — nhất quán với hệ thống */
+            --accent-dark: #CFCFCF;
+            --good: #22c55e;
+            --bad:  #ef4444;
+            --bg:   #111111;                    /* #111 — đồng bộ VIP hero */
+        }
+        html, body { height: 100%; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+
+        /* ── TOP BAR ── */
+        #topbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            height: 52px;
+            background: #252525;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+        }
+        #topbar .brand {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900; font-size: 0.9rem;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: #fff;
+        }
+        #topbar .brand span { color: rgba(255,255,255,.5); font-weight: 400; }
+        .timer-display {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3rem; font-weight: 900;
+            color: #fff;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.12);
+            padding: 4px 18px;
+            border-radius: 0;
+        }
+        #btn-exit {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,.25);
+            color: rgba(255,255,255,.7);
+            padding: 5px 14px;
+            border-radius: 0;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
+        #btn-exit:hover { border-color: #ef4444; color: #ef4444; }
+
+        /* ── SPLIT LAYOUT ── */
+        #studio {
+            position: fixed; inset: 52px 0 0 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* ── LEFT PANEL — REFERENCE ── */
+        #left-panel {
+            background: #1a1a1a;
+            border-right: 1px solid rgba(255,255,255,.08);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            font-family: 'Montserrat', sans-serif;
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.4);
+        }
+
+        /* Animated skeleton illustration */
+        #animation-area {
+            flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        #ref-canvas { width: 100%; height: 100%; }
+
+        /* Placement guide */
+        .placement-guide {
+            background: rgba(255,255,255,.04);
+            border-top: 1px solid rgba(255,255,255,.06);
+            padding: 14px 20px;
+        }
+        .placement-guide h6 {
+            font-size: .72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+            color: rgba(255,255,255,.4); margin-bottom: 8px;
+        }
+        .placement-guide ul { list-style: none; padding: 0; }
+        .placement-guide ul li {
+            font-size: .8rem; color: rgba(255,255,255,.65); padding: 3px 0;
+            display: flex; align-items: flex-start; gap: 8px;
+        }
+        .placement-guide ul li::before { content: '📍'; flex-shrink: 0; }
+
+        /* Form checklist */
+        .form-checklist {
+            padding: 14px 20px;
+            border-top: 1px solid rgba(255,255,255,.06);
+        }
+        .form-checklist h6 {
+            font-size: .72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+            color: rgba(255,255,255,.4); margin-bottom: 8px;
+        }
+        .check-item {
+            display: flex; align-items: center; gap: 8px;
+            font-size: .82rem; color: rgba(255,255,255,.7);
+            padding: 4px 0;
+        }
+        .check-item .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
+
+        /* Metronome */
+        .metronome {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 20px;
+            border-top: 1px solid rgba(255,255,255,.06);
+            font-size: .8rem; color: rgba(255,255,255,.5);
+        }
+        #metro-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            animation: metroPulse 2s ease-in-out infinite;
+        }
+        @@keyframes metroPulse {
+            0%,100% { transform: scale(1); opacity: 1; }
+            50%      { transform: scale(1.6); opacity: .5; }
+        }
+
+        /* ── RIGHT PANEL — WEBCAM + AI ── */
+        #right-panel {
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
+        #video-el {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        #pose-canvas {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            transform: scaleX(-1);
+        }
+
+        /* ── HUD OVERLAY ── */
+        #hud {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 16px;
+        }
+        /* Reps counter — top right */
+        .hud-reps {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(0,0,0,.8);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 0;
+            padding: 10px 20px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .hud-reps .rep-number {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3.5rem; font-weight: 900;
+            line-height: 1;
+            color: #fff;
+            text-shadow: 0 0 20px var(--accent);
+        }
+        .hud-reps .rep-label { font-size: .72rem; color: rgba(255,255,255,.5); letter-spacing: 1px; text-transform: uppercase; }
+
+        /* Form score — top left */
+        .hud-score {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(0,0,0,.8);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 0;
+            padding: 10px 18px;
+            text-align: center;
+        }
+        .hud-score .score-val {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem; font-weight: 900;
+            color: var(--good);
+        }
+        .hud-score .score-label { font-size: .65rem; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Depth gauge — right center */
+        .hud-depth {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,.8);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 0;
+            padding: 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .depth-bar-bg {
+            width: 14px; height: 160px;
+            background: rgba(255,255,255,.1);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        #depth-fill {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, var(--bad), var(--accent), var(--good));
+            border-radius: 999px;
+            transition: height .1s linear;
+            height: 0%;
+        }
+        .depth-label { font-size: .6rem; color: rgba(255,255,255,.4); text-align: center; margin-top: 2px; }
+        #depth-pct { font-size: .72rem; font-weight: 700; color: #fff; }
+
+        /* Voice coach feed — bottom */
+        #voice-feed {
+            position: absolute; bottom: 12px; left: 12px; right: 12px;
+            display: flex; justify-content: center;
+        }
+        #coach-msg {
+            background: #252525;
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 0;
+            padding: 7px 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #fff;
+            max-width: 440px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+        #coach-msg.show { opacity: 1; }
+
+        /* State badge */
+        #state-badge {
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            background: #252525;
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 0;
+            padding: 4px 16px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: .65rem;
+            font-weight: 700;
+            color: rgba(255,255,255,.7);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* ── START OVERLAY ── */
+        #start-overlay {
+            position: absolute; inset: 0;
+            background: rgba(17,17,17,.94);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 20px; z-index: 50;
+        }
+        #start-overlay h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3rem; font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+        #start-overlay p { color: rgba(255,255,255,.5); text-align: center; font-size: .85rem; max-width: 300px; line-height: 1.6; }
+        #btn-start {
+            background: #fff;
+            color: #252525;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 0;
+            font-size: 0.75rem;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            transition: background .2s, color .2s;
+        }
+        #btn-start:hover { background: #CFCFCF; color: #252525; }
+
+        /* ── FINISH OVERLAY ── */
+        #finish-overlay {
+            display: none;
+            position: absolute; inset: 0;
+            background: rgba(17,17,17,.97);
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px; z-index: 50;
+            padding: 24px;
+        }
+        #finish-overlay h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.4rem; font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+        .result-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1px; width: 100%; max-width: 400px;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.1);
+        }
+        .result-item {
+            background: #1a1a1a;
+            border-radius: 0; padding: 14px 10px;
+            text-align: center;
+        }
+        .result-item .val {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem; font-weight: 900;
+            color: #fff;
+        }
+        .result-item .lbl { font-size: .62rem; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .finish-btns { display: flex; gap: 10px; }
+        .finish-btns button, .finish-btns a {
+            padding: 9px 22px; border-radius: 0; font-weight: 700;
+            font-size: .72rem; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; border: none; text-decoration: none;
+            font-family: 'Montserrat', sans-serif;
+        }
+        #btn-save  { background: #fff; color: #252525; }
+        #btn-save:hover  { background: #CFCFCF; }
+        #btn-again { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); border: 1px solid rgba(255,255,255,.2); }
+        #btn-again:hover { background: rgba(255,255,255,.15); }
+        #btn-back-home { background: transparent; color: rgba(255,255,255,.35); font-size: .7rem; border: none; }
+
+        /* Loading spinner */
+        #cam-loading {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: #000;
+            z-index: 10;
+        }
+        .spinner-ring {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(255,255,255,.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @@keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Rep Flash animation */
+        @@keyframes repFlash {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.4); color: var(--good); text-shadow: 0 0 30px var(--good); }
+            100% { transform: scale(1); }
+        }
+        .rep-flash { animation: repFlash .5s ease-out forwards; }
+
+        /* Error flash on canvas */
+        @@keyframes errorPulse {
+            0%,100% { box-shadow: none; }
+            50% { box-shadow: inset 0 0 40px rgba(239,68,68,.5); }
+        }
+        .error-border { animation: errorPulse .4s ease; }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+    <div class="brand">GymPro <span>AI</span> Coach — @(isSquat ? "🏋️ Squat" : "💪 Push-up")</div>
+    <div class="timer-display" id="timer-el">00:00</div>
+    <button id="btn-exit" onclick="exitStudio()"><i class="bi bi-x-lg me-1"></i>Thoát</button>
+</div>
+
+<!-- STUDIO SPLIT SCREEN -->
+<div id="studio">
+
+    <!-- LEFT: REFERENCE PANEL -->
+    <div id="left-panel">
+        <div class="panel-header"><i class="bi bi-film me-2"></i>Video mẫu chuẩn form</div>
+
+        <div id="animation-area">
+            <canvas id="ref-canvas"></canvas>
+        </div>
+
+        <div class="metronome">
+            <div id="metro-dot"></div>
+            <div>
+                @if (isSquat)
+                {
+                    <div>Nhịp: <b>2s xuống</b> — <b>1s lên</b></div>
+                    <div style="font-size:.72rem;color:rgba(255,255,255,.35);">Hít vào khi hạ, thở ra khi đứng lên</div>
+                }
+                else
+                {
+                    <div>Nhịp: <b>2s hạ</b> — <b>1s đẩy</b></div>
+                    <div style="font-size:.72rem;color:rgba(255,255,255,.35);">Hít vào khi hạ, thở ra khi đẩy</div>
+                }
+            </div>
+        </div>
+
+        <div class="form-checklist">
+            <h6><i class="bi bi-check2-all me-1"></i>Chuẩn form</h6>
+            @if (isSquat)
+            {
+                <div class="check-item"><div class="dot"></div>Góc gối ≤ 90° (đùi song song sàn)</div>
+                <div class="check-item"><div class="dot"></div>Lưng thẳng, không gập > 45°</div>
+                <div class="check-item"><div class="dot"></div>Gối không vượt quá mũi chân</div>
+                <div class="check-item"><div class="dot"></div>Chân rộng bằng vai</div>
+            }
+            else
+            {
+                <div class="check-item"><div class="dot"></div>Khuỷu tay gập ≤ 90° khi hạ</div>
+                <div class="check-item"><div class="dot"></div>Thân thẳng từ vai đến gót chân (165°–180°)</div>
+                <div class="check-item"><div class="dot"></div>Không võng lưng / chổng mông</div>
+                <div class="check-item"><div class="dot"></div>Tay rộng hơn vai một chút</div>
+            }
+        </div>
+
+        <div class="placement-guide">
+            <h6><i class="bi bi-laptop me-1"></i>Vị trí đặt Laptop</h6>
+            <ul>
+                @if (isSquat)
+                {
+                    <li>Đặt laptop trên bàn/ghế cao 70–90cm</li>
+                    <li>Mở nắp thẳng đứng, đứng lùi 1.8m–2.2m</li>
+                    <li>Góc chính diện hoặc chếch 30°–45°</li>
+                }
+                else
+                {
+                    <li>Đặt laptop dưới sàn, cách sườn 1.5m–2.0m</li>
+                    <li>Camera ở ngang tầm hông khi nằm plank</li>
+                    <li>Góc nhìn ngang (Side-View) để bắt đường thẳng cơ thể</li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <!-- RIGHT: WEBCAM + AI -->
+    <div id="right-panel">
+        <!-- Camera loading -->
+        <div id="cam-loading">
+            <div style="text-align:center;">
+                <div class="spinner-ring mb-3" style="margin:0 auto 12px;"></div>
+                <div style="color:rgba(255,255,255,.5);font-size:.85rem;">Đang khởi động camera...</div>
+            </div>
+        </div>
+
+        <video id="video-el" autoplay muted playsinline></video>
+        <canvas id="pose-canvas"></canvas>
+
+        <!-- HUD Elements -->
+        <div id="hud">
+            <div class="hud-score" id="hud-score">
+                <div class="score-val" id="score-val">—</div>
+                <div class="score-label">Form Score</div>
+            </div>
+            <div id="state-badge">Chưa bắt đầu</div>
+            <div class="hud-reps" id="hud-reps">
+                <div class="rep-number" id="rep-count">0</div>
+                <div class="rep-label">REPS</div>
+            </div>
+            <div class="hud-depth" id="hud-depth">
+                <div class="depth-bar-bg">
+                    <div id="depth-fill"></div>
+                </div>
+                <div id="depth-pct">0%</div>
+                <div class="depth-label">DEPTH</div>
+            </div>
+            <div id="voice-feed">
+                <div id="coach-msg"></div>
+            </div>
+        </div>
+
+        <!-- Start Overlay -->
+        <div id="start-overlay">
+            <h3>@(isSquat ? "🏋️ Squat AI Studio" : "💪 Push-up AI Studio")</h3>
+            <p>
+                @if (isSquat) { <text>Đứng thẳng trước camera, khoảng cách 1.8–2.2m.<br/>AI sẽ tự phát hiện và bắt đầu đếm rep.</text> }
+                else { <text>Nằm tư thế plank trước camera (góc nhìn ngang).<br/>AI sẽ theo dõi và đếm rep chuẩn form.</text> }
+            </p>
+            <button id="btn-start" onclick="startSession()">
+                <i class="bi bi-camera-video-fill me-2"></i>Bật Camera & Bắt đầu
+            </button>
+            <a href="/AiWorkout" style="color:rgba(255,255,255,.3);font-size:.8rem;text-decoration:none;margin-top:4px;">
+                ← Quay lại chọn bài tập
+            </a>
+        </div>
+
+        <!-- Finish Overlay -->
+        <div id="finish-overlay">
+            <h3 id="finish-title">🎉 Kết quả buổi tập!</h3>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="val" id="res-valid">0</div>
+                    <div class="lbl">Rep chuẩn</div>
+                </div>
+                <div class="result-item">
+                    <div class="val" id="res-invalid">0</div>
+                    <div class="lbl">Rep lỗi</div>
+                </div>
+                <div class="result-item">
+                    <div class="val" id="res-score">0</div>
+                    <div class="lbl">Form Score</div>
+                </div>
+                <div class="result-item">
+                    <div class="val" id="res-cal">0</div>
+                    <div class="lbl">Calo (kcal)</div>
+                </div>
+                <div class="result-item">
+                    <div class="val" id="res-time">0:00</div>
+                    <div class="lbl">Thời gian</div>
+                </div>
+                <div class="result-item" id="res-pr-box" style="display:none;">
+                    <div class="val" style="font-size:1.5rem;">🏆</div>
+                    <div class="lbl">Kỷ lục mới!</div>
+                </div>
+            </div>
+            <div class="finish-btns">
+                <button id="btn-save" onclick="saveSession()"><i class="bi bi-cloud-upload me-1"></i>Lưu kết quả</button>
+                <button id="btn-again" onclick="resetSession()"><i class="bi bi-arrow-repeat me-1"></i>Tập lại</button>
+            </div>
+            <a href="/AiWorkout" id="btn-back-home">← Về trang bài tập</a>
+            <div id="save-status" style="font-size:.8rem;color:rgba(255,255,255,.4);min-height:20px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MediaPipe Pose CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  CONFIGURATION
+// ════════════════════════════════════════════════════════════════
+const EXERCISE = '@exercise';
+const IS_SQUAT = EXERCISE === 'Squat';
+const TOKEN    = document.querySelector('meta[name="__RequestVerificationToken"]')?.content ?? '';
+
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let state = {
+    started:      false,
+    phase:        'UP',        // 'UP' | 'DOWN'
+    repCount:     0,
+    validReps:    0,
+    invalidReps:  0,
+    formScores:   [],
+    startTime:    null,
+    timerInterval:null,
+    landmarks:    null,
+    depthPct:     0,
+    coachTimeout: null,
+    camera:       null,
+    pose:         null
+};
+
+// ════════════════════════════════════════════════════════════════
+//  POSE MATH — Invariant joint angle (3-point vector)
+// ════════════════════════════════════════════════════════════════
+function calcAngle(A, B, C) {
+    const rad2deg = 180 / Math.PI;
+    const BAx = A.x - B.x, BAy = A.y - B.y;
+    const BCx = C.x - B.x, BCy = C.y - B.y;
+    const dot = BAx * BCx + BAy * BCy;
+    const mag = Math.sqrt(BAx**2 + BAy**2) * Math.sqrt(BCx**2 + BCy**2);
+    if (mag < 1e-6) return 0;
+    return Math.acos(Math.min(1, Math.max(-1, dot / mag))) * rad2deg;
+}
+
+function visible(lm, minConf = 0.5) {
+    return lm && (lm.visibility ?? 1) > minConf;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SQUAT ANALYSIS
+// ════════════════════════════════════════════════════════════════
+function analyzeSquat(lm) {
+    // Pick visible side (prefer left = indices 23,25,27,11)
+    const side = (visible(lm[25]) && visible(lm[27])) ? 'L' : 'R';
+    const hip  = lm[side === 'L' ? 23 : 24];
+    const knee = lm[side === 'L' ? 25 : 26];
+    const ank  = lm[side === 'L' ? 27 : 28];
+    const sho  = lm[side === 'L' ? 11 : 12];
+
+    if (!visible(hip) || !visible(knee) || !visible(ank)) return null;
+
+    const kneeAngle  = calcAngle(hip, knee, ank);
+    const trunkAngle = visible(sho) ? calcAngle(sho, hip, {x: hip.x, y: hip.y + 1}) : 0;
+
+    // Depth: 0% = standing (>160°), 100% = parallel (90°)
+    const depth = Math.max(0, Math.min(100, ((160 - kneeAngle) / (160 - 90)) * 100));
+
+    // State machine
+    let newPhase = state.phase;
+    let formScore = 100;
+    let errors = [];
+
+    if (kneeAngle > 160) newPhase = 'UP';
+    else if (kneeAngle <= 95) newPhase = 'DOWN';
+
+    // Count rep when UP → DOWN → UP
+    if (state.phase === 'DOWN' && newPhase === 'UP') {
+        if (state.repCount > 0 || depth > 0) {
+            // Did they go deep enough?
+            const wasDeep = depth > 40 || kneeAngle <= 95;
+            if (wasDeep) {
+                state.validReps++;
+                triggerRepSound(true);
+                showCoach(getRepCall(state.validReps, 'Squat', true));
+            } else {
+                state.invalidReps++;
+                formScore = Math.max(40, formScore - 30);
+                errors.push('half');
+                triggerRepSound(false);
+                showCoach('Xuống sâu hơn nữa! Đùi song song sàn!');
+            }
+            state.repCount++;
+            flashRep();
+        }
+    }
+
+    // Form penalties
+    if (trunkAngle > 45) {
+        formScore = Math.max(30, formScore - 25);
+        errors.push('trunk');
+        if (newPhase === 'DOWN') showCoach('Ưỡn ngực! Giữ lưng thẳng!');
+    }
+
+    state.phase = newPhase;
+    return { kneeAngle, trunkAngle, depth, formScore, errors };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PUSH-UP ANALYSIS
+// ════════════════════════════════════════════════════════════════
+function analyzePushUp(lm) {
+    // Side view: use whichever elbow is more visible
+    const side = (visible(lm[13]) && visible(lm[15])) ? 'L' : 'R';
+    const sho = lm[side === 'L' ? 11 : 12];
+    const elb = lm[side === 'L' ? 13 : 14];
+    const wri = lm[side === 'L' ? 15 : 16];
+    const hip = lm[side === 'L' ? 23 : 24];
+    const ank = lm[side === 'L' ? 27 : 28];
+
+    if (!visible(sho) || !visible(elb) || !visible(wri)) return null;
+
+    const elbowAngle = calcAngle(sho, elb, wri);
+    const bodyAngle  = (visible(hip) && visible(ank))
+        ? calcAngle(sho, hip, ank)
+        : 175;
+
+    // Depth: 0% = top (elbowAngle>155), 100% = bottom (<=90)
+    const depth = Math.max(0, Math.min(100, ((155 - elbowAngle) / (155 - 90)) * 100));
+
+    let newPhase = state.phase;
+    let formScore = 100;
+    let errors = [];
+
+    if (elbowAngle > 155) newPhase = 'UP';
+    else if (elbowAngle <= 92) newPhase = 'DOWN';
+
+    // Rep counting
+    if (state.phase === 'DOWN' && newPhase === 'UP') {
+        if (state.repCount > 0 || depth > 0) {
+            const wentDeep = depth > 50 || elbowAngle <= 92;
+            if (wentDeep && bodyAngle > 155) {
+                state.validReps++;
+                triggerRepSound(true);
+                showCoach(getRepCall(state.validReps, 'PushUp', true));
+            } else if (!wentDeep) {
+                state.invalidReps++;
+                formScore = Math.max(40, formScore - 30);
+                errors.push('shallow');
+                triggerRepSound(false);
+                showCoach('Hạ ngực sâu hơn nữa!');
+            } else {
+                state.invalidReps++;
+                formScore = Math.max(40, formScore - 20);
+                errors.push('body');
+                triggerRepSound(false);
+                showCoach('Siết cơ bụng! Giữ thân thẳng!');
+            }
+            state.repCount++;
+            flashRep();
+        }
+    }
+
+    // Form penalties
+    if (bodyAngle < 155) {
+        formScore = Math.max(30, formScore - 25);
+        errors.push('sag');
+        if (newPhase === 'DOWN') showCoach('Siết chặt cơ bụng, không võng lưng!');
+    }
+
+    state.phase = newPhase;
+    return { elbowAngle, bodyAngle, depth, formScore, errors };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DRAWING — Neon Skeleton
+// ════════════════════════════════════════════════════════════════
+const POSE_CONNECTIONS = window.POSE_CONNECTIONS || [];
+
+function drawSkeleton(canvas, lm, errors) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    if (!lm || lm.length < 33) return;
+
+    const isError = errors && errors.length > 0;
+    const color   = isError ? '#ef4444' : '#22c55e';
+    const shadow  = isError ? 'rgba(239,68,68,.8)' : 'rgba(34,197,94,.8)';
+
+    ctx.save();
+    ctx.shadowColor = shadow;
+    ctx.shadowBlur  = 18;
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 3;
+    ctx.lineCap     = 'round';
+
+    // Draw connections using MediaPipe POSE_CONNECTIONS
+    if (POSE_CONNECTIONS.length > 0) {
+        for (const [start, end] of POSE_CONNECTIONS) {
+            const a = lm[start], b = lm[end];
+            if (!a || !b) continue;
+            if ((a.visibility ?? 1) < 0.3 || (b.visibility ?? 1) < 0.3) continue;
+            ctx.beginPath();
+            ctx.moveTo(a.x * W, a.y * H);
+            ctx.lineTo(b.x * W, b.y * H);
+            ctx.stroke();
+        }
+    }
+
+    // Draw joints
+    ctx.shadowBlur = 12;
+    for (const pt of lm) {
+        if ((pt.visibility ?? 1) < 0.3) continue;
+        ctx.beginPath();
+        ctx.arc(pt.x * W, pt.y * H, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  HUD UPDATE
+// ════════════════════════════════════════════════════════════════
+function updateHUD(result) {
+    if (!result) return;
+    const { depth, formScore, errors } = result;
+
+    // Depth gauge
+    state.depthPct = depth;
+    document.getElementById('depth-fill').style.height = depth + '%';
+    document.getElementById('depth-pct').textContent = Math.round(depth) + '%';
+
+    // Form score (running average)
+    if (state.started) {
+        state.formScores.push(formScore);
+        const avg = state.formScores.reduce((a, b) => a + b, 0) / state.formScores.length;
+        const scoreEl = document.getElementById('score-val');
+        scoreEl.textContent = Math.round(avg) + 'đ';
+        scoreEl.style.color = avg >= 80 ? 'var(--good)' : avg >= 55 ? '#f59e0b' : 'var(--bad)';
+    }
+
+    // State badge
+    const badge = document.getElementById('state-badge');
+    badge.textContent = state.phase === 'DOWN'
+        ? (IS_SQUAT ? '↓ Đang ngồi xuống' : '↓ Đang hạ xuống')
+        : (IS_SQUAT ? '↑ Đứng thẳng'       : '↑ Tư thế trên');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  VOICE COACH (Web Speech API — tiếng Việt)
+// ════════════════════════════════════════════════════════════════
+function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang  = 'vi-VN';
+    utt.rate  = 1.1;
+    utt.pitch = 1.05;
+    window.speechSynthesis.speak(utt);
+}
+
+function showCoach(msg) {
+    const el = document.getElementById('coach-msg');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(state.coachTimeout);
+    state.coachTimeout = setTimeout(() => el.classList.remove('show'), 3000);
+    speak(msg);
+}
+
+function getRepCall(n, exercise, isValid) {
+    const nums = ['Một', 'Hai', 'Ba', 'Bốn', 'Năm', 'Sáu', 'Bảy', 'Tám', 'Chín', 'Mười',
+                  'Mười một', 'Mười hai', 'Mười ba', 'Mười bốn', 'Mười lăm',
+                  'Mười sáu', 'Mười bảy', 'Mười tám', 'Mười chín', 'Hai mươi'];
+    const numWord = n <= 20 ? nums[n - 1] : n;
+    const praise  = ['Tốt lắm!', 'Xuất sắc!', 'Chuẩn form!', 'Tuyệt vời!', 'Hoàn hảo!'];
+    const p = praise[Math.floor(Math.random() * praise.length)];
+    return `${numWord}! ${p}`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  REP SOUND & FLASH
+// ════════════════════════════════════════════════════════════════
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function triggerRepSound(valid) {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = valid ? 880 : 330;
+    osc.type = valid ? 'sine' : 'sawtooth';
+    gain.gain.setValueAtTime(.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + .3);
+    osc.start(); osc.stop(audioCtx.currentTime + .3);
+}
+
+function flashRep() {
+    const el = document.getElementById('rep-count');
+    el.textContent = state.validReps;
+    el.classList.remove('rep-flash');
+    void el.offsetWidth; // reflow
+    el.classList.add('rep-flash');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════════════════════════════
+function startTimer() {
+    state.startTime = Date.now();
+    state.timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+        const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const s = (elapsed % 60).toString().padStart(2, '0');
+        document.getElementById('timer-el').textContent = `${m}:${s}`;
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(state.timerInterval);
+}
+
+function getElapsedSeconds() {
+    if (!state.startTime) return 0;
+    return Math.floor((Date.now() - state.startTime) / 1000);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  REFERENCE ANIMATION (Left Panel Stick Figure)
+// ════════════════════════════════════════════════════════════════
+(function animateReference() {
+    const canvas = document.getElementById('ref-canvas');
+    const ctx    = canvas.getContext('2d');
+    let t = 0;
+
+    function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width  = rect.width;
+        canvas.height = rect.height;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function drawFigure(t) {
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        const cx = W / 2;
+        const scale = Math.min(W, H) * 0.0035;
+
+        // Background glow
+        const grd = ctx.createRadialGradient(cx, H * .5, 10, cx, H * .5, H * .45);
+        grd.addColorStop(0, IS_SQUAT ? 'rgba(14,165,233,.08)' : 'rgba(168,85,247,.08)');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+
+        const accent = IS_SQUAT ? '#0ea5e9' : '#a855f7';
+
+        ctx.save();
+        ctx.strokeStyle = accent;
+        ctx.shadowColor = accent;
+        ctx.shadowBlur  = 12;
+        ctx.lineWidth   = 3 * scale;
+        ctx.lineCap     = 'round';
+
+        if (IS_SQUAT) {
+            // Squat animation: oscillate knee angle 165→85 degrees
+            const phase = (Math.sin(t * 0.8) + 1) / 2; // 0→1
+            const kneeAngleDeg = 165 - phase * 80;
+
+            // Stick figure coordinates (normalized, scale later)
+            const head = { x: cx, y: H * .12 };
+            const neck = { x: cx, y: H * .20 };
+            const hip  = { x: cx, y: H * .42 + phase * H * .12 };
+            const kR   = polarAdd(hip, 80 * scale, 90 + (kneeAngleDeg / 2 - 45));
+            const ankR = polarAdd(kR,  75 * scale, 90 + kneeAngleDeg / 2);
+            const kL   = polarAdd(hip, 80 * scale, 90 - (kneeAngleDeg / 2 - 45));
+            const ankL = polarAdd(kL,  75 * scale, 90 - kneeAngleDeg / 2);
+            const sho  = { x: cx, y: H * .26 };
+            const elbR = { x: cx + 40 * scale, y: H * .32 };
+            const elbL = { x: cx - 40 * scale, y: H * .32 };
+
+            // Draw skeleton
+            line(ctx, head, neck); line(ctx, neck, sho); line(ctx, sho, hip);
+            line(ctx, hip, kR);    line(ctx, kR, ankR);
+            line(ctx, hip, kL);    line(ctx, kL, ankL);
+            line(ctx, sho, elbR);  line(ctx, sho, elbL);
+            circle(ctx, head, 14 * scale, accent);
+
+            // Angle indicator
+            if (phase > 0.3) {
+                ctx.save();
+                ctx.strokeStyle = phase > 0.8 ? '#22c55e' : '#f59e0b';
+                ctx.shadowColor = phase > 0.8 ? 'rgba(34,197,94,.6)' : 'rgba(245,158,11,.6)';
+                ctx.font = `bold ${11 * scale}px Montserrat`;
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.fillText(Math.round(kneeAngleDeg) + '°', kR.x + 10, kR.y);
+                ctx.restore();
+            }
+        } else {
+            // Push-up animation: oscillate elbow angle 160→80 degrees
+            const phase = (Math.sin(t * 0.8) + 1) / 2;
+            const elbAngle = 160 - phase * 80;
+
+            const baseY = H * .6;
+            const headX = W * .75;
+            const torsoLen = W * .35;
+
+            const headPos = { x: headX, y: baseY - 22 * scale };
+            const sho     = { x: headX - torsoLen * .12, y: baseY };
+            const hip     = { x: headX - torsoLen * .58, y: baseY };
+            const ank     = { x: headX - torsoLen, y: baseY };
+
+            // Elbow position
+            const elbY = baseY - (Math.sin((180 - elbAngle) * Math.PI / 180) * 55 * scale);
+            const elbX = sho.x - Math.cos((elbAngle / 2) * Math.PI / 180) * 50 * scale;
+            const wriY = baseY;
+            const wriX = elbX - 30 * scale;
+
+            line(ctx, headPos, sho); line(ctx, sho, hip); line(ctx, hip, ank);
+            line(ctx, sho, { x: elbX, y: elbY });
+            line(ctx, { x: elbX, y: elbY }, { x: wriX, y: wriY });
+            circle(ctx, headPos, 14 * scale, accent);
+
+            // Hips highlight
+            if (phase > 0.3) {
+                ctx.save();
+                ctx.strokeStyle = '#22c55e';
+                ctx.shadowColor = 'rgba(34,197,94,.6)';
+                ctx.font = `bold ${10 * scale}px Inter`;
+                ctx.fillStyle = '#22c55e';
+                ctx.fillText(Math.round(elbAngle) + '°', elbX + 6, elbY - 6);
+                ctx.restore();
+            }
+        }
+        ctx.restore();
+    }
+
+    function polarAdd(origin, r, deg) {
+        const rad = deg * Math.PI / 180;
+        return { x: origin.x + r * Math.cos(rad), y: origin.y + r * Math.sin(rad) };
+    }
+    function line(ctx, a, b) {
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    function circle(ctx, c, r, color) {
+        ctx.save();
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = color; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+    }
+
+    function loop() { drawFigure(t); t += 0.03; requestAnimationFrame(loop); }
+    loop();
+})();
+
+// ════════════════════════════════════════════════════════════════
+//  SESSION CONTROL
+// ════════════════════════════════════════════════════════════════
+async function startSession() {
+    document.getElementById('start-overlay').style.display = 'none';
+    document.getElementById('cam-loading').style.display   = 'flex';
+
+    // Init MediaPipe Pose
+    const pose = new Pose({
+        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@@mediapipe/pose/${f}`
+    });
+    pose.setOptions({
+        modelComplexity:       1,
+        smoothLandmarks:       true,
+        enableSegmentation:    false,
+        minDetectionConfidence:0.6,
+        minTrackingConfidence: 0.55
+    });
+
+    const video  = document.getElementById('video-el');
+    const canvas = document.getElementById('pose-canvas');
+
+    pose.onResults((results) => {
+        // Sync canvas size to video display size
+        const rect = video.getBoundingClientRect();
+        canvas.width  = rect.width  || video.videoWidth;
+        canvas.height = rect.height || video.videoHeight;
+
+        const lm = results.poseLandmarks;
+        state.landmarks = lm;
+
+        if (!state.started || !lm) {
+            drawSkeleton(canvas, lm, []);
+            return;
+        }
+
+        const result = IS_SQUAT ? analyzeSquat(lm) : analyzePushUp(lm);
+        drawSkeleton(canvas, lm, result ? result.errors : []);
+        if (result) updateHUD(result);
+    });
+
+    state.pose = pose;
+
+    const camera = new Camera(video, {
+        onFrame: async () => { await pose.send({ image: video }); },
+        width: 640, height: 480
+    });
+
+    try {
+        await camera.start();
+        state.camera = camera;
+        document.getElementById('cam-loading').style.display = 'none';
+        // Auto-start tracking after camera is ready
+        setTimeout(() => {
+            state.started = true;
+            startTimer();
+            showCoach(IS_SQUAT ? 'Sẵn sàng! Bắt đầu squat nào!' : 'Sẵn sàng! Bắt đầu hít đất nào!');
+        }, 1500);
+    } catch (err) {
+        document.getElementById('cam-loading').innerHTML =
+            `<div style="text-align:center;color:#ef4444;padding:24px;">
+                <div style="font-size:2rem;">📷</div>
+                <div>Không thể truy cập camera.<br/><small>Hãy cấp quyền camera cho trình duyệt.</small></div>
+             </div>`;
+    }
+}
+
+function finishSession() {
+    if (!state.started) return;
+    state.started = false;
+    stopTimer();
+
+    const elapsed = getElapsedSeconds();
+    const avgScore = state.formScores.length
+        ? Math.round(state.formScores.reduce((a, b) => a + b, 0) / state.formScores.length)
+        : 0;
+    const calPerRep = IS_SQUAT ? 0.32 : 0.29;
+    const cal = Math.round(state.validReps * calPerRep * 100) / 100;
+    const m = Math.floor(elapsed / 60), s = elapsed % 60;
+
+    document.getElementById('res-valid').textContent   = state.validReps;
+    document.getElementById('res-invalid').textContent = state.invalidReps;
+    document.getElementById('res-score').textContent   = avgScore + 'đ';
+    document.getElementById('res-cal').textContent     = cal;
+    document.getElementById('res-time').textContent    = `${m}:${s.toString().padStart(2,'0')}`;
+
+    const overlay = document.getElementById('finish-overlay');
+    overlay.style.display = 'flex';
+
+    // Store for save
+    window._sessionData = { elapsed, avgScore, cal };
+}
+
+function resetSession() {
+    state.repCount    = 0;
+    state.validReps   = 0;
+    state.invalidReps = 0;
+    state.formScores  = [];
+    state.phase       = 'UP';
+    document.getElementById('rep-count').textContent  = '0';
+    document.getElementById('score-val').textContent  = '—';
+    document.getElementById('depth-fill').style.height = '0%';
+    document.getElementById('depth-pct').textContent  = '0%';
+    document.getElementById('finish-overlay').style.display = 'none';
+    document.getElementById('timer-el').textContent   = '00:00';
+    document.getElementById('state-badge').textContent = IS_SQUAT ? '↑ Đứng thẳng' : '↑ Tư thế trên';
+    state.started = true;
+    startTimer();
+    showCoach(IS_SQUAT ? 'Bắt đầu lại! Squat nào!' : 'Bắt đầu lại! Hít đất nào!');
+}
+
+async function saveSession() {
+    if (!window._sessionData) return;
+    document.getElementById('btn-save').disabled = true;
+    document.getElementById('save-status').textContent = 'Đang lưu...';
+
+    const avgScore = state.formScores.length
+        ? state.formScores.reduce((a, b) => a + b, 0) / state.formScores.length
+        : 0;
+
+    const fd = new FormData();
+    fd.append('exerciseType',    EXERCISE);
+    fd.append('totalReps',       state.repCount);
+    fd.append('validReps',       state.validReps);
+    fd.append('invalidReps',     state.invalidReps);
+    fd.append('averageFormScore',avgScore.toFixed(2));
+    fd.append('durationSeconds', window._sessionData.elapsed);
+    fd.append('__RequestVerificationToken', TOKEN);
+
+    try {
+        const res  = await fetch('/AiWorkout/SaveSession', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('save-status').textContent =
+                `✅ Đã lưu! ${data.caloriesBurned} kcal tiêu thụ.` +
+                (data.isPersonalRecord ? ' 🏆 Kỷ lục mới!' : '');
+            if (data.isPersonalRecord) {
+                document.getElementById('res-pr-box').style.display = 'block';
+            }
+        } else {
+            document.getElementById('save-status').textContent = '❌ ' + data.message;
+        }
+    } catch {
+        document.getElementById('save-status').textContent = '❌ Lỗi kết nối, thử lại sau.';
+    }
+}
+
+function exitStudio() {
+    if (state.started && state.repCount > 0) {
+        if (!confirm('Bạn có muốn kết thúc buổi tập không?')) return;
+        finishSession();
+        return;
+    }
+    window.location.href = '/AiWorkout';
+}
+
+// ── Finish button in topbar ──
+document.getElementById('btn-exit').addEventListener('click', exitStudio);
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); finishSession(); }
+    if (e.code === 'Escape') exitStudio();
+});
+</script>
+
+<!-- CSRF token for fetch -->
+<form id="csrf-form" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+<script>
+// Pick up the token from the hidden form
+(function() {
+    const t = document.querySelector('#csrf-form input[name="__RequestVerificationToken"]');
+    if (t) window.__csrfToken = t.value;
+    // Patch saveSession to use the real token
+    const orig = window.saveSession;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+@{
+    ViewData["Title"] = "Tin Nhắn — Owner";
+    Layout = "_OwnerAdminLayout";
+    var gym           = ViewBag.Gym           as GymManagement.Models.Gym;
+    var conversations = ViewBag.Conversations as List<GymManagement.Models.ChatConversation> ?? new();
+    var broadcasts    = ViewBag.Broadcasts    as List<GymManagement.Models.ChatMessage>      ?? new();
+    int totalUnread   = ViewBag.TotalUnread   is int u ? u : 0;
+}
+
+<div class="container-fluid py-2">
+
+    <!-- Page header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div>
+            <h1 style="font-family:'Montserrat',sans-serif;font-size:1.35rem;font-weight:900;color:#111;margin:0 0 4px;letter-spacing:-0.5px;">
+                TIN NHẮN PHÒNG GYM
+                @if (totalUnread > 0)
+                {
+                    <span style="display:inline-block;background:#252525;color:#fff;font-size:.65rem;padding:2px 8px;margin-left:8px;font-weight:900;vertical-align:middle;">@totalUnread chưa đọc</span>
+                }
+            </h1>
+            <p style="margin:0;font-size:.85rem;color:#6b7280;">@gym?.Name — Chat với hội viên &amp; gửi thông báo</p>
+        </div>
+        <a href="/OwnerChat/Broadcast" class="btn btn-dark rounded-0 px-3 py-2 text-uppercase fw-bold" style="font-size:.72rem;letter-spacing:1px;">
+            <i class="bi bi-megaphone me-1"></i>Gửi thông báo hàng loạt
+        </a>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- LEFT: Member conversations -->
+        <div class="col-lg-8">
+            <div class="content-card p-0">
+                <div class="content-card-header d-flex align-items-center justify-content-between p-3 border-bottom">
+                    <h5 class="content-card-title mb-0" style="font-size:.95rem;font-weight:800;">
+                        <i class="bi bi-chat-left-text me-2 text-primary"></i>Hội thoại với hội viên
+                    </h5>
+                    <span class="badge bg-light text-dark border">@conversations.Count hội viên</span>
+                </div>
+
+                @if (!conversations.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                        <h6 class="fw-bold text-dark">Chưa có tin nhắn nào</h6>
+                        <p class="small text-muted mb-0">Hội viên nhắn tin qua trang phòng gym sẽ hiển thị tại đây.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var conv in conversations)
+                    {
+                        var lastMsg  = conv.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault();
+                        bool unread  = conv.OwnerUnread > 0;
+                        string init  = conv.Member?.FullName?.Length > 0 ? conv.Member.FullName[0].ToString().ToUpper() : "H";
+                        <a href="/OwnerChat/Conversation/@conv.MemberId"
+                           style="display:flex;align-items:center;gap:14px;padding:.9rem 1.2rem;border-bottom:1px solid #f0f0f0;text-decoration:none;color:inherit;background:@(unread?"#fafafa":"#fff");border-left:@(unread?"3px solid #252525":"3px solid transparent");transition:background .15s;">
+                            <!-- Avatar -->
+                            <div style="width:42px;height:42px;background:#252525;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:900;font-size:.9rem;flex-shrink:0;">@init</div>
+                            <!-- Info -->
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:'Montserrat',sans-serif;font-size:.88rem;font-weight:800;color:#252525;">@conv.Member?.FullName</div>
+                                <div style="font-size:.76rem;color:#7D7D7D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">
+                                    @if (lastMsg != null)
+                                    {
+                                        <text>@(lastMsg.SenderRole == "Owner" ? "Bạn: " : "")@lastMsg.Content</text>
+                                    }
+                                    else { <span style="font-style:italic;">Chưa có tin nhắn</span> }
+                                </div>
+                            </div>
+                            <!-- Meta -->
+                            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                                <div style="font-size:.68rem;color:#7D7D7D;white-space:nowrap;">@conv.LastMessageAt.ToString("dd/MM HH:mm")</div>
+                                @if (unread)
+                                {
+                                    <div style="background:#252525;color:#fff;font-size:.62rem;font-weight:900;font-family:'Montserrat',sans-serif;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;padding:0 5px;">@conv.OwnerUnread</div>
+                                }
+                            </div>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT: Recent broadcasts -->
+        <div class="col-lg-4">
+            <div class="content-card p-0">
+                <div class="content-card-header d-flex align-items-center justify-content-between p-3 border-bottom">
+                    <h5 class="content-card-title mb-0" style="font-size:.95rem;font-weight:800;">
+                        <i class="bi bi-megaphone me-2 text-warning"></i>Thông báo gần đây
+                    </h5>
+                    <a href="/OwnerChat/Broadcast" class="badge bg-dark text-white text-decoration-none">Xem tất cả</a>
+                </div>
+
+                @if (!broadcasts.Any())
+                {
+                    <div class="text-center py-4 text-muted px-3">
+                        <i class="bi bi-megaphone fs-2 d-block mb-2 text-secondary"></i>
+                        <p class="small mb-0">Chưa có thông báo nào. <a href="/OwnerChat/Broadcast">Gửi ngay</a></p>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3" style="display:flex;flex-direction:column;gap:10px;">
+                        @foreach (var bc in broadcasts)
+                        {
+                            <div style="border:1px solid #CFCFCF;border-left:3px solid #252525;padding:.8rem 1rem;">
+                                <div style="font-size:.82rem;color:#252525;line-height:1.5;">@bc.Content</div>
+                                <div style="font-size:.68rem;color:#7D7D7D;margin-top:4px;">@bc.CreatedAt.ToString("HH:mm — dd/MM/yyyy")</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -22,5 +22,8 @@ namespace GymManagement.Models
         public ICollection<CheckinLog> ConfirmedCheckins { get; set; } = new List<CheckinLog>();
         public ICollection<GymReview> GymReviews { get; set; } = new List<GymReview>();
         public MemberFaceProfile? FaceProfile { get; set; }
+        public ICollection<WorkoutSession> WorkoutSessions { get; set; } = new List<WorkoutSession>();
+        public ICollection<ChatConversation> ChatConversations { get; set; } = new List<ChatConversation>();
+        public ICollection<ChatMessage> SentMessages { get; set; } = new List<ChatMessage>();
     }
 }
